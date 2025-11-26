@@ -11,10 +11,11 @@ export function AuthProvider({ children }: PropsWithChildren) {
     // Load user/token from secure storage
     const restoreSession = async () => {
       try {
-        const token = await SecureStore.getItemAsync('token');
-        if (token) {
+        const user = await SecureStore.getItemAsync('user');
+
+        if (user) {
           // Optionally validate token with your backend
-          setUser({ token });
+          setUser(JSON.parse(user));
         }
       } finally {
         setLoading(false);
@@ -25,11 +26,13 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
   const signIn = async (token: string, userData: any) => {
     await SecureStore.setItemAsync('token', token);
-    setUser({ token, ...userData });
+    await SecureStore.setItemAsync('user', JSON.stringify(userData));
+    setUser(userData);
   };
 
   const signOut = async () => {
     await SecureStore.deleteItemAsync('token');
+    await SecureStore.deleteItemAsync('user');
     setUser(null);
   };
 

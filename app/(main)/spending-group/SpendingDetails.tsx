@@ -1,12 +1,11 @@
+import { deleteSpending } from '@/app/services/api';
 import { ScreenContainer } from '@/components/ScreenContainer';
+import { useBudgets } from '@/context/BudgetContext';
 import { useTitle } from '@/context/NavBarTitleContext';
 import { DrawerScreenProps } from '@react-navigation/drawer';
-import { RouteProp, useRoute } from '@react-navigation/native';
 import { useFocusEffect } from 'expo-router';
 import React from 'react';
 import { Card, IconButton, MD2Colors, Text } from 'react-native-paper';
-
-
 
 type DrawerParamList = {
   GroupDetails: { id: string; title: string };
@@ -17,26 +16,38 @@ type Props = DrawerScreenProps<DrawerParamList, 'GroupDetails'>;
 
 
 export default function SpendingDetailsScreen() {
-  const route = useRoute<RouteProp<DrawerParamList, 'GroupDetails'>>();
   const { setTitle } = useTitle();
-  const { id } = route.params; // ✅ id is typed as string
+  const { selectedMainBudgetId, selectedBudgetCategoryId, budgets, removeSpending } = useBudgets();
+  const selectedCategory = budgets.filter(b => b.id == selectedMainBudgetId).flatMap(x => x.budgetCategories).find(c => c?.id == selectedBudgetCategoryId);
 
-useFocusEffect(() => {
-  setTitle(id);
-});
+  useFocusEffect(() => {
+    setTitle(selectedCategory?.name ? selectedCategory.name : "");
+  });
+
+  async function onDeleteSpending(spendingId: number) {
+    try {
+      await deleteSpending(spendingId);
+      removeSpending(spendingId);
+    }
+    catch (e) {
+      console.log(e);
+    }
+  }
 
   return (
-    <ScreenContainer>
-      <Card style={{ marginBottom: 12 }}>
-        <Card.Title
-          title="-7.50"
-          subtitle="Milk and butter"
+    <ScreenContainer scrollable={true}>
+      {selectedCategory?.spendings?.length == 0 ? <Text style={{textAlign:"center"}}>No spending history</Text> : null}
+      {selectedCategory?.spendings?.map(sp =>
+        <Card key={sp.id} style={{ marginBottom: 12 }}>
+          <Card.Title titleStyle={{color: sp.amount < 0 ? "red" : "green"}}
+            title={sp.amount}
+            subtitle={sp.description}
 
-          left={(props) => <Text>21.01.2025</Text>}
-          right={(props) => 
-            <IconButton iconColor={MD2Colors.red800} icon="close"/>} />
-      </Card>
-
+            left={(props) => <Text>{sp.date}</Text>}
+            right={(props) =>
+              <IconButton iconColor={MD2Colors.red800} icon="close" onPress={() => onDeleteSpending(sp.id)} />} />
+        </Card>
+      )}
     </ScreenContainer>
   );
 }

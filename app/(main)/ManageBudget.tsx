@@ -1,0 +1,179 @@
+import { Modal, ModalRef } from "@/components/Modal";
+import { ScreenContainer } from "@/components/ScreenContainer";
+import { useBudgets } from "@/context/BudgetContext";
+import { useTitle } from "@/context/NavBarTitleContext";
+import { BudgetCategory } from "@/types/Types";
+import { useFocusEffect, useLocalSearchParams, useNavigation, useRouter } from "expo-router";
+import { useRef, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+import { View } from "react-native";
+import { Button, HelperText, IconButton, List, MD2Colors, Portal, Snackbar, TextInput } from "react-native-paper";
+import { createBudgetCategory, deleteBudget, deleteBudgetCategory } from "../services/api";
+
+
+export default function ManageBudgetScreen() {
+    const navigation = useNavigation();
+    const router = useRouter();
+    const { selectedMainBudgetId, setSelectedBudgetCategory, selectedBudgetCategoryId, addSpending, budgets, removeBudgetCategory, addBudgetCategory, removeBudget } = useBudgets();
+    const deleteCategoryModalRef = useRef<ModalRef>(null);
+    const createCategoryModalRef = useRef<ModalRef>(null);
+    const deleteBudgetModalRef = useRef<ModalRef>(null);
+    const { setTitle } = useTitle();
+    const params = useLocalSearchParams();
+    const [visible, setVisible] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [errorMessage, setErrorMessage] = useState("");
+    const selectedMainBudget = budgets.find(b => b.id == Number(params.budgetId));
+    const selectedCategory = budgets.filter(b => b.id == Number(params.budgetId)).flatMap(x => x.budgetCategories).find(c => c?.id == selectedBudgetCategoryId);
+
+    const { control, handleSubmit, watch, reset } = useForm<BudgetCategory>({
+        defaultValues: {
+            id: 0,
+            budgetId: selectedMainBudget?.id,
+            name: "",
+            spendings: [
+                {
+                    id: 0,
+                    amount: undefined,
+                    description: "ADD MONEY",
+                    budgetCategoryId: 0
+                }
+            ],
+        }
+    });
+
+    function onOpenDeletecategoryModal(budgetCategory: BudgetCategory) {
+        setSelectedBudgetCategory(budgetCategory.id);
+        deleteCategoryModalRef.current?.open();
+    }
+
+    function onOpenCreateCategoryModal() {
+        createCategoryModalRef.current?.open();
+    }
+
+    function onOpenDeleteBudgetModal() {
+        deleteBudgetModalRef.current?.open();
+    }
+
+
+    async function onDeleteCategory(cancelled: boolean) {
+        if (cancelled) {
+            return;
+        }
+
+        try {
+            setLoading(true);
+            var budgetCategoryId = await deleteBudgetCategory(selectedBudgetCategoryId!);
+            removeBudgetCategory(budgetCategoryId, selectedMainBudget!.id);
+            setLoading(false);
+            deleteCategoryModalRef.current?.close();
+        }
+        catch (e) {
+            setErrorMessage("Deleting category was not successful.");
+            setVisible(true);
+            setLoading(false);
+            console.log(e);
+        }
+    }
+
+    async function onDeleteBudget(cancelled: boolean) {
+        if (cancelled) {
+            return;
+        }
+
+        try {
+            setLoading(true);
+            var budgetId = await deleteBudget(selectedMainBudget!.id);
+            removeBudget(budgetId);
+            setLoading(false);
+            deleteBudgetModalRef.current?.close();
+            router.push("/(main)/(tabs)");
+        }
+        catch (e) {
+            setErrorMessage("Deleting budget was not successful.");
+            setVisible(true);
+            setLoading(false);
+            console.log(e);
+        }
+    }
+
+    async function onCreateCategory(budgetCategory: BudgetCategory) {
+        try {
+            setLoading(true);
+            budgetCategory.budgetId = selectedMainBudget!.id;
+            const addedBudgetCategory = await createBudgetCategory(budgetCategory);
+            addBudgetCategory(addedBudgetCategory);
+            setLoading(false);
+            createCategoryModalRef.current?.close();
+            reset();
+        }
+        catch (e) {
+            setErrorMessage("Creating category was not successful.");
+            setVisible(true);
+            setLoading(false);
+            console.log(e);
+        }
+    }
+
+    useFocusEffect(() => {
+        setTitle(`Budget: ${selectedMainBudget?.name}`);
+    });
+
+    return (
+        <ScreenContainer scrollable={true}>
+            <Button style={{ marginBottom: 20 }} mode="contained">Invite Participant</Button>
+            <List.Accordion style={{ marginBottom: 20 }} title="Categories" id="1">
+                {selectedMainBudget != null && selectedMainBudget.budgetCategories?.map(bc =>
+                    <List.Item left={props => <List.Icon {...props} icon="account-cash" />} right={props => <IconButton icon="close" iconColor={MD2Colors.red800} onPress={() => onOpenDeletecategoryModal(bc)} />} key={bc.id} title={bc.name} />
+                )}
+                <Button onPress={onOpenCreateCategoryModal} style={{ marginBottom: 20 }}>Add Category</Button>
+            </List.Accordion>
+            <Button style={{ marginBottom: 20 }} textColor="red" onPress={onOpenDeleteBudgetModal}>Delete Budget</Button>
+
+            <Modal ref={deleteCategoryModalRef} loading={loading} title={`Are you sure you wan't to delete ${selectedCategory?.name} category? All spendings history will be lost.`} onSubmit={(cancelled: boolean) => onDeleteCategory(cancelled)}>
+            </Modal>
+            <Modal ref={deleteBudgetModalRef} loading={loading} title={`Are you sure you wan't to delete ${selectedMainBudget?.name} budget? All spending categories and spendings history will be lost.`} onSubmit={(cancelled: boolean) => onDeleteBudget(cancelled)}>
+            </Modal>
+            <Modal ref={createCategoryModalRef} loading={loading} title={"Create Category"} onSubmit={(cancelled: boolean) => handleSubmit(onCreateCategory)()}>
+                <Controller
+                    control={control}
+                    rules={{ required: "Category name is required" }}
+                    name={`name`}
+                    render={({ field: { onChange, value }, fieldState }) => (
+                        <View>
+                            <TextInput error={fieldState.error != null} value={value} onChangeText={onChange} label="Name" />
+                            <HelperText type="error" visible={!!fieldState.error}>
+                                {fieldState.error?.message}
+                            </HelperText>
+                        </View>
+                    )}
+                />
+                <Controller
+                    control={control}
+                    rules={{ required: "Category amount is required" }}
+                    name={`spendings.0.amount`}
+                    render={({ field: { onChange, value }, fieldState }) => (
+                        <View>
+                            <TextInput error={fieldState.error != null} keyboardType='numeric' value={value ? value.toString() : ""} onChangeText={onChange} label="Money" />
+                            <HelperText type="error" visible={!!fieldState.error}>
+                                {fieldState.error?.message}
+                            </HelperText>
+                        </View>
+                    )}
+                />
+            </Modal>
+            <Portal>
+                <Snackbar
+                    visible={visible}
+                    onDismiss={() => setVisible(false)}
+                    duration={5000}
+                    action={{
+                        label: 'OK',
+                        onPress: () => setVisible(false),
+                    }}>
+                    {errorMessage}
+                </Snackbar>
+            </Portal>
+        </ScreenContainer>
+    );
+}

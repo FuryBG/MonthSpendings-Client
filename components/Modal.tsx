@@ -5,7 +5,8 @@ import { Button, Dialog, Portal, Text } from 'react-native-paper';
 
 type ModalProps = {
   title?: string;
-  onClose: (cancelled: boolean) => void;
+  loading: boolean;
+  onSubmit: (cancelled: boolean) => void;
   children?: React.ReactNode;
 };
 
@@ -16,7 +17,7 @@ export type ModalRef = {
 
 
 export const Modal = forwardRef<ModalRef, ModalProps>(
-  ({ title, onClose, children }: ModalProps, ref) => {
+  ({ title, onSubmit, children, loading }: ModalProps, ref) => {
     const [visible, setVisible] = useState(false);
     const containerStyle = { borderRadius: 10 };
 
@@ -26,8 +27,11 @@ export const Modal = forwardRef<ModalRef, ModalProps>(
     }));
 
     function onHide(cancelled: boolean) {
-      setVisible(false);
-      onClose(cancelled);
+      if (cancelled) {
+        setVisible(false);
+      }
+      
+      onSubmit(cancelled);
     }
 
     return (
@@ -38,7 +42,7 @@ export const Modal = forwardRef<ModalRef, ModalProps>(
           </Dialog.Title>
           <Dialog.Content>{children}</Dialog.Content>
           <Dialog.Actions>
-            <Button onPress={() => onHide(false)} mode="contained">Done</Button>
+            <Button onPress={() => onHide(false)} loading={loading} mode="contained">Done</Button>
             <Button onPress={() => onHide(true)}>Cancel</Button>
           </Dialog.Actions>
         </Dialog>

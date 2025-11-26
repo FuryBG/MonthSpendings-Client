@@ -1,113 +1,160 @@
-import { ModalRef } from "@/components/Modal";
+import { OverlayLoader } from "@/components/OverlayLoader";
 import { ScreenContainer } from "@/components/ScreenContainer";
-import { useTitle } from "@/context/NavBarTitleContext";
-import { useFocusEffect } from "@react-navigation/native";
-import { useRef } from "react";
+import { useBudgets } from "@/context/BudgetContext";
+import { Budget } from "@/types/Types";
+import { DrawerActions } from "@react-navigation/native";
+import { useFocusEffect, useNavigation, useRouter } from "expo-router";
+import { useCallback, useState } from "react";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { View } from "react-native";
-import { Button, Text, TextInput } from "react-native-paper";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { Appbar, Button, HelperText, IconButton, MD2Colors, Portal, Snackbar, Text, TextInput } from "react-native-paper";
+import { createBudget } from "../services/api";
 
-
-
-type Budget = {
-    id: number,
-    name: string,
-    monthlyBudget: MonthlyBudget
-}
-
-type MonthlyBudget = {
-    id: number,
-    startDate: string,
-    endDate: string,
-    budgetId: number,
-    budgetCategories: BudgetCategory[]
-}
-
-type BudgetCategory = {
-    id: number,
-    name: string,
-    monthlyBudgetId: number,
-    spendings: Spending[]
-}
-
-type Spending = {
-    id: number,
-    date: string,
-    amount: number,
-    description: string,
-    budgetCategoryId: number
-}
 
 export default function CreateBudgetScreen() {
-    const { setTitle } = useTitle();
-    const modalRef = useRef<ModalRef>(null);
-
+    const navigation = useNavigation();
+    const { addBudget } = useBudgets();
+    const router = useRouter();
+    const [visible, setVisible] = useState(false);
+    const [loading, setLoading] = useState(false);
     const { control, handleSubmit, watch, reset } = useForm<Budget>({
         defaultValues: {
             id: 0,
-            name: '',
-            monthlyBudget: {
-                id: 0,
-                startDate: '',
-                endDate: '',
-                budgetId: 0,
-                budgetCategories: [
-                    {
-                        id: 0,
-                        name: '',
-                        monthlyBudgetId: 0,
-                        spendings: [
-                            {
-                                amount: 0
-                            }
-                        ],
-                    },
-                ],
-            },
+            name: "",
+            users: null,
+            budgetPeriods: [
+                {
+                    id: 0,
+                    budgetId: 0,
+                    startDate: new Date().toISOString(),
+                    endDate: null
+                }
+            ],
+            budgetCategories: [
+                {
+                    id: 0,
+                    name: '',
+                    budgetId: 0,
+                    spendings: [
+                        {
+                            id: 0,
+                            amount: undefined,
+                            description: "ADD MONEY",
+                            budgetCategoryId: 0
+                        }
+                    ],
+                },
+            ],
         },
     });
 
-        useFocusEffect(() => {
-        setTitle("Create Budget");
-        reset();
-    });
+    async function onSubmit(data: Budget) {
+        try {
+            setLoading(true);
+            var budget = await createBudget(data);
+            addBudget(budget);
+            setLoading(false);
+            router.push("/(main)/(tabs)");
+            reset();
+            requestAnimationFrame(() => {
+                navigation.dispatch(DrawerActions.closeDrawer());
+            });
+        }
+        catch (e) {
+            setVisible(true);
+            setLoading(false);
+        }
 
-    const { fields: categories, append: addCategory } = useFieldArray({
+    }
+
+    useFocusEffect(
+        useCallback(() => {
+            reset();
+            navigation.setOptions({
+                header: () => (
+                    <Appbar.Header>
+                        {router.canGoBack() && (
+                            <Appbar.BackAction onPress={() => {
+                                router.back();
+                            }} />
+                        )}
+                        <Appbar.Content title={"Create Budget"} />
+                        <Appbar.Action icon="check" onPress={handleSubmit(onSubmit)} />
+                    </Appbar.Header>
+                ),
+            });
+        }, [])
+    );
+
+    const { fields: categories, append: addCategory, remove } = useFieldArray({
         control,
-        name: 'monthlyBudget.budgetCategories',
+        name: 'budgetCategories',
     });
 
     return (
-        <SafeAreaView style={{ flex: 1 }}>
-            <ScreenContainer>
-                <Controller
-                    control={control}
-                    name="name"
-                    render={({ field: { onChange, value } }) => (
-                        <TextInput value={value} onChangeText={onChange} style={{ marginBottom: 20, width: "100%" }} label="Budget name" />)} />
-                <Text style={{ paddingBottom: 5 }}>Categories:</Text>
-                {categories.map((cat, index) => (
-                    <View key={cat.id} style={{ marginBottom: 10, display: "flex", flexDirection: "row", gap: 10 }}>
-                        <Controller
-                            control={control}
-                            name={`monthlyBudget.budgetCategories.${index}.name`}
-                            render={({ field: { onChange, value } }) => (
-                                <TextInput style={{ width: "50%" }} value={value} onChangeText={onChange} label="Category name" />
-                            )}
-                        />
-                        <Controller
-                            control={control}
-                            name={`monthlyBudget.budgetCategories.${index}.spendings.0.amount`}
-                            render={({ field: { onChange, value } }) => (
-                                <TextInput keyboardType='numeric' style={{ width: "46%" }} value={value.toString()} onChangeText={onChange} label="Category money" />
-                            )}
-                        />
-                    </View>
-                ))}
-                <Button onPress={() => addCategory({ id: Date.now(), name: '', monthlyBudgetId: 0, spendings: [{ amount: 0, id: 0, budgetCategoryId: 0, date: "", description: "" }] })}>Add Category</Button>
-            </ScreenContainer>
-        </SafeAreaView>
+
+        <ScreenContainer scrollable={true}>
+            <OverlayLoader isVisible={loading} message='Creating budget...'></OverlayLoader>
+            <Controller
+                control={control}
+                rules={{ required: "Budget name is required" }}
+                name="name"
+                render={({ field: { onChange, value }, fieldState }) => (
+                    <>
+                        <TextInput error={fieldState.error != null} value={value} onChangeText={onChange} style={{ marginBottom: 0, width: "100%" }} label="Budget name" />
+                        <HelperText type="error" visible={!!fieldState.error}>
+                            {fieldState.error?.message}
+                        </HelperText>
+                    </>
+                )} />
+            <Text style={{ paddingBottom: 5 }}>Categories:</Text>
+            {categories.map((cat, index) => (
+                <View key={index} style={{ marginBottom: 10, display: "flex", flexDirection: "row", gap: 10 }}>
+                    <Controller
+                        control={control}
+                        rules={{ required: "Category name is required" }}
+                        name={`budgetCategories.${index}.name`}
+                        render={({ field: { onChange, value }, fieldState }) => (
+                            <View style={{ width: "40%" }}>
+                                <TextInput error={fieldState.error != null} value={value} onChangeText={onChange} label="Name" />
+                                <HelperText type="error" visible={!!fieldState.error}>
+                                    {fieldState.error?.message}
+                                </HelperText>
+                            </View>
+                        )}
+                    />
+                    <Controller
+                        control={control}
+                        rules={{ required: "Category amount is required" }}
+                        name={`budgetCategories.${index}.spendings.0.amount`}
+                        render={({ field: { onChange, value }, fieldState }) => (
+                            <View style={{ width: "42%" }}>
+                                <TextInput error={fieldState.error != null} keyboardType='numeric' value={value ? value.toString() : ""} onChangeText={onChange} label="Money" />
+                                <HelperText type="error" visible={!!fieldState.error}>
+                                    {fieldState.error?.message}
+                                </HelperText>
+                            </View>
+                        )}
+                    />
+
+                    <IconButton icon="close" iconColor={MD2Colors.red800} onPress={() => remove(index)} />
+
+                </View>
+            ))}
+            <Button onPress={() => addCategory({ id: 0, name: '', budgetId: 0, spendings: [{ amount: undefined!, id: 0, date: null, budgetCategoryId: 0, description: "ADD MONEY" }] })}>Add Category</Button>
+            <Portal>
+                <Snackbar
+                    visible={visible}
+                    onDismiss={() => setVisible(false)}
+                    duration={5000}
+                    action={{
+                        label: 'OK',
+                        onPress: () => setVisible(false),
+                    }}>
+                    Create Budget failed.
+                </Snackbar>
+            </Portal>
+        </ScreenContainer>
 
     );
 }
