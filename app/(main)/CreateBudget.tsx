@@ -22,14 +22,6 @@ export default function CreateBudgetScreen() {
             id: 0,
             name: "",
             users: null,
-            budgetPeriods: [
-                {
-                    id: 0,
-                    budgetId: 0,
-                    startDate: new Date().toISOString(),
-                    endDate: null
-                }
-            ],
             budgetCategories: [
                 {
                     id: 0,
@@ -40,7 +32,8 @@ export default function CreateBudgetScreen() {
                             id: 0,
                             amount: undefined,
                             description: "ADD MONEY",
-                            budgetCategoryId: 0
+                            budgetCategoryId: 0,
+                            budgetPeriodId: 0
                         }
                     ],
                 },
@@ -141,7 +134,7 @@ export default function CreateBudgetScreen() {
 
                 </View>
             ))}
-            <Button onPress={() => addCategory({ id: 0, name: '', budgetId: 0, spendings: [{ amount: undefined!, id: 0, date: null, budgetCategoryId: 0, description: "ADD MONEY" }] })}>Add Category</Button>
+            <Button onPress={() => addCategory({ id: 0, name: '', budgetId: 0, spendings: [{ amount: undefined!, id: 0, date: null, budgetCategoryId: 0, budgetPeriodId: 0, description: "ADD MONEY" }] })}>Add Category</Button>
             <Portal>
                 <Snackbar
                     visible={visible}

@@ -17,7 +17,7 @@ export interface GoogleUserDto {
   notificationToken: string
 }
 
-const BASE_URL = 'https://2bdb39069d96.ngrok-free.app';
+const BASE_URL = 'https://65551e3de8c5.ngrok-free.app';
 
 const api: AxiosInstance = axios.create({
   baseURL: BASE_URL,
@@ -98,6 +98,15 @@ export const deleteBudget = async (budgetId: number): Promise<number> => {
   const response = await api.delete<number>("/api/budget", {
     params: { budgetId: budgetId }
   });
+
+  console.log(response.data);
+
+  const b = response.data;
+  return b;
+};
+
+export const finishBudget = async (budget: Budget): Promise<number> => {
+  const response = await api.post<Budget>("/api/budget/finish", budget);
 
   console.log(response.data);
 

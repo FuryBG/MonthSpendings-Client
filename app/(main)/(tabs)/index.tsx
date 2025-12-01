@@ -63,6 +63,7 @@ export default function HomeScreen() {
   async function onModalSubmit(spending: Spending) {
     setIsLoading(true);
     spending.budgetCategoryId = selectedBudgetCategoryId ?? 0;
+    spending.budgetPeriodId = selectedMainBudget?.budgetPeriods[0].id ?? 0;
     spending.amount = negativeInput ? -Number(spending.amount) : Number(spending.amount);
     let newSpending = await createSpending(spending);
     addSpending(newSpending);

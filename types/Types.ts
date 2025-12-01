@@ -27,7 +27,7 @@ export type BudgetCategory = {
     id: number,
     budgetId: number,
     name: string,
-    spendings: Spending[] | null
+    spendings: Spending[]
 }
 
 export type Spending = {
@@ -36,4 +36,5 @@ export type Spending = {
     date: string | null,
     description: string,
     budgetCategoryId: number
+    budgetPeriodId: number
 }

@@ -17,12 +17,14 @@ const BudgetContext = createContext({
     removeBudgetCategory: (removedBudgetCategoryId: number, budgetId: number) => { },
     addBudgetCategory: (addedBudgetCategory: BudgetCategory) => { },
     removeBudget: (deletedBudgetId: number) => { },
+    reFetchBudgets: () => { },
 });
 
 export const useBudgets = () => useContext(BudgetContext);
 
 export function BudgetProvider({ children }: { children: ReactNode }) {
     const [budgets, setBudgets] = useState<Budget[]>([]);
+    const [triggerReload, setTriggerReload] = useState<boolean>(false);
     const [loading, setLoading] = useState<boolean>(true);
     const [selectedMainBudgetId, setSelectedMainBudget] = useState<number | null>(null);
     const [selectedBudgetCategoryId, setSelectedBudgetCategory] = useState<number | null>(null);
@@ -54,7 +56,7 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
         }
 
         init();
-    }, []);
+    }, [triggerReload]);
 
 
     async function loadMainBudgetId(): Promise<number | null> {
@@ -155,8 +157,12 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
         }));
     };
 
+    const reFetchBudgets = () => {
+        setTriggerReload(prev => !prev);
+    };
+
     return (
-        <BudgetContext.Provider value={{ budgets, addBudget, selectedMainBudgetId, setMainBudget, loading, setSelectedBudgetCategory, selectedBudgetCategoryId, addSpending, removeSpending, removeBudgetCategory, addBudgetCategory, removeBudget }}>
+        <BudgetContext.Provider value={{ budgets, addBudget, reFetchBudgets, selectedMainBudgetId, setMainBudget, loading, setSelectedBudgetCategory, selectedBudgetCategoryId, addSpending, removeSpending, removeBudgetCategory, addBudgetCategory, removeBudget }}>
             {children}
         </BudgetContext.Provider>
     );
