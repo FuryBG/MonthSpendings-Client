@@ -1,7 +1,6 @@
 import { OverlayLoader } from '@/components/OverlayLoader';
 import { ScreenContainer } from '@/components/ScreenContainer';
 import { AuthContext } from '@/context/AuthContext';
-import { useNotification } from '@/context/NotificationContext';
 import { GoogleSignin, GoogleSigninButton } from '@react-native-google-signin/google-signin';
 import { useContext, useState } from 'react';
 import { View } from 'react-native';
@@ -9,7 +8,7 @@ import { Portal, Snackbar, Text } from 'react-native-paper';
 import { googleLogin } from '../services/api';
 
 export default function LoginScreen() {
-  const { notification, expoPushToken, error } = useNotification();
+  // const { notification, expoPushToken, error } = useNotification();
   const { signIn } = useContext(AuthContext);
   const [visible, setVisible] = useState(false);
   const [signing, setSigning] = useState(false);
@@ -22,7 +21,7 @@ export default function LoginScreen() {
 
       if (googleToken != undefined) {
         setSigning((prev) => true);
-        let jwt = await googleLogin({ id: userInfo.data!.user.id, notificationToken: expoPushToken!, email: userInfo.data!.user.email, familyName: userInfo.data!.user.familyName, givenName: userInfo.data!.user.givenName, photo: userInfo.data!.user.photo });
+        let jwt = await googleLogin({ id: userInfo.data!.user.id, notificationToken: "", email: userInfo.data!.user.email, familyName: userInfo.data!.user.familyName, givenName: userInfo.data!.user.givenName, photo: userInfo.data!.user.photo });
         signIn(jwt, userInfo.data?.user);
       }
     } catch (error) {

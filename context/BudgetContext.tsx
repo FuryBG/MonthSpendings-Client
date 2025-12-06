@@ -2,6 +2,7 @@ import { getBudgets } from "@/app/services/api";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, ReactNode, useContext, useEffect, useState } from "react";
 import { Budget, BudgetCategory, Spending } from "../types/Types";
+import { AuthContext } from "./AuthContext";
 
 
 const BudgetContext = createContext({
@@ -25,6 +26,7 @@ export const useBudgets = () => useContext(BudgetContext);
 export function BudgetProvider({ children }: { children: ReactNode }) {
     const [budgets, setBudgets] = useState<Budget[]>([]);
     const [triggerReload, setTriggerReload] = useState<boolean>(false);
+    const { user } = useContext(AuthContext);
     const [loading, setLoading] = useState<boolean>(true);
     const [selectedMainBudgetId, setSelectedMainBudget] = useState<number | null>(null);
     const [selectedBudgetCategoryId, setSelectedBudgetCategory] = useState<number | null>(null);
@@ -32,6 +34,10 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
     // Initial fetch
     useEffect(() => {
         const init = async () => {
+            if (user == null || user == undefined) {
+                return;
+            }
+
             const data = await getBudgets();
             setBudgets(data);
             let mainBudgetId = await loadMainBudgetId();
@@ -44,11 +50,9 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
             // set previously selected when start
             if (selectedBudget != undefined) {
                 setMainBudget(selectedBudget.id);
-                setLoading(false);
-                return;
             }
 
-            if (data.length > 0) {
+            if (data.length > 0 && selectedBudget == undefined) {
                 await setMainBudget(data[0].id);
             }
 
@@ -56,7 +60,8 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
         }
 
         init();
-    }, [triggerReload]);
+
+    }, [triggerReload, user]);
 
 
     async function loadMainBudgetId(): Promise<number | null> {

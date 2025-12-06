@@ -4,22 +4,11 @@ import { TitleProvider } from '@/context/NavBarTitleContext';
 import { NotificationProvider } from '@/context/NotificationContext';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import * as Notifications from "expo-notifications";
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
 import { MD3DarkTheme, MD3LightTheme, PaperProvider } from 'react-native-paper';
 import 'react-native-reanimated';
-
-Notifications.setNotificationHandler({
-  handleNotification: async (): Promise<Notifications.NotificationBehavior> => ({
-    shouldShowAlert: true,
-    shouldPlaySound: false,
-    shouldSetBadge: false,
-    shouldShowBanner: false,
-    shouldShowList: false
-  }),
-});
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -38,7 +27,7 @@ export default function RootLayout() {
     },
   };
 
-    const customThemeDark = {
+  const customThemeDark = {
     ...MD3DarkTheme,
     // Specify custom property
     myOwnProperty: true,

@@ -13,7 +13,7 @@ import { Avatar, Button, Card, HelperText, Icon, IconButton, MD2Colors, Text, Te
 
 export default function HomeScreen() {
   const { notification, expoPushToken, error } = useNotification();
-  const { selectedMainBudgetId, setSelectedBudgetCategory, selectedBudgetCategoryId, addSpending, budgets } = useBudgets();
+  const { selectedMainBudgetId, setSelectedBudgetCategory, selectedBudgetCategoryId, addSpending, budgets, loading: budgetLoading } = useBudgets();
   const [negativeInput, setNegativeInput] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const router = useRouter();
@@ -31,8 +31,7 @@ export default function HomeScreen() {
     }
   });
 
-  console.log("RERENDEEERS");
-
+  console.log(expoPushToken);
 
   useFocusEffect(() => {
     setTitle(selectedMainBudget ? `Budget: ${selectedMainBudget.name}` : "Home");
@@ -85,7 +84,7 @@ export default function HomeScreen() {
         <Text>
           {JSON.stringify(notification?.request.content.data, null, 2)}
         </Text> */}
-        {selectedMainBudget == null &&
+        {selectedMainBudgetId != null && selectedMainBudget == undefined &&
           <View>
             <View style={{ alignItems: "center", paddingBottom: 40 }}>
               <Icon

@@ -10,6 +10,7 @@ import { StyleSheet } from "react-native";
 import { Appbar } from "react-native-paper";
 import { DrawerContent } from "../../components/DrawerContent";
 
+
 export default function MainLayout() {
   const route = useRoute();
   const pathname = usePathname();
@@ -18,7 +19,6 @@ export default function MainLayout() {
   const { title } = useTitle();
   const { user, loading } = useContext(AuthContext);
   const { loading: budgetsLoading } = useBudgets();
-
 
   if (loading || budgetsLoading) {
     return (

@@ -6,7 +6,7 @@ export default function PagesLayout() {
   const { user, loading } = useContext(AuthContext);
 
 
-  if (user != null) {
+  if (user != undefined) {
     return <Redirect href="/(main)/(tabs)" />;
   }
 

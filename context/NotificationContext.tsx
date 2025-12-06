@@ -1,14 +1,15 @@
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  useRef,
-  ReactNode,
-} from "react";
-import * as Notifications from "expo-notifications";
 import { registerForPushNotificationsAsync } from "@/utils/registerForPushNotificationsAsync";
 import { EventSubscription } from "expo-modules-core";
+import * as Notifications from "expo-notifications";
+import React, {
+  createContext,
+  ReactNode,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import { useBudgets } from "./BudgetContext";
 
 interface NotificationContextType {
   expoPushToken: string | null;
@@ -36,14 +37,25 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
   children,
 }) => {
   const [expoPushToken, setExpoPushToken] = useState<string | null>(null);
-  const [notification, setNotification] =
-    useState<Notifications.Notification | null>(null);
+  const [notification, setNotification] = useState<Notifications.Notification | null>(null);
   const [error, setError] = useState<Error | null>(null);
 
-const notificationListener = useRef<EventSubscription | null>(null);
-const responseListener = useRef<EventSubscription | null>(null);
+  const notificationListener = useRef<EventSubscription | null>(null);
+  const responseListener = useRef<EventSubscription | null>(null);
+
+  const { reFetchBudgets } = useBudgets();
 
   useEffect(() => {
+    Notifications.setNotificationHandler({
+      handleNotification: async (): Promise<Notifications.NotificationBehavior> => ({
+        shouldPlaySound: true,
+        shouldSetBadge: false,
+        shouldShowBanner: true,
+        priority: Notifications.AndroidNotificationPriority.MAX,
+        shouldShowList: true,
+
+      }),
+    });
     // Register for push notifications and get token
     registerForPushNotificationsAsync()
       .then((token) => {
@@ -59,6 +71,7 @@ const responseListener = useRef<EventSubscription | null>(null);
       (notification) => {
         console.log("🔔 Notification Received:", notification);
         setNotification(notification);
+        reFetchBudgets();
       }
     );
 
