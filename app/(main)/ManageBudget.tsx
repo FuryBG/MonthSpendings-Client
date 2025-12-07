@@ -1,24 +1,27 @@
 import { Modal, ModalRef } from "@/components/Modal";
 import { ScreenContainer } from "@/components/ScreenContainer";
+import { AuthContext } from "@/context/AuthContext";
 import { useBudgets } from "@/context/BudgetContext";
 import { useTitle } from "@/context/NavBarTitleContext";
-import { BudgetCategory, Spending } from "@/types/Types";
+import { BudgetCategory, BudgetInvite, Spending } from "@/types/Types";
 import { useFocusEffect, useLocalSearchParams, useNavigation, useRouter } from "expo-router";
-import { useRef, useState } from "react";
+import { useContext, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { View } from "react-native";
 import { Button, HelperText, IconButton, List, MD2Colors, Portal, Snackbar, TextInput } from "react-native-paper";
-import { createBudgetCategory, deleteBudget, deleteBudgetCategory, finishBudget } from "../services/api";
+import { createBudgetCategory, createInvite, deleteBudget, deleteBudgetCategory, finishBudget } from "../services/api";
 
 
 export default function ManageBudgetScreen() {
     const navigation = useNavigation();
     const router = useRouter();
+    const { user } = useContext(AuthContext);
     const { selectedMainBudgetId, setSelectedBudgetCategory, reFetchBudgets, selectedBudgetCategoryId, addSpending, budgets, removeBudgetCategory, addBudgetCategory, removeBudget } = useBudgets();
     const finishPeriodModalRef = useRef<ModalRef>(null);
     const deleteCategoryModalRef = useRef<ModalRef>(null);
     const createCategoryModalRef = useRef<ModalRef>(null);
     const deleteBudgetModalRef = useRef<ModalRef>(null);
+    const createInviteModalRef = useRef<ModalRef>(null);
     const { setTitle } = useTitle();
     const params = useLocalSearchParams();
     const [visible, setVisible] = useState(false);
@@ -43,6 +46,14 @@ export default function ManageBudgetScreen() {
         }
     });
 
+    const { control: inviteControl, handleSubmit: inviteHandleSubmit, reset: inviteReset } = useForm<BudgetInvite>({
+        defaultValues: {
+            id: 0,
+            budgetId: selectedMainBudgetId ?? 0,
+            receiverEmail: ""
+        }
+    });
+
     function onOpenDeletecategoryModal(budgetCategory: BudgetCategory) {
         setSelectedBudgetCategory(budgetCategory.id);
         deleteCategoryModalRef.current?.open();
@@ -58,6 +69,10 @@ export default function ManageBudgetScreen() {
 
     function onOpenFinishPeriodModal() {
         finishPeriodModalRef.current?.open();
+    }
+
+    function onOpenCreateInviteModal() {
+        createInviteModalRef.current?.open();
     }
 
 
@@ -121,6 +136,22 @@ export default function ManageBudgetScreen() {
         }
     }
 
+    async function onCreateInvite(budgetInvite: BudgetInvite) {
+        try {
+            setLoading(true);
+            await createInvite(budgetInvite);
+            setLoading(false);
+            createInviteModalRef.current?.close();
+            reset();
+        }
+        catch (e) {
+            setErrorMessage("Sending invite was not successful.");
+            setVisible(true);
+            setLoading(false);
+            console.log(e);
+        }
+    }
+
     async function onFinishPeriod(cancelled: boolean) {
         if (cancelled || selectedMainBudget == undefined) {
             return;
@@ -135,20 +166,6 @@ export default function ManageBudgetScreen() {
         await finishBudget(selectedMainBudget);
         reFetchBudgets();
         finishPeriodModalRef.current?.close();
-
-        // try {
-        //     setLoading(true);
-        //     var budgetCategoryId = await deleteBudgetCategory(selectedBudgetCategoryId!);
-        //     removeBudgetCategory(budgetCategoryId, selectedMainBudget!.id);
-        //     setLoading(false);
-        //     deleteCategoryModalRef.current?.close();
-        // }
-        // catch (e) {
-        //     setErrorMessage("Deleting category was not successful.");
-        //     setVisible(true);
-        //     setLoading(false);
-        //     console.log(e);
-        // }
     }
 
     const calculateRemaining = (spendings: Spending[]) => {
@@ -166,7 +183,7 @@ export default function ManageBudgetScreen() {
         <ScreenContainer scrollable={true}>
             <View style={{ display: "flex", flexDirection: "row", gap: "15", justifyContent: "space-between" }}>
                 <Button onPress={onOpenFinishPeriodModal} style={{ marginBottom: 20 }} mode="contained">Finish</Button>
-                <Button style={{ marginBottom: 20 }} mode="contained">Invite</Button>
+                <Button onPress={onOpenCreateInviteModal} style={{ marginBottom: 20 }} mode="contained">Invite</Button>
             </View>
             <List.Accordion style={{ marginBottom: 20 }} title="Categories" id="1">
                 {selectedMainBudget != null && selectedMainBudget.budgetCategories?.map(bc =>
@@ -182,7 +199,7 @@ export default function ManageBudgetScreen() {
             </Modal>
             <Modal ref={deleteBudgetModalRef} loading={loading} title={`Are you sure you wan't to delete ${selectedMainBudget?.name} budget? All spending categories and spendings history will be lost.`} onSubmit={(cancelled: boolean) => onDeleteBudget(cancelled)}>
             </Modal>
-            <Modal ref={createCategoryModalRef} loading={loading} title={"Create Category"} onSubmit={(cancelled: boolean) => handleSubmit(onCreateCategory)()}>
+            <Modal ref={createCategoryModalRef} loading={loading} title={"Create Category"} onSubmit={(cancelled: boolean) => cancelled ? null : handleSubmit(onCreateCategory)()}>
                 <Controller
                     control={control}
                     rules={{ required: "Category name is required" }}
@@ -203,6 +220,21 @@ export default function ManageBudgetScreen() {
                     render={({ field: { onChange, value }, fieldState }) => (
                         <View>
                             <TextInput error={fieldState.error != null} keyboardType='numeric' value={value ? value.toString() : ""} onChangeText={onChange} label="Money" />
+                            <HelperText type="error" visible={!!fieldState.error}>
+                                {fieldState.error?.message}
+                            </HelperText>
+                        </View>
+                    )}
+                />
+            </Modal>
+            <Modal ref={createInviteModalRef} loading={loading} title={"Invite"} onSubmit={(cancelled: boolean) => cancelled ? null : inviteHandleSubmit(onCreateInvite)()}>
+                <Controller
+                    control={inviteControl}
+                    rules={{ required: "Email is required" }}
+                    name={`receiverEmail`}
+                    render={({ field: { onChange, value }, fieldState }) => (
+                        <View>
+                            <TextInput error={fieldState.error != null} value={value} onChangeText={onChange} label="Email" />
                             <HelperText type="error" visible={!!fieldState.error}>
                                 {fieldState.error?.message}
                             </HelperText>

@@ -38,3 +38,11 @@ export type Spending = {
     budgetCategoryId: number
     budgetPeriodId: number
 }
+
+export type BudgetInvite = {
+    id: number,
+    receiverEmail: string,
+    budgetId: number,
+    validTo: string | null,
+    accepted: boolean | null
+}

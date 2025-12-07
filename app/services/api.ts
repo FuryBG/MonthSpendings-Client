@@ -1,4 +1,4 @@
-import { Budget, BudgetCategory, Spending } from '@/types/Types';
+import { Budget, BudgetCategory, BudgetInvite, Spending } from '@/types/Types';
 import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
 import * as SecureStore from 'expo-secure-store';
 
@@ -107,6 +107,24 @@ export const deleteBudget = async (budgetId: number): Promise<number> => {
 
 export const finishBudget = async (budget: Budget): Promise<number> => {
   const response = await api.post<Budget>("/api/budget/finish", budget);
+
+  console.log(response.data);
+
+  const b = response.data;
+  return b;
+};
+
+export const createInvite = async (budgetInvite: BudgetInvite): Promise<number> => {
+  const response = await api.post<Budget>("/api/budgetinvite", budgetInvite);
+
+  console.log(response.data);
+
+  const b = response.data;
+  return b;
+};
+
+export const respondToInvite = async (inviteId: number, accepted: boolean): Promise<number> => {
+  const response = await api.patch<Budget>(`/api/budgetinvite/${inviteId}`, accepted);
 
   console.log(response.data);
 
