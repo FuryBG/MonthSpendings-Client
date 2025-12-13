@@ -8,7 +8,6 @@ import { Portal, Snackbar, Text } from 'react-native-paper';
 import { googleLogin } from '../services/api';
 
 export default function LoginScreen() {
-  // const { notification, expoPushToken, error } = useNotification();
   const { signIn } = useContext(AuthContext);
   const [visible, setVisible] = useState(false);
   const [signing, setSigning] = useState(false);
@@ -23,6 +22,7 @@ export default function LoginScreen() {
         setSigning((prev) => true);
         let jwt = await googleLogin({ id: userInfo.data!.user.id, notificationToken: "", email: userInfo.data!.user.email, familyName: userInfo.data!.user.familyName, givenName: userInfo.data!.user.givenName, photo: userInfo.data!.user.photo });
         signIn(jwt, userInfo.data?.user);
+        setSigning(false);
       }
     } catch (error) {
       setVisible(true);

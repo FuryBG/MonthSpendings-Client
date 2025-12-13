@@ -1,21 +1,25 @@
-import { AuthContext } from "@/context/AuthContext";
+import { useAuth } from "@/context/AuthContext";
 import { useBudgets } from "@/context/BudgetContext";
 import { Budget } from "@/types/Types";
 import { DrawerContentScrollView, DrawerItem } from "@react-navigation/drawer";
 import { useNavigation, useRouter } from "expo-router";
-import React, { useContext } from "react";
-import { View } from "react-native";
-import { Avatar, Button, IconButton, List, MD2Colors, Text, useTheme } from "react-native-paper";
+import React from "react";
+import { StyleSheet, View } from "react-native";
+import { Avatar, Badge, Button, IconButton, List, MD2Colors, Text, useTheme } from "react-native-paper";
 
 export function DrawerContent(props: any) {
   const theme = useTheme();
   const navigation = useNavigation();
   const router = useRouter();
-  const { signOut, user } = useContext(AuthContext);
+  const { signOut, user } = useAuth();
   const { budgets, setMainBudget } = useBudgets();
 
   function onCreateBudget() {
     router.push("/(main)/CreateBudget");
+  }
+
+    function onInvitations() {
+    router.push("/(main)/Invites");
   }
 
   function onManageBudget(budgetId: number) {
@@ -40,7 +44,11 @@ export function DrawerContent(props: any) {
             <Text>{user.email}</Text>
           </View>
           <View style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 10, paddingBottom: 20 }}>
-            <Button icon={"plus"} mode="contained" onPress={onCreateBudget}>Create Budget </Button>
+            <Button icon={"plus"} mode="contained" onPress={onCreateBudget}>Create Budget</Button>
+            <View>
+              <Button icon={"account-plus"} mode="contained" onPress={onInvitations}>Invitations</Button>
+              <Badge style={styles.badge}>3</Badge>
+            </View>
           </View>
           <View>
             <List.Accordion title="Budgets" id="1">
@@ -54,3 +62,16 @@ export function DrawerContent(props: any) {
     </DrawerContentScrollView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    position: 'relative',
+  },
+  badge: {
+    backgroundColor: "red",
+    color: "white",
+    position: 'absolute',
+    top: -4,
+    right: -4,
+  },
+});

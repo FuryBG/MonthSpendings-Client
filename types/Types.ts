@@ -6,6 +6,8 @@ export type AppUser = {
     notificationToken: string,
     googleId: string,
     googlePhotoAddress: string,
+    receivedBudgetInvites: BudgetInvite[],
+    sentBudgetInvites: BudgetInvite[]
 }
 
 export type Budget = {

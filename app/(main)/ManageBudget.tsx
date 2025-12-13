@@ -1,11 +1,11 @@
 import { Modal, ModalRef } from "@/components/Modal";
 import { ScreenContainer } from "@/components/ScreenContainer";
-import { AuthContext } from "@/context/AuthContext";
+import { useAuth } from "@/context/AuthContext";
 import { useBudgets } from "@/context/BudgetContext";
 import { useTitle } from "@/context/NavBarTitleContext";
 import { BudgetCategory, BudgetInvite, Spending } from "@/types/Types";
 import { useFocusEffect, useLocalSearchParams, useNavigation, useRouter } from "expo-router";
-import { useContext, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { View } from "react-native";
 import { Button, HelperText, IconButton, List, MD2Colors, Portal, Snackbar, TextInput } from "react-native-paper";
@@ -15,7 +15,7 @@ import { createBudgetCategory, createInvite, deleteBudget, deleteBudgetCategory,
 export default function ManageBudgetScreen() {
     const navigation = useNavigation();
     const router = useRouter();
-    const { user } = useContext(AuthContext);
+    const { user } = useAuth();
     const { selectedMainBudgetId, setSelectedBudgetCategory, reFetchBudgets, selectedBudgetCategoryId, addSpending, budgets, removeBudgetCategory, addBudgetCategory, removeBudget } = useBudgets();
     const finishPeriodModalRef = useRef<ModalRef>(null);
     const deleteCategoryModalRef = useRef<ModalRef>(null);

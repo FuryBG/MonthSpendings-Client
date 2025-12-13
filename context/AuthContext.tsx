@@ -1,39 +1,49 @@
+import { getUser } from '@/app/services/api';
+import { AppUser } from '@/types/Types';
 import * as SecureStore from 'expo-secure-store';
-import React, { createContext, PropsWithChildren, useEffect, useState } from 'react';
+import React, { createContext, PropsWithChildren, useContext, useEffect, useState } from 'react';
 
-export const AuthContext = createContext<any>(null);
+export const AuthContext = createContext({
+  user: {} as any,
+  loading: true as boolean,
+  signIn: (token: string, userData: any) => { },
+  signOut: () => { }
+});
+
+export const useAuth = () => useContext(AuthContext);
 
 export function AuthProvider({ children }: PropsWithChildren) {
-  const [user, setUser] = useState<any>();
+  const [user, setUser] = useState<AppUser | null>();
+  const [token, setToken] = useState<string | null>();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     // Load user/token from secure storage
     const restoreSession = async () => {
       try {
-        const user = await SecureStore.getItemAsync('user');
+        let jwtToken = await SecureStore.getItemAsync('token');
 
-        if (user) {
-          // Optionally validate token with your backend
-          setUser(JSON.parse(user));
+        if (jwtToken != null) {
+          let userData = await getUser();
+          setUser(userData);
         }
+
       } finally {
         setLoading(false);
       }
     };
     restoreSession();
-  }, []);
+  }, [token]);
 
-  const signIn = async (token: string, userData: any) => {
+  const signIn = async (token: string) => {
     await SecureStore.setItemAsync('token', token);
-    await SecureStore.setItemAsync('user', JSON.stringify(userData));
-    setUser(userData);
+    setToken(token);
   };
 
   const signOut = async () => {
     await SecureStore.deleteItemAsync('token');
-    await SecureStore.deleteItemAsync('user');
     setUser(null);
+    setToken(null);
   };
 
   return (

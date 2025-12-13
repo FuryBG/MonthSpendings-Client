@@ -1,4 +1,4 @@
-import { Budget, BudgetCategory, BudgetInvite, Spending } from '@/types/Types';
+import { AppUser, Budget, BudgetCategory, BudgetInvite, Spending } from '@/types/Types';
 import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
 import * as SecureStore from 'expo-secure-store';
 
@@ -39,6 +39,13 @@ export const googleLogin = async (userDto: GoogleUserDto): Promise<string> => {
   const response = await api.post<GoogleAuthResponse>('/api/user', userDto);
   const jwt = response.data;
   return jwt;
+
+};
+
+export const getUser = async (): Promise<AppUser> => {
+  const response = await api.get<GoogleAuthResponse>('/api/user');
+  const userData = response.data;
+  return userData;
 
 };
 

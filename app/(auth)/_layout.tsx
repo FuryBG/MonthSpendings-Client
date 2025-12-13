@@ -1,9 +1,9 @@
-import { AuthContext } from '@/context/AuthContext';
+import { useAuth } from '@/context/AuthContext';
 import { Redirect, Stack } from 'expo-router';
-import React, { useContext } from 'react';
+import React from 'react';
 
 export default function PagesLayout() {
-  const { user, loading } = useContext(AuthContext);
+  const { user, loading } = useAuth();
 
 
   if (user != undefined) {
