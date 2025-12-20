@@ -4,10 +4,11 @@ import * as SecureStore from 'expo-secure-store';
 import React, { createContext, PropsWithChildren, useContext, useEffect, useState } from 'react';
 
 export const AuthContext = createContext({
-  user: {} as any,
+  user: {} as AppUser | null | undefined,
   loading: true as boolean,
   signIn: (token: string, userData: any) => { },
-  signOut: () => { }
+  signOut: () => { },
+  reFetchAuth: () => { }
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -16,6 +17,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const [user, setUser] = useState<AppUser | null>();
   const [token, setToken] = useState<string | null>();
   const [loading, setLoading] = useState(true);
+  const [triggerReload, setTriggerReload] = useState<boolean>(false);
 
   useEffect(() => {
     // Load user/token from secure storage
@@ -33,7 +35,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       }
     };
     restoreSession();
-  }, [token]);
+  }, [token, triggerReload]);
 
   const signIn = async (token: string) => {
     await SecureStore.setItemAsync('token', token);
@@ -46,8 +48,12 @@ export function AuthProvider({ children }: PropsWithChildren) {
     setToken(null);
   };
 
+  const reFetchAuth = () => {
+    setTriggerReload(prev => !prev);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, loading, signIn, signOut, reFetchAuth }}>
       {children}
     </AuthContext.Provider>
   );

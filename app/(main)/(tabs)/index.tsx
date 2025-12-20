@@ -84,7 +84,7 @@ export default function HomeScreen() {
         <Text>
           {JSON.stringify(notification?.request.content.data, null, 2)}
         </Text> */}
-        {selectedMainBudgetId != null && selectedMainBudget == undefined &&
+        {selectedMainBudgetId == null &&
           <View>
             <View style={{ alignItems: "center", paddingBottom: 40 }}>
               <Icon

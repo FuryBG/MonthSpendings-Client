@@ -47,7 +47,7 @@ export function DrawerContent(props: any) {
             <Button icon={"plus"} mode="contained" onPress={onCreateBudget}>Create Budget</Button>
             <View>
               <Button icon={"account-plus"} mode="contained" onPress={onInvitations}>Invitations</Button>
-              <Badge style={styles.badge}>3</Badge>
+              <Badge style={styles.badge}>{user.receivedBudgetInvites.length}</Badge>
             </View>
           </View>
           <View>

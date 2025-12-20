@@ -9,6 +9,7 @@ import React, {
   useRef,
   useState,
 } from "react";
+import { useAuth } from "./AuthContext";
 import { useBudgets } from "./BudgetContext";
 
 interface NotificationContextType {
@@ -43,6 +44,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
   const notificationListener = useRef<EventSubscription | null>(null);
   const responseListener = useRef<EventSubscription | null>(null);
 
+  const { reFetchAuth } = useAuth();
   const { reFetchBudgets } = useBudgets();
 
   useEffect(() => {
@@ -71,7 +73,10 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
       (notification) => {
         console.log("🔔 Notification Received:", notification);
         setNotification(notification);
-        reFetchBudgets();
+
+        console.log(notification.request.content.data);
+        
+        reFetchAuth();
       }
     );
 
