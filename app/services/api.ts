@@ -17,7 +17,7 @@ export interface GoogleUserDto {
   notificationToken: string
 }
 
-const BASE_URL = 'https://65551e3de8c5.ngrok-free.app';
+const BASE_URL = ' https://ventless-scribal-loan.ngrok-free.dev';
 
 const api: AxiosInstance = axios.create({
   baseURL: BASE_URL,
