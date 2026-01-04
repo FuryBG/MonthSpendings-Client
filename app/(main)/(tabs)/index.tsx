@@ -5,7 +5,7 @@ import { useBudgets } from '@/context/BudgetContext';
 import { useTitle } from '@/context/NavBarTitleContext';
 import { useNotification } from '@/context/NotificationContext';
 import { BudgetCategory, Spending } from '@/types/Types';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import React, { useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { View } from 'react-native';
@@ -33,9 +33,6 @@ export default function HomeScreen() {
 
   console.log(expoPushToken);
 
-  useFocusEffect(() => {
-    setTitle(selectedMainBudget ? `Budget: ${selectedMainBudget.name}` : "Home");
-  });
 
     function onCreateBudget() {
     router.push("/(main)/CreateBudget");

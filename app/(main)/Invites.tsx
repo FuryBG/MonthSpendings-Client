@@ -11,7 +11,7 @@ import { respondToInvite } from "../services/api";
 
 export default function CreateBudgetScreen() {
     const navigation = useNavigation();
-    const { user } = useAuth();
+    const { user, reFetchAuth } = useAuth();
     const { setTitle } = useTitle();
     const router = useRouter();
     const [visible, setVisible] = useState(false);
@@ -23,6 +23,7 @@ export default function CreateBudgetScreen() {
 
     async function onRespondToInvite(inviteId: number, accepted: boolean) {
         await respondToInvite(inviteId, accepted);
+        await reFetchAuth();
     }
 
     return (
@@ -41,8 +42,8 @@ export default function CreateBudgetScreen() {
                                     ? <IconButton mode="contained" icon={invite.accepted ? "check" : "close"} disabled={true} iconColor={MD2Colors.white} onPress={() => respondToInvite(invite.id, true)} />
 
                                     : <>
-                                        <IconButton mode="contained" containerColor={MD2Colors.green900} icon="check" iconColor={MD2Colors.white} onPress={() => respondToInvite(invite.id, true)} />
-                                        <IconButton mode="contained" containerColor={MD2Colors.red800} icon="close" iconColor={MD2Colors.white} onPress={() => respondToInvite(invite.id, false)} />
+                                        <IconButton mode="contained" containerColor={MD2Colors.green900} icon="check" iconColor={MD2Colors.white} onPress={() => onRespondToInvite(invite.id, true)} />
+                                        <IconButton mode="contained" containerColor={MD2Colors.red800} icon="close" iconColor={MD2Colors.white} onPress={() => onRespondToInvite(invite.id, false)} />
                                     </>}
 
                             </View>

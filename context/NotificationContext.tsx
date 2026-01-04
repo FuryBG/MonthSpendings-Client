@@ -1,3 +1,4 @@
+import { AppNotification, AppNotificationType } from "@/types/Types";
 import { registerForPushNotificationsAsync } from "@/utils/registerForPushNotificationsAsync";
 import { EventSubscription } from "expo-modules-core";
 import * as Notifications from "expo-notifications";
@@ -70,15 +71,34 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
 
     // When a notification is received while app is open
     notificationListener.current = Notifications.addNotificationReceivedListener(
-      (notification) => {
+      (receivedNotification) => {
         console.log("🔔 Notification Received:", notification);
         setNotification(notification);
 
-        console.log(notification.request.content.data);
-        
-        reFetchAuth();
+        console.log(receivedNotification.request.content.data);
+        const appNotification = receivedNotification.request.content.data as AppNotification;
+
+        switch (appNotification.type) {
+          case AppNotificationType.ReceivedInvite:
+            onReceivedInvite();
+            break;
+          case AppNotificationType.SpendingAdd || AppNotificationType.SpendingDelete:
+            onSpendingUpdate();
+            break;
+          case AppNotificationType.SpendingDelete:
+            onSpendingUpdate();
+            break;
+        }
       }
     );
+
+    function onReceivedInvite() {
+      reFetchAuth();
+    }
+
+    function onSpendingUpdate() {
+      reFetchBudgets();
+    }
 
     // When user taps on a notification
     responseListener.current =

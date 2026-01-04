@@ -13,9 +13,17 @@ export type AppUser = {
 export type Budget = {
     id: number,
     name: string,
+    currency: Currency,
     budgetPeriods: BudgetPeriod[],
     budgetCategories: BudgetCategory[] | null,
     users: AppUser[] | null
+}
+
+export type Currency = {
+    id: number,
+    code: string,
+    name: string,
+    symbol: string,
 }
 
 export type BudgetPeriod = {
@@ -47,4 +55,15 @@ export type BudgetInvite = {
     budgetId: number,
     validTo: string | null,
     accepted: boolean | null
+}
+
+export enum AppNotificationType {
+    ReceivedInvite,
+    InviteResponse,
+    SpendingAdd,
+    SpendingDelete
+}
+
+export type AppNotification = {
+    type: AppNotificationType
 }

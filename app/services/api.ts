@@ -1,4 +1,4 @@
-import { AppUser, Budget, BudgetCategory, BudgetInvite, Spending } from '@/types/Types';
+import { AppUser, Budget, BudgetCategory, BudgetInvite, Currency, Spending } from '@/types/Types';
 import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
 import * as SecureStore from 'expo-secure-store';
 
@@ -17,7 +17,7 @@ export interface GoogleUserDto {
   notificationToken: string
 }
 
-const BASE_URL = ' https://ventless-scribal-loan.ngrok-free.dev';
+const BASE_URL = 'https://da753082beaa.ngrok-free.app';
 
 const api: AxiosInstance = axios.create({
   baseURL: BASE_URL,
@@ -57,6 +57,14 @@ export const createBudget = async (budget: Budget): Promise<Budget> => {
 
 export const getBudgets = async (): Promise<Budget[]> => {
   const response = await api.get<boolean>('/api/budget');
+  console.log(response.data);
+
+  const b = response.data;
+  return b;
+};
+
+export const getCurrencies = async (): Promise<Currency[]> => {
+  const response = await api.get<boolean>('/api/currency');
   console.log(response.data);
 
   const b = response.data;

@@ -7,6 +7,7 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { MD3DarkTheme, MD3LightTheme, PaperProvider } from 'react-native-paper';
 import 'react-native-reanimated';
 
@@ -37,7 +38,7 @@ export default function RootLayout() {
       primary: '#BADA55',
       surface: "#0000",
       background: "#0000",
-      onBackground: "#0000",
+      onBackground: '#FFFFFF',
       onPrimary: "#0000",
     },
   };
@@ -45,21 +46,23 @@ export default function RootLayout() {
   const theme = scheme === 'dark' ? customThemeDark : customThemeLight;
 
   return (
-    <AuthProvider>
-      <BudgetProvider>
-        <NotificationProvider>
-          <TitleProvider>
-            <PaperProvider theme={theme}>
-              <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-                <Stack screenOptions={{ headerShown: false }}>
+    <GestureHandlerRootView>
+      <AuthProvider>
+        <BudgetProvider>
+          <NotificationProvider>
+            <TitleProvider>
+              <PaperProvider theme={theme}>
+                <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+                  <Stack screenOptions={{ headerShown: false }}>
 
-                </Stack>
-                <StatusBar style="auto" />
-              </ThemeProvider>
-            </PaperProvider>
-          </TitleProvider>
-        </NotificationProvider>
-      </BudgetProvider>
-    </AuthProvider>
+                  </Stack>
+                  <StatusBar style="auto" />
+                </ThemeProvider>
+              </PaperProvider>
+            </TitleProvider>
+          </NotificationProvider>
+        </BudgetProvider>
+      </AuthProvider>
+    </GestureHandlerRootView>
   );
 }
