@@ -1,4 +1,4 @@
-import { AppUser, Budget, BudgetCategory, BudgetInvite, Currency, Spending } from '@/types/Types';
+import { AppUser, BankOption, Budget, BudgetCategory, BudgetInvite, Currency, Spending } from '@/types/Types';
 import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
 import * as SecureStore from 'expo-secure-store';
 
@@ -17,7 +17,7 @@ export interface GoogleUserDto {
   notificationToken: string
 }
 
-const BASE_URL = 'https://da753082beaa.ngrok-free.app';
+const BASE_URL = 'https://0597-88-203-208-219.ngrok-free.app';
 
 const api: AxiosInstance = axios.create({
   baseURL: BASE_URL,
@@ -29,6 +29,9 @@ const api: AxiosInstance = axios.create({
 // Attach JWT to every request automatically
 api.interceptors.request.use(async (config: AxiosRequestConfig) => {
   const token = await SecureStore.getItemAsync('token');
+  console.log(token);
+  console.log(token);
+  
   if (token && config.headers) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -46,6 +49,20 @@ export const getUser = async (): Promise<AppUser> => {
   const response = await api.get<GoogleAuthResponse>('/api/user');
   const userData = response.data;
   return userData;
+
+};
+
+export const getBanks = async (): Promise<BankOption[]> => {
+  const response = await api.get<BankOption[]>('/api/bank');
+  const banks = response.data;
+  return banks;
+
+};
+
+export const startBankConnection = async (bankName: string, countryCode: string): Promise<string> => {
+  const response = await api.get<string>(`/api/Bank/connect?bankName=${bankName}&countryCode=${countryCode}`);
+  const redirectUrl = response.data;
+  return redirectUrl;
 
 };
 

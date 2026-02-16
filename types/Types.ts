@@ -57,6 +57,13 @@ export type BudgetInvite = {
     accepted: boolean | null
 }
 
+export type BankOption = {
+    name: string,
+    country: string,
+    logo: string,
+    bic: string,
+}
+
 export enum AppNotificationType {
     ReceivedInvite,
     InviteResponse,

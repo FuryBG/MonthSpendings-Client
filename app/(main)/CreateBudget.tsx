@@ -54,6 +54,7 @@ export default function CreateBudgetScreen() {
             ],
         },
     });
+    const selectedCurrency = watch("currency.code");
 
     useEffect(() => {
         const fetchCurrencies = async () => {
@@ -105,7 +106,7 @@ export default function CreateBudgetScreen() {
                                 router.back();
                             }} />
                         )}
-                        <Appbar.Content title={"Create Budget"} />
+                        <Text style={{flex: 1}}>Create Budget</Text>
                         <Appbar.Action icon="check" onPress={handleSubmit(onSubmit)} />
                     </Appbar.Header>
                 ),
@@ -188,7 +189,7 @@ export default function CreateBudgetScreen() {
                         name={`budgetCategories.${index}.spendings.0.amount`}
                         render={({ field: { onChange, value }, fieldState }) => (
                             <View style={{ width: "42%" }}>
-                                <TextInput error={fieldState.error != null} keyboardType='numeric' value={value ? value.toString() : ""} onChangeText={onChange} label="Money" />
+                                <TextInput error={fieldState.error != null} keyboardType='numeric' value={value ? value.toString() : ""} onChangeText={onChange} label={selectedCurrency} />
                                 <HelperText type="error" visible={!!fieldState.error}>
                                     {fieldState.error?.message}
                                 </HelperText>

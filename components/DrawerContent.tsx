@@ -18,6 +18,10 @@ export function DrawerContent(props: any) {
     router.push("/(main)/Invites");
   }
 
+    function onConnectBank() {
+    router.push("/(main)/ConnectBank");
+  }
+
   return (
     <DrawerContentScrollView {...props} style={{ backgroundColor: theme.colors.surface }}>
       <View style={{flex: 1}}>
@@ -35,6 +39,7 @@ export function DrawerContent(props: any) {
         </View>
 
       </View>
+      <Button style={{marginBottom: 10}} icon={"account"} mode="contained" onPress={async () => await onConnectBank()}>Connect Bank</Button>
       <Button icon={"account"} mode="contained" onPress={async () => await signOut()}>Logout</Button>
     </DrawerContentScrollView>
   );

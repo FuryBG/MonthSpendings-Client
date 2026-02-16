@@ -97,7 +97,7 @@ export default function HomeScreen() {
           <Card key={bc.id} style={{ marginBottom: 12 }} onPress={() => onSpendingDetails(bc)}>
             <Card.Title
               title={bc.name}
-              subtitle={`Money left: ${calculateRemaining(bc.spendings!)}`}
+              subtitle={`Balance: ${calculateRemaining(bc.spendings!)} ${selectedMainBudget.currency.symbol}`}
               left={(props) => <Avatar.Icon {...props} icon="cash" />}
               right={(props) => <View style={{ flexDirection: "row" }}>
                 {calculateRemaining(bc.spendings!) <= 0
