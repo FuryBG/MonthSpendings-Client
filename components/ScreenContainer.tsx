@@ -6,9 +6,10 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 interface ScreenContainerProps {
   children: ReactNode;
   scrollable?: boolean | null;
+  removeSafeBottom?: boolean | null;
 }
 
-export const ScreenContainer = ({ children, scrollable = false }: ScreenContainerProps) => {
+export const ScreenContainer = ({ children, scrollable = false, removeSafeBottom = false }: ScreenContainerProps) => {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
 
@@ -17,11 +18,12 @@ export const ScreenContainer = ({ children, scrollable = false }: ScreenContaine
       flex: 1,
       paddingBottom: 0
     },
-     container: {
+    container: {
       flex: 1,
       paddingHorizontal: 16,
       paddingBottom: 0,
-      // marginBottom: -insets.bottom,
+      marginTop: -insets.top,
+      marginBottom: removeSafeBottom == true ? -insets.bottom : 0,
     },
   });
 

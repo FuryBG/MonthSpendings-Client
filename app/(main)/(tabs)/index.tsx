@@ -70,13 +70,15 @@ export default function HomeScreen() {
   const LeftContent = (props: any) => <Icon source={"bank"} color={MD2Colors.black} size={48} />
   return (
     <>
-      {transactions.length > 0 &&
-        <Card style={{ marginHorizontal: 16, marginTop:15, backgroundColor: MD2Colors.orange300 }}>
-          <Badge size={30} style={{position: 'absolute', top: -10, right: -10, backgroundColor: 'red', color: 'white'}}>{transactions.length}</Badge>
-          <Card.Title title="Pending Bank Transactions" style={{ alignItems: "center" }} titleStyle={{ color: "black", textAlign: 'center', justifyContent: 'center', marginTop: 10 }} left={LeftContent} />
-        </Card>
-      }
-      <ScreenContainer scrollable={true}>
+      <ScreenContainer scrollable={true} removeSafeBottom={true}>
+        {transactions.length > 0 &&
+          <View>
+            <Card style={{ marginTop: 15, marginBottom: 12, backgroundColor: MD2Colors.orange300 }}>
+              <Badge size={30} style={{ position: 'absolute', top: -10, right: -10, backgroundColor: 'red', color: 'white' }}>{transactions.length}</Badge>
+              <Card.Title title="Pending Bank Transactions" style={{ alignItems: "center" }} titleStyle={{ color: "black", textAlign: 'center', justifyContent: 'center', marginTop: 10 }} left={LeftContent} />
+            </Card>
+          </View>
+        }
         {/* <Text>Updates Demo 1</Text>
         <Text style={{ color: "red" }}>
           Your push token:
