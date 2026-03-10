@@ -1,23 +1,23 @@
 import { createSpending } from '@/app/services/api';
 import { Modal, ModalRef } from '@/components/Modal';
 import { ScreenContainer } from '@/components/ScreenContainer';
+import { useBankTransactions } from '@/context/BankTransactionsContext';
 import { useBudgets } from '@/context/BudgetContext';
-import { useTitle } from '@/context/NavBarTitleContext';
 import { useNotification } from '@/context/NotificationContext';
 import { BudgetCategory, Spending } from '@/types/Types';
 import { useRouter } from 'expo-router';
 import React, { useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { View } from 'react-native';
-import { Avatar, Button, Card, HelperText, Icon, IconButton, MD2Colors, Text, TextInput } from 'react-native-paper';
+import { Avatar, Badge, Button, Card, HelperText, Icon, IconButton, MD2Colors, Text, TextInput } from 'react-native-paper';
 
 export default function HomeScreen() {
   const { notification, expoPushToken, error } = useNotification();
   const { selectedMainBudgetId, setSelectedBudgetCategory, selectedBudgetCategoryId, addSpending, budgets, loading: budgetLoading } = useBudgets();
+  const { transactions } = useBankTransactions();
   const [negativeInput, setNegativeInput] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const router = useRouter();
-  const { setTitle } = useTitle();
   const modalRef = useRef<ModalRef>(null);
   const selectedMainBudget = budgets.find(b => b.id == selectedMainBudgetId);
   const selectedCategory = budgets.filter(b => b.id == selectedMainBudgetId).flatMap(x => x.budgetCategories).find(c => c?.id == selectedBudgetCategoryId);
@@ -34,7 +34,7 @@ export default function HomeScreen() {
   console.log(expoPushToken);
 
 
-    function onCreateBudget() {
+  function onCreateBudget() {
     router.push("/(main)/CreateBudget");
   }
 
@@ -67,9 +67,15 @@ export default function HomeScreen() {
     reset();
     setIsLoading(false);
   }
-
+  const LeftContent = (props: any) => <Icon source={"bank"} color={MD2Colors.black} size={48} />
   return (
     <>
+      {transactions.length > 0 &&
+        <Card style={{ marginHorizontal: 16, marginTop:15, backgroundColor: MD2Colors.orange300 }}>
+          <Badge size={30} style={{position: 'absolute', top: -10, right: -10, backgroundColor: 'red', color: 'white'}}>{transactions.length}</Badge>
+          <Card.Title title="Pending Bank Transactions" style={{ alignItems: "center" }} titleStyle={{ color: "black", textAlign: 'center', justifyContent: 'center', marginTop: 10 }} left={LeftContent} />
+        </Card>
+      }
       <ScreenContainer scrollable={true}>
         {/* <Text>Updates Demo 1</Text>
         <Text style={{ color: "red" }}>

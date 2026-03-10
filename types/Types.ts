@@ -1,67 +1,78 @@
 export type AppUser = {
-    id: number,
-    email: string,
-    firstName: string,
-    lastName: string,
-    notificationToken: string,
-    googleId: string,
-    googlePhotoAddress: string,
-    receivedBudgetInvites: BudgetInvite[],
+    id: number
+    email: string
+    firstName: string
+    lastName: string
+    notificationToken: string
+    googleId: string
+    googlePhotoAddress: string
+    receivedBudgetInvites: BudgetInvite[]
     sentBudgetInvites: BudgetInvite[]
 }
 
 export type Budget = {
-    id: number,
-    name: string,
-    currency: Currency,
-    budgetPeriods: BudgetPeriod[],
-    budgetCategories: BudgetCategory[] | null,
+    id: number
+    name: string
+    currency: Currency
+    budgetPeriods: BudgetPeriod[]
+    budgetCategories: BudgetCategory[] | null
     users: AppUser[] | null
 }
 
 export type Currency = {
-    id: number,
-    code: string,
-    name: string,
-    symbol: string,
+    id: number
+    code: string
+    name: string
+    symbol: string
 }
 
 export type BudgetPeriod = {
-    id: number,
-    budgetId: number,
-    startDate: string,
+    id: number
+    budgetId: number
+    startDate: string
     endDate: string | null
 }
 
 export type BudgetCategory = {
-    id: number,
-    budgetId: number,
-    name: string,
+    id: number
+    budgetId: number
+    name: string
     spendings: Spending[]
 }
 
 export type Spending = {
-    id: number,
-    amount: number,
-    date: string | null,
-    description: string,
+    id: number
+    amount: number
+    date: string | null
+    description: string
     budgetCategoryId: number
     budgetPeriodId: number
+    bankTransactionId: number | null
+    bankTransaction: BankTransaction | null
+}
+
+export type BankTransaction = {
+    id: number
+    transactionId: string
+    bankAccountId: string
+    currency: string
+    amount: string
 }
 
 export type BudgetInvite = {
-    id: number,
-    receiverEmail: string,
-    budgetId: number,
-    validTo: string | null,
+    id: number
+    receiverEmail: string
+    budgetId: number
+    validTo: string | null
     accepted: boolean | null
 }
 
 export type BankOption = {
-    name: string,
-    country: string,
-    logo: string,
-    bic: string,
+    name: string
+    country: string
+    logo: string
+    bic: string
+    maximumConsentValidity: number
 }
 
 export enum AppNotificationType {

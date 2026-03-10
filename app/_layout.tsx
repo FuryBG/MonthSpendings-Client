@@ -1,4 +1,5 @@
 import { AuthProvider } from '@/context/AuthContext';
+import { BankTransactionsProvider } from '@/context/BankTransactionsContext';
 import { BudgetProvider } from '@/context/BudgetContext';
 import { TitleProvider } from '@/context/NavBarTitleContext';
 import { NotificationProvider } from '@/context/NotificationContext';
@@ -49,18 +50,20 @@ export default function RootLayout() {
     <GestureHandlerRootView>
       <AuthProvider>
         <BudgetProvider>
-          <NotificationProvider>
-            <TitleProvider>
-              <PaperProvider theme={theme}>
-                <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-                  <Stack screenOptions={{ headerShown: false }}>
+          <BankTransactionsProvider>
+            <NotificationProvider>
+              <TitleProvider>
+                <PaperProvider theme={theme}>
+                  <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+                    <Stack screenOptions={{ headerShown: false }}>
 
-                  </Stack>
-                  <StatusBar style="auto" />
-                </ThemeProvider>
-              </PaperProvider>
-            </TitleProvider>
-          </NotificationProvider>
+                    </Stack>
+                    <StatusBar style="auto" />
+                  </ThemeProvider>
+                </PaperProvider>
+              </TitleProvider>
+            </NotificationProvider>
+          </BankTransactionsProvider>
         </BudgetProvider>
       </AuthProvider>
     </GestureHandlerRootView>

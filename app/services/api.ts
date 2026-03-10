@@ -1,4 +1,4 @@
-import { AppUser, BankOption, Budget, BudgetCategory, BudgetInvite, Currency, Spending } from '@/types/Types';
+import { AppUser, BankOption, BankTransaction, Budget, BudgetCategory, BudgetInvite, Currency, Spending } from '@/types/Types';
 import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
 import * as SecureStore from 'expo-secure-store';
 
@@ -17,7 +17,7 @@ export interface GoogleUserDto {
   notificationToken: string
 }
 
-const BASE_URL = 'https://0597-88-203-208-219.ngrok-free.app';
+const BASE_URL = 'https://b0a9-88-203-208-219.ngrok-free.app';
 
 const api: AxiosInstance = axios.create({
   baseURL: BASE_URL,
@@ -31,7 +31,7 @@ api.interceptors.request.use(async (config: AxiosRequestConfig) => {
   const token = await SecureStore.getItemAsync('token');
   console.log(token);
   console.log(token);
-  
+
   if (token && config.headers) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -52,18 +52,33 @@ export const getUser = async (): Promise<AppUser> => {
 
 };
 
-export const getBanks = async (): Promise<BankOption[]> => {
-  const response = await api.get<BankOption[]>('/api/bank');
+export const getBanks = async (bankName: string): Promise<BankOption[]> => {
+  const response = await api.get<BankOption[]>(`/api/bank?bankName=${bankName}`);
   const banks = response.data;
   return banks;
 
 };
 
-export const startBankConnection = async (bankName: string, countryCode: string): Promise<string> => {
-  const response = await api.get<string>(`/api/Bank/connect?bankName=${bankName}&countryCode=${countryCode}`);
+export const startBankConnection = async (bankName: string, countryCode: string, bankImgUrl: string, maximumConsentValidity: number): Promise<string> => {
+  console.log(encodeURIComponent(bankImgUrl));
+  const response = await api.get<string>(`/api/Bank/connect?bankName=${bankName}&countryCode=${countryCode}&bankImageUrl=${bankImgUrl}&maximumConsentValidity=${maximumConsentValidity}`);
   const redirectUrl = response.data;
   return redirectUrl;
 
+};
+
+export const getNotCategorizedTransactions = async (): Promise<BankTransaction[]> => {
+  const response = await api.get<boolean>('/api/Transactions');
+  console.log(response.data);
+  const b = response.data;
+  return b;
+};
+
+export const categorizeTransaction = async (transaction: BankTransaction): Promise<Spending> => {
+  const response = await api.post<boolean>('/api/Transactions');
+  console.log(response.data);
+  const b = response.data;
+  return b;
 };
 
 export const createBudget = async (budget: Budget): Promise<Budget> => {
