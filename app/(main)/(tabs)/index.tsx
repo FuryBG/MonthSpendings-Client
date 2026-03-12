@@ -38,6 +38,10 @@ export default function HomeScreen() {
     router.push("/(main)/CreateBudget");
   }
 
+    function onPendingTransactions() {
+    router.push("/(main)/PendingTransactions");
+  }
+
   const calculateRemaining = (spendings: Spending[]) => {
     return spendings.reduce((sum, s) => {
       if (s.amount > 0) return sum + s.amount;
@@ -73,7 +77,7 @@ export default function HomeScreen() {
       <ScreenContainer scrollable={true} removeSafeBottom={true}>
         {transactions.length > 0 &&
           <View>
-            <Card style={{ marginTop: 15, marginBottom: 12, backgroundColor: MD2Colors.orange300 }}>
+            <Card onPress={onPendingTransactions} style={{ marginTop: 15, marginBottom: 12, backgroundColor: MD2Colors.orange300 }}>
               <Badge size={30} style={{ position: 'absolute', top: -10, right: -10, backgroundColor: 'red', color: 'white' }}>{transactions.length}</Badge>
               <Card.Title title="Pending Bank Transactions" style={{ alignItems: "center" }} titleStyle={{ color: "black", textAlign: 'center', justifyContent: 'center', marginTop: 10 }} left={LeftContent} />
             </Card>

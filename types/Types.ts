@@ -57,6 +57,7 @@ export type BankTransaction = {
     bankAccountId: string
     currency: string
     amount: string
+    bookingDate: string
 }
 
 export type BudgetInvite = {
