@@ -17,7 +17,7 @@ export interface GoogleUserDto {
   notificationToken: string
 }
 
-const BASE_URL = 'https://b0a9-88-203-208-219.ngrok-free.app';
+const BASE_URL = 'https://676e-88-203-208-219.ngrok-free.app';
 
 const api: AxiosInstance = axios.create({
   baseURL: BASE_URL,

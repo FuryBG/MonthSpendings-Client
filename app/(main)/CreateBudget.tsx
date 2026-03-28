@@ -79,6 +79,8 @@ export default function CreateBudgetScreen() {
 
     async function onSubmit(data: Budget) {
         try {
+            console.log("???");
+            
             setLoading(true);
             data.currency = currencies.find(c => c.code == data.currency.code)!;
             var budget = await createBudget(data);
@@ -113,7 +115,7 @@ export default function CreateBudgetScreen() {
                     </Appbar.Header>
                 ),
             });
-        }, [])
+        }, [currencies])
     );
 
     const { fields: categories, append: addCategory, remove } = useFieldArray({

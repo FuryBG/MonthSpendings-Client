@@ -60,6 +60,14 @@ export type BankTransaction = {
     bookingDate: string
 }
 
+export type CategorizeTransactionDto = {
+    transactionId: number
+    budgetId: string
+    categoryId: string
+    amount: string
+    dateCreated: string
+}
+
 export type BudgetInvite = {
     id: number
     receiverEmail: string
