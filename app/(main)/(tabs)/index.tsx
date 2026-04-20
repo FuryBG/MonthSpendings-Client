@@ -8,19 +8,20 @@ import { BudgetCategory, Spending } from '@/types/Types';
 import { useRouter } from 'expo-router';
 import React, { useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { View } from 'react-native';
+import { TouchableOpacity, View } from 'react-native';
 import { Avatar, Badge, Button, Card, HelperText, Icon, IconButton, MD2Colors, Text, TextInput } from 'react-native-paper';
 
 export default function HomeScreen() {
   const { notification, expoPushToken, error } = useNotification();
-  const { selectedMainBudgetId, setSelectedBudgetCategory, selectedBudgetCategoryId, addSpending, budgets, loading: budgetLoading } = useBudgets();
+  const { addSpending, budgetState } = useBudgets();
   const { transactions } = useBankTransactions();
   const [negativeInput, setNegativeInput] = useState<boolean>(false);
+  const [selectedBudgetCategoryId, setSelectedBudgetCategoryId] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const router = useRouter();
   const modalRef = useRef<ModalRef>(null);
-  const selectedMainBudget = budgets.find(b => b.id == selectedMainBudgetId);
-  const selectedCategory = budgets.filter(b => b.id == selectedMainBudgetId).flatMap(x => x.budgetCategories).find(c => c?.id == selectedBudgetCategoryId);
+  const selectedMainBudget = budgetState.budgets.find(b => b.id == budgetState.selectedMainBudgetId);
+  const selectedCategory = budgetState.budgets.filter(b => b.id == budgetState.selectedMainBudgetId).flatMap(x => x.budgetCategories).find(c => c?.id == selectedBudgetCategoryId);
 
   const { control, handleSubmit, watch, reset } = useForm<Spending>({
     defaultValues: {
@@ -30,15 +31,13 @@ export default function HomeScreen() {
       description: ""
     }
   });
-
-  console.log(expoPushToken);
-
+  // console.log(expoPushToken);
 
   function onCreateBudget() {
     router.push("/(main)/CreateBudget");
   }
 
-    function onPendingTransactions() {
+  function onPendingTransactions() {
     router.push("/(main)/PendingTransactions");
   }
 
@@ -50,14 +49,17 @@ export default function HomeScreen() {
   };
 
   function onOpenModal(budgetCategory: BudgetCategory, negativeInput: boolean) {
-    setSelectedBudgetCategory(budgetCategory.id);
+    setSelectedBudgetCategoryId(budgetCategory.id);
     setNegativeInput(negativeInput);
     modalRef.current?.open();
   }
 
   function onSpendingDetails(budgetCategory: BudgetCategory) {
-    setSelectedBudgetCategory(budgetCategory.id);
-    router.push("/spending-group/SpendingDetails");
+    setSelectedBudgetCategoryId(budgetCategory.id);
+    router.push({
+      pathname: "/spending-group/SpendingDetails",
+      params: { selectedCategoryId: budgetCategory.id },
+    });
   }
 
   async function onModalSubmit(spending: Spending) {
@@ -66,21 +68,24 @@ export default function HomeScreen() {
     spending.budgetPeriodId = selectedMainBudget?.budgetPeriods[0].id ?? 0;
     spending.amount = negativeInput ? -Number(spending.amount) : Number(spending.amount);
     let newSpending = await createSpending(spending);
-    addSpending(newSpending);
+    addSpending(newSpending, selectedBudgetCategoryId);
     modalRef.current?.close();
     reset();
     setIsLoading(false);
   }
   const LeftContent = (props: any) => <Icon source={"bank"} color={MD2Colors.black} size={48} />
+
   return (
     <>
       <ScreenContainer scrollable={true} removeSafeBottom={true}>
         {transactions.length > 0 &&
           <View>
-            <Card onPress={onPendingTransactions} style={{ marginTop: 15, marginBottom: 12, backgroundColor: MD2Colors.orange300 }}>
-              <Badge size={30} style={{ position: 'absolute', top: -10, right: -10, backgroundColor: 'red', color: 'white' }}>{transactions.length}</Badge>
-              <Card.Title title="Pending Bank Transactions" style={{ alignItems: "center" }} titleStyle={{ color: "black", textAlign: 'center', justifyContent: 'center', marginTop: 10 }} left={LeftContent} />
-            </Card>
+            <TouchableOpacity onPress={onPendingTransactions}>
+              <Card style={{ marginTop: 15, marginBottom: 12, backgroundColor: MD2Colors.orange300 }}>
+                <Badge size={30} style={{ position: 'absolute', top: -10, right: -10, backgroundColor: 'red', color: 'white' }}>{transactions.length}</Badge>
+                <Card.Title title="Pending Bank Transactions" style={{ alignItems: "center" }} titleStyle={{ color: "black", textAlign: 'center', justifyContent: 'center', marginTop: 10 }} left={LeftContent} />
+              </Card>
+            </TouchableOpacity>
           </View>
         }
         {/* <Text>Updates Demo 1</Text>
@@ -93,7 +98,7 @@ export default function HomeScreen() {
         <Text>
           {JSON.stringify(notification?.request.content.data, null, 2)}
         </Text> */}
-        {selectedMainBudgetId == null &&
+        {budgetState.selectedMainBudgetId == null && budgetState.budgetLoading == 'ready' &&
           <View>
             <View style={{ alignItems: "center", paddingBottom: 40 }}>
               <Icon
@@ -106,7 +111,7 @@ export default function HomeScreen() {
           </View>
         }
         {selectedMainBudget != null && selectedMainBudget.budgetCategories?.map(bc =>
-          <Card key={bc.id} style={{ marginBottom: 12 }} onPress={() => onSpendingDetails(bc)}>
+          <Card mode='contained' key={bc.id} style={{ marginBottom: 12 }} onPress={() => onSpendingDetails(bc)}>
             <Card.Title
               title={bc.name}
               subtitle={`Balance: ${calculateRemaining(bc.spendings!)} ${selectedMainBudget.currency.symbol}`}

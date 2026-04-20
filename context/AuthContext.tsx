@@ -5,7 +5,7 @@ import React, { createContext, PropsWithChildren, useContext, useEffect, useStat
 
 export const AuthContext = createContext({
   user: {} as AppUser | null | undefined,
-  loading: true as boolean,
+  userLoading: true as boolean,
   signIn: (token: string, userData: any) => { },
   signOut: () => { },
   reFetchAuth: () => { }
@@ -16,7 +16,7 @@ export const useAuth = () => useContext(AuthContext);
 export function AuthProvider({ children }: PropsWithChildren) {
   const [user, setUser] = useState<AppUser | null>();
   const [token, setToken] = useState<string | null>();
-  const [loading, setLoading] = useState(true);
+  const [userLoading, setUserLoading] = useState(true);
   const [triggerReload, setTriggerReload] = useState<boolean>(false);
 
   useEffect(() => {
@@ -31,7 +31,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
         }
 
       } finally {
-        setLoading(false);
+        setUserLoading(false);
       }
     };
     restoreSession();
@@ -53,7 +53,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signOut, reFetchAuth }}>
+    <AuthContext.Provider value={{ user, userLoading, signIn, signOut, reFetchAuth }}>
       {children}
     </AuthContext.Provider>
   );

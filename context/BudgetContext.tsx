@@ -1,20 +1,16 @@
 import { getBudgets } from "@/app/services/api";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, ReactNode, useContext, useEffect, useState } from "react";
-import { Budget, BudgetCategory, Spending } from "../types/Types";
+import { Budget, BudgetCategory, BudgetState, Spending } from "../types/Types";
 import { useAuth } from "./AuthContext";
 
 
 const BudgetContext = createContext({
-    budgets: [] as Budget[],
-    loading: true as boolean,
-    selectedMainBudgetId: null as number | null,
-    selectedBudgetCategoryId: null as number | null,
+    budgetState: {} as BudgetState,
     addBudget: (budget: Budget) => { },
     setMainBudget: (budgetId: number) => { },
-    setSelectedBudgetCategory: (budgetCategoryId: number) => { },
-    addSpending: (spending: Spending) => { },
-    removeSpending: (removeSpendingId: number) => { },
+    addSpending: (spending: Spending, selectedBudgetCategoryId: number) => { },
+    removeSpending: (removeSpendingId: number, selectedBudgetCategoryId: number) => { },
     removeBudgetCategory: (removedBudgetCategoryId: number, budgetId: number) => { },
     addBudgetCategory: (addedBudgetCategory: BudgetCategory) => { },
     removeBudget: (deletedBudgetId: number) => { },
@@ -24,44 +20,40 @@ const BudgetContext = createContext({
 export const useBudgets = () => useContext(BudgetContext);
 
 export function BudgetProvider({ children }: { children: ReactNode }) {
-    const [budgets, setBudgets] = useState<Budget[]>([]);
+    const [budgetState, setBudgetState] = useState<BudgetState>({ budgets: [], budgetLoading: 'loading', selectedMainBudgetId: null });
     const [triggerReload, setTriggerReload] = useState<boolean>(false);
-    const { user } = useAuth();
-    const [loading, setLoading] = useState<boolean>(true);
-    const [selectedMainBudgetId, setSelectedMainBudget] = useState<number | null>(null);
-    const [selectedBudgetCategoryId, setSelectedBudgetCategory] = useState<number | null>(null);
+    const { user, userLoading } = useAuth();
 
     // Initial fetch
     useEffect(() => {
         const init = async () => {
-            if (user == null || user == undefined) {
-                setLoading(false);
+            if (!user) {
                 return;
             }
-
             const data = await getBudgets();
-            setBudgets(data);
-            let mainBudgetId = await loadMainBudgetId();
-            let selectedBudget: Budget | undefined;
+            try {
+                let mainBudgetId = await loadMainBudgetId();
+                let selectedBudget: Budget | undefined;
 
-            if (mainBudgetId != null) {
-                selectedBudget = data.find(b => b.id == mainBudgetId);
+                if (mainBudgetId != null) {
+                    selectedBudget = data.find(b => b.id == mainBudgetId);
+                }
+
+                // set previously selected when start
+                if (selectedBudget != undefined) {
+                    setMainBudget(selectedBudget.id);
+                }
+
+                if (data.length > 0 && selectedBudget == undefined) {
+                    await setMainBudget(data[0].id);
+                }
+                setBudgetState(prev => ({ ...prev, budgets: data, budgetLoading: 'ready' }));
             }
+            catch (e) {
 
-            // set previously selected when start
-            if (selectedBudget != undefined) {
-                setMainBudget(selectedBudget.id);
             }
-
-            if (data.length > 0 && selectedBudget == undefined) {
-                await setMainBudget(data[0].id);
-            }
-
-            setLoading(false);
         }
-
         init();
-
     }, [triggerReload, user]);
 
 
@@ -71,96 +63,162 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
     }
 
     const addBudget = (budget: Budget) => {
-        if (budgets.length == 0) {
-            setSelectedMainBudget(budget.id);
+        if (budgetState.budgets.length == 0) {
+            setBudgetState((prev) => ({ ...prev, selectedMainBudgetId: budget.id }));
         }
 
-        setBudgets((prev) => [...prev, budget]);
+        setBudgetState((prev) => ({ ...prev, budgets: [...prev.budgets, budget] }));
     };
 
     const removeBudget = (deletedBudgetId: number) => {
-        setBudgets((prev) => [...prev.filter(b => b.id != deletedBudgetId)]);
+        setBudgetState((prev) => ({ ...prev, budgets: prev.budgets.filter(b => b.id != deletedBudgetId) }));
 
-        if (budgets.length == 1) {
-            setSelectedMainBudget(null);
+        if (budgetState.budgets.length == 1) {
+            setBudgetState((prev) => ({ ...prev, selectedMainBudgetId: null }));
         }
-
     };
 
-    const setMainBudget = async (budgetId: number) => {
-        const id = await AsyncStorage.setItem('mainBudgetId', budgetId.toString());
-        setSelectedMainBudget(budgetId);
+    const setMainBudget = (budgetId: number) => {
+        const id = AsyncStorage.setItem('mainBudgetId', budgetId.toString());
+        setBudgetState(prev => ({ ...prev, selectedMainBudgetId: budgetId }))
     };
 
-    const addSpending = (newSpending: Spending) => {
-        setBudgets(prev => prev.map(b => {
-            if (b.id != selectedMainBudgetId) {
-                return b;
-            }
+    const addSpending = (newSpending: Spending, selectedBudgetCategoryId: number) => {
+        setBudgetState(prev => ({
+            ...prev, budgets: prev.budgets.map(b => {
+                if (b.id != budgetState.selectedMainBudgetId) {
+                    return b;
+                }
 
-            return {
-                ...b,
-                budgetCategories: b!.budgetCategories!.map(bc => {
-                    if (bc.id != selectedBudgetCategoryId) {
-                        return bc;
-                    }
+                return {
+                    ...b,
+                    budgetCategories: b!.budgetCategories!.map(bc => {
+                        if (bc.id != selectedBudgetCategoryId) {
+                            return bc;
+                        }
 
-                    return {
-                        ...bc,
-                        spendings: [...bc.spendings!, newSpending]
-                    }
-                })
-            }
-        }));
+                        return {
+                            ...bc,
+                            spendings: [...bc.spendings!, newSpending]
+                        }
+                    })
+                }
+            })
+        }))
+        // setBudgets(prev => prev.map(b => {
+        //     if (b.id != selectedMainBudgetId) {
+        //         return b;
+        //     }
+
+        //     return {
+        //         ...b,
+        //         budgetCategories: b!.budgetCategories!.map(bc => {
+        //             if (bc.id != selectedBudgetCategoryId) {
+        //                 return bc;
+        //             }
+
+        //             return {
+        //                 ...bc,
+        //                 spendings: [...bc.spendings!, newSpending]
+        //             }
+        //         })s
+        //     }
+        // }));
     };
 
-    const removeSpending = (removedSpendingId: number) => {
-        setBudgets(prev => prev.map(b => {
-            if (b.id != selectedMainBudgetId) {
-                return b;
-            }
+    const removeSpending = (removedSpendingId: number, selectedBudgetCategoryId: number) => {
+        setBudgetState(prev => ({
+            ...prev, budgets: prev.budgets.map(b => {
+                if (b.id != budgetState.selectedMainBudgetId) {
+                    return b;
+                }
 
-            return {
-                ...b,
-                budgetCategories: b.budgetCategories!.map(bc => {
-                    if (bc.id != selectedBudgetCategoryId) {
-                        return bc;
-                    }
+                return {
+                    ...b,
+                    budgetCategories: b.budgetCategories!.map(bc => {
+                        if (bc.id != selectedBudgetCategoryId) {
+                            return bc;
+                        }
 
-                    return {
-                        ...bc,
-                        spendings: bc.spendings!.filter(sp => sp.id != removedSpendingId)
-                    }
-                })
-            }
-        }));
+                        return {
+                            ...bc,
+                            spendings: bc.spendings!.filter(sp => sp.id != removedSpendingId)
+                        }
+                    })
+                }
+            })
+        }))
+        // setBudgets(prev => prev.map(b => {
+        //     if (b.id != selectedMainBudgetId) {
+        //         return b;
+        //     }
+
+        //     return {
+        //         ...b,
+        //         budgetCategories: b.budgetCategories!.map(bc => {
+        //             if (bc.id != selectedBudgetCategoryId) {
+        //                 return bc;
+        //             }
+
+        //             return {
+        //                 ...bc,
+        //                 spendings: bc.spendings!.filter(sp => sp.id != removedSpendingId)
+        //             }
+        //         })
+        //     }
+        // }));
     };
 
     const removeBudgetCategory = (removedBudgetCategoryId: number, budgetId: number) => {
-        setBudgets(prev => prev.map(b => {
-            if (b.id != budgetId) {
-                return b;
-            }
+        setBudgetState(prev => ({
+            ...prev, budgets: prev.budgets.map(b => {
+                if (b.id != budgetId) {
+                    return b;
+                }
 
 
-            return {
-                ...b,
-                budgetCategories: b.budgetCategories!.filter(bc => bc.id != removedBudgetCategoryId)
-            }
-        }));
+                return {
+                    ...b,
+                    budgetCategories: b.budgetCategories!.filter(bc => bc.id != removedBudgetCategoryId)
+                }
+            })
+        }))
+        // setBudgets(prev => prev.map(b => {
+        //     if (b.id != budgetId) {
+        //         return b;
+        //     }
+
+
+        //     return {
+        //         ...b,
+        //         budgetCategories: b.budgetCategories!.filter(bc => bc.id != removedBudgetCategoryId)
+        //     }
+        // }));
     };
 
     const addBudgetCategory = (addedBudgetCategory: BudgetCategory) => {
-        setBudgets(prev => prev.map(b => {
-            if (b.id != addedBudgetCategory.budgetId) {
-                return b;
-            }
+        setBudgetState(prev => ({
+            ...prev, budgets: prev.budgets.map(b => {
+                if (b.id != addedBudgetCategory.budgetId) {
+                    return b;
+                }
 
-            return {
-                ...b,
-                budgetCategories: [...b.budgetCategories!, addedBudgetCategory]
-            }
-        }));
+                return {
+                    ...b,
+                    budgetCategories: [...b.budgetCategories!, addedBudgetCategory]
+                }
+            })
+        }))
+        // setBudgets(prev => prev.map(b => {
+        //     if (b.id != addedBudgetCategory.budgetId) {
+        //         return b;
+        //     }
+
+        //     return {
+        //         ...b,
+        //         budgetCategories: [...b.budgetCategories!, addedBudgetCategory]
+        //     }
+        // }));
     };
 
     const reFetchBudgets = () => {
@@ -168,7 +226,7 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
     };
 
     return (
-        <BudgetContext.Provider value={{ budgets, addBudget, reFetchBudgets, selectedMainBudgetId, setMainBudget, loading, setSelectedBudgetCategory, selectedBudgetCategoryId, addSpending, removeSpending, removeBudgetCategory, addBudgetCategory, removeBudget }}>
+        <BudgetContext.Provider value={{ budgetState, addBudget, reFetchBudgets, setMainBudget, addSpending, removeSpending, removeBudgetCategory, addBudgetCategory, removeBudget }}>
             {children}
         </BudgetContext.Provider>
     );

@@ -6,9 +6,9 @@ import { Budget } from "@/types/Types";
 import { useRoute } from "@react-navigation/native";
 import { Redirect, usePathname, useRouter } from "expo-router";
 import { Drawer } from 'expo-router/drawer';
-import React, { useContext, useRef, useState } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
-import { Appbar, Menu, Text } from "react-native-paper";
+import React, { useContext, useRef } from "react";
+import { StyleSheet, TouchableOpacity, View } from "react-native";
+import { Appbar, Icon, Text, useTheme } from "react-native-paper";
 import { DrawerContent } from "../../components/DrawerContent";
 
 
@@ -19,55 +19,45 @@ export default function MainLayout() {
 
   const router = useRouter();
   const { title } = useTitle();
-  const { user, loading } = useContext(AuthContext);
-  const { budgets, setMainBudget, loading: budgetsLoading, selectedMainBudgetId } = useBudgets();
-  const [visible, setVisible] = useState(false);
-
-  const selectedMainBudget = budgets.find(b => b.id == selectedMainBudgetId);
-
-  function onManageBudget(budgetId: number) {
-    router.push({ pathname: "/(main)/ManageBudget", params: { budgetId: budgetId } });
-    setVisible(false);
-  }
+  const { user, userLoading } = useContext(AuthContext);
+  const { setMainBudget, budgetState } = useBudgets();
+  const { colors } = useTheme();
+  const selectedMainBudget = budgetState.budgets.find(b => b.id == budgetState.selectedMainBudgetId);
 
   function onSelectMainBudget(budget: Budget) {
     setMainBudget(budget.id);
-    setVisible(false);
   }
 
-
+  function onManageBudget(budgetId: number) {
+    router.push({
+      pathname: "/(main)/ManageBudget",
+      params: { budgetId: budgetId },
+    });
+  }
 
   const HeaderMenu = () => {
     return (
-      <View style={{ paddingLeft: 20 }}>
-        <Menu
-          visible={visible}
-          onDismiss={() => setVisible(false)}
-          anchorPosition="bottom"
-          anchor={
-            <Pressable
-              ref={anchorRef}
-              onPress={() => setVisible(true)}
-              style={{ flexDirection: "row", alignItems: "center" }}
-            >
-              <Text>{selectedMainBudget?.name}</Text>
-              <Appbar.Action icon="menu-down" />
-            </Pressable>
-          }>
-          {budgets.map(b =>
-            <Menu.Item key={b.id} title={b.name} onPress={() => onSelectMainBudget(b)} trailingIcon={({ size, color }) => (
-              <Pressable
-                onPress={() => onManageBudget(b.id)}>
-                <Appbar.Action icon="cog" style={{ paddingBottom: 0, paddingRight: 20 }} color={color} size={size} />
-              </Pressable>
-            )} />
-          )}
-        </Menu>
+      <View style={{ paddingLeft: 20, display: 'flex', flexDirection: 'row', gap: 5 }}>
+        {budgetState.budgets.map(b =>
+          <TouchableOpacity key={b.id} onPress={() => onSelectMainBudget(b)}>
+            <View style={{ borderWidth: 1, padding: 10, height: 45, maxWidth: 115, borderColor: b.id == selectedMainBudget?.id ? '' : colors.primary, backgroundColor: b.id == selectedMainBudget?.id ? colors.primary : '', borderRadius: 10 }}  >
+              <View style={{ display: 'flex', flexDirection: 'row', gap: 5 }}>
+                <Icon source="account-cash" size={18} />
+                <Text>{b.name}</Text>
+                {b.id == selectedMainBudget?.id &&
+                  <TouchableOpacity onPress={() => onManageBudget(b.id)}>
+                    <Icon source="cog" size={24} />
+                  </TouchableOpacity>
+                }
+              </View>
+            </View>
+          </TouchableOpacity>
+        )}
       </View>
     )
   }
 
-  if (loading || budgetsLoading) {
+  if (userLoading || budgetState.budgetLoading == 'loading') {
     return (
       <OverlayLoader isVisible={true} message="Loading..."></OverlayLoader>
     );

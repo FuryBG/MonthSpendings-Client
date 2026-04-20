@@ -16,7 +16,8 @@ export const ScreenContainer = ({ children, scrollable = false, removeSafeBottom
   const styles = StyleSheet.create({
     safeArea: {
       flex: 1,
-      paddingBottom: 0
+      paddingBottom: 0,
+      paddingTop: 10
     },
     container: {
       flex: 1,

@@ -24,8 +24,11 @@ export default function RootLayout() {
     colors: {
       ...MD3LightTheme.colors,
       primary: '#BADA55',
-      onBackground: "#0000",
-      onPrimary: "#0000",
+      secondaryContainer: '#BADA55',
+      onSecondaryContainer: '#000000',
+      surface: "#F1F1F1F1",
+      onBackground: '#000000',
+      onPrimary: "#000000",
     },
   };
 
@@ -37,10 +40,13 @@ export default function RootLayout() {
     colors: {
       ...MD3DarkTheme.colors,
       primary: '#BADA55',
-      surface: "#0000",
+      secondaryContainer: '#BADA55',
+      onSecondaryContainer: '#000000',
+      surface: "#1F2021",
+      surfaceVariant: "#1F2021",
       background: "#0000",
       onBackground: '#FFFFFF',
-      onPrimary: "#0000",
+      onPrimary: "#000000",
     },
   };
 

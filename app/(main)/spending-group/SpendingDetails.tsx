@@ -3,7 +3,7 @@ import { ScreenContainer } from '@/components/ScreenContainer';
 import { useBudgets } from '@/context/BudgetContext';
 import { useTitle } from '@/context/NavBarTitleContext';
 import { DrawerScreenProps } from '@react-navigation/drawer';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import React from 'react';
 import { Card, IconButton, MD2Colors, Text } from 'react-native-paper';
 
@@ -17,9 +17,10 @@ type Props = DrawerScreenProps<DrawerParamList, 'GroupDetails'>;
 
 export default function SpendingDetailsScreen() {
   const { setTitle } = useTitle();
-  const { selectedMainBudgetId, selectedBudgetCategoryId, budgets, removeSpending } = useBudgets();
-  const selectedCategory = budgets.filter(b => b.id == selectedMainBudgetId).flatMap(x => x.budgetCategories).find(c => c?.id == selectedBudgetCategoryId);
-  const selectedMainBudget = budgets.find(b => b.id == selectedMainBudgetId);
+  const { budgetState, removeSpending } = useBudgets();
+  const { selectedCategoryId } = useLocalSearchParams();
+  const selectedCategory = budgetState.budgets.filter(b => b.id == budgetState.selectedMainBudgetId).flatMap(x => x.budgetCategories).find(c => c?.id == Number(selectedCategoryId));
+  const selectedMainBudget = budgetState.budgets.find(b => b.id == budgetState.selectedMainBudgetId);
 
   useFocusEffect(() => {
     setTitle(selectedCategory?.name ? selectedCategory.name : "");
@@ -28,7 +29,7 @@ export default function SpendingDetailsScreen() {
   async function onDeleteSpending(spendingId: number) {
     try {
       await deleteSpending(spendingId);
-      removeSpending(spendingId);
+      removeSpending(spendingId, Number(selectedCategoryId));
     }
     catch (e) {
       console.log(e);

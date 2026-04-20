@@ -16,7 +16,7 @@ import { createSpending } from "../services/api";
 export default function PendingTransactions() {
     const navigation = useNavigation();
     const router = useRouter();
-    const { budgets, addSpending } = useBudgets();
+    const { budgetState, addSpending } = useBudgets();
     const { setTitle } = useTitle();
     const [value, setValue] = useState<string>("");
     const [loading, setLoading] = useState(false);
@@ -26,7 +26,7 @@ export default function PendingTransactions() {
     const { control, handleSubmit, watch, reset } = useForm<Spending>({});
 
     const [selectedBudget, setSelectedBudget] = useState<Budget | null>(null);
-    const [selectedCategory, setSelectedCategory] = useState<BudgetCategory | null>(null);
+    const [selectedCategoryId, setSelectedCategoryId] = useState<number>(0);
     const [selectedTransaction, setSelectedTransaction] = useState<BankTransaction | null>(null);
 
     async function onSelectTransaction(selectedTransaction: BankTransaction) {
@@ -44,7 +44,7 @@ export default function PendingTransactions() {
     }
 
     async function onSelectBudgetCategory(category: BudgetCategory) {
-        setSelectedCategory(category);
+        setSelectedCategoryId(category.id);
     }
 
     useFocusEffect(() => {
@@ -63,7 +63,7 @@ export default function PendingTransactions() {
                 amount: -Number(selectedTransaction!.amount),
                 date: selectedTransaction!.bookingDate,
                 bankTransactionId: selectedTransaction!.id,
-                budgetCategoryId: selectedCategory!.id,
+                budgetCategoryId: selectedCategoryId,
                 budgetPeriodId: selectedBudget!.budgetPeriods[0].id,
                 id: 0,
                 description: `FROM TRANSACTION WITH ID: ${selectedTransaction!.id}`,
@@ -71,11 +71,10 @@ export default function PendingTransactions() {
 
             });
 
-            addSpending(spending);
+            addSpending(spending, selectedCategoryId);
             removeTransaction(selectedTransaction!.id);
             setSelectedTransaction(null);
             modalRef.current?.close();
-
         }
         catch (e) {
             setErrorVisible(true);
@@ -90,11 +89,11 @@ export default function PendingTransactions() {
             <FlatList
                 data={transactions}
                 keyExtractor={(item) => `${item.id}`}
-                initialNumToRender={40}
-                maxToRenderPerBatch={40}
+                initialNumToRender={5}
+                maxToRenderPerBatch={5}
                 windowSize={5}
                 renderItem={({ item }) => (
-                    <Card style={{ margin: 10, padding: 5 }} onPress={() => onSelectTransaction(item)}>
+                    <Card mode="contained" style={{ margin: 10, padding: 5 }} onPress={() => onSelectTransaction(item)}>
                         <Card.Content style={{}}>
                             <View>
                                 <View style={{ display: 'flex', flexDirection: 'row' }}>
@@ -138,7 +137,7 @@ export default function PendingTransactions() {
                         </View>
                         <Label style={{ textAlign: "left" }}>Select Budget:</Label>
                         <View style={{ display: 'flex', gap: 10, flexDirection: 'row', paddingTop: 10, paddingBottom: 10 }}>
-                            {budgets.map(b =>
+                            {budgetState.budgets.map(b =>
                                 <Button key={b.id} mode={b.name == selectedBudget?.name ? "contained" : "outlined"} onPress={() => onSelectBudget(b)}>
                                     {b.name}
                                 </Button>
@@ -149,7 +148,7 @@ export default function PendingTransactions() {
                         <Label style={{ textAlign: "left" }}>Select Category:</Label>
                         <View style={{ display: 'flex', gap: 10, flexDirection: 'row', paddingTop: 10, paddingBottom: 10 }}>
                             {selectedBudget?.budgetCategories?.map(c =>
-                                <Button key={c.id} mode={c.name == selectedCategory?.name ? "contained" : "outlined"} onPress={() => onSelectBudgetCategory(c)}>
+                                <Button key={c.id} mode={c.id == selectedCategoryId ? "contained" : "outlined"} onPress={() => onSelectBudgetCategory(c)}>
                                     {c.name}
                                 </Button>
                             )}

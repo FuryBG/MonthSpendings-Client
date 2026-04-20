@@ -17,7 +17,7 @@ export interface GoogleUserDto {
   notificationToken: string
 }
 
-const BASE_URL = 'https://676e-88-203-208-219.ngrok-free.app';
+const BASE_URL = 'https://84c6-88-203-208-219.ngrok-free.app';
 
 const api: AxiosInstance = axios.create({
   baseURL: BASE_URL,
@@ -69,7 +69,6 @@ export const startBankConnection = async (bankName: string, countryCode: string,
 
 export const getNotCategorizedTransactions = async (): Promise<BankTransaction[]> => {
   const response = await api.get<boolean>('/api/Transactions');
-  console.log(response.data);
   const b = response.data;
   return b;
 };
@@ -97,7 +96,6 @@ export const getBudgets = async (): Promise<Budget[]> => {
 
 export const getCurrencies = async (): Promise<Currency[]> => {
   const response = await api.get<boolean>('/api/currency');
-  console.log(response.data);
 
   const b = response.data;
   return b;

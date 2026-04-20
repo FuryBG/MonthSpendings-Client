@@ -6,7 +6,7 @@ import { useAuth } from "./AuthContext";
 
 const BankTransactionsContext = createContext({
     transactions: [] as BankTransaction[],
-    loading: true as boolean,
+    transactionsLoading: true as boolean,
     removeTransaction: (categorizedTransactionId: number) => { },
     reFetchTransactions: () => { },
 });
@@ -17,7 +17,7 @@ export function BankTransactionsProvider({ children }: { children: ReactNode }) 
     const [transactions, setTransactions] = useState<BankTransaction[]>([]);
     const [triggerReload, setTriggerReload] = useState<boolean>(false);
     const { user } = useAuth();
-    const [loading, setLoading] = useState<boolean>(true);
+    const [transactionsLoading, setTransactionLoading] = useState<boolean>(true);
     const [selectedMainBudgetId, setSelectedMainBudget] = useState<number | null>(null);
     const [selectedBudgetCategoryId, setSelectedBudgetCategory] = useState<number | null>(null);
 
@@ -25,13 +25,13 @@ export function BankTransactionsProvider({ children }: { children: ReactNode }) 
     useEffect(() => {
         const init = async () => {
             if (user == null || user == undefined) {
-                setLoading(false);
+                setTransactionLoading(false);
                 return;
             }
 
             const data = await getNotCategorizedTransactions();
             setTransactions(data);
-            setLoading(false);
+            setTransactionLoading(false);
         }
 
         init();
@@ -48,7 +48,7 @@ export function BankTransactionsProvider({ children }: { children: ReactNode }) 
     };
 
     return (
-        <BankTransactionsContext.Provider value={{ transactions, removeTransaction, loading, reFetchTransactions }}>
+        <BankTransactionsContext.Provider value={{ transactions, removeTransaction, transactionsLoading, reFetchTransactions }}>
             {children}
         </BankTransactionsContext.Provider>
     );

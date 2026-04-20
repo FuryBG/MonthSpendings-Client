@@ -16,7 +16,7 @@ export default function ManageBudgetScreen() {
     const navigation = useNavigation();
     const router = useRouter();
     const { user } = useAuth();
-    const { selectedMainBudgetId, setSelectedBudgetCategory, reFetchBudgets, selectedBudgetCategoryId, addSpending, budgets, removeBudgetCategory, addBudgetCategory, removeBudget } = useBudgets();
+    const { reFetchBudgets, budgetState, removeBudgetCategory, addBudgetCategory, removeBudget } = useBudgets();
     const finishPeriodModalRef = useRef<ModalRef>(null);
     const deleteCategoryModalRef = useRef<ModalRef>(null);
     const createCategoryModalRef = useRef<ModalRef>(null);
@@ -27,8 +27,9 @@ export default function ManageBudgetScreen() {
     const [visible, setVisible] = useState(false);
     const [loading, setLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
-    const selectedMainBudget = budgets.find(b => b.id == Number(params.budgetId));
-    const selectedCategory = budgets.filter(b => b.id == Number(params.budgetId)).flatMap(x => x.budgetCategories).find(c => c?.id == selectedBudgetCategoryId);
+    const [selectedBudgetCategoryId, setSelectedBudgetCategoryId] = useState<number>(0);
+    const selectedMainBudget = budgetState.budgets.find(b => b.id == Number(params.budgetId));
+    const selectedCategory = budgetState.budgets.filter(b => b.id == Number(params.budgetId)).flatMap(x => x.budgetCategories).find(c => c?.id == selectedBudgetCategoryId);
 
     const { control, handleSubmit, watch, reset } = useForm<BudgetCategory>({
         defaultValues: {
@@ -49,13 +50,13 @@ export default function ManageBudgetScreen() {
     const { control: inviteControl, handleSubmit: inviteHandleSubmit, reset: inviteReset } = useForm<BudgetInvite>({
         defaultValues: {
             id: 0,
-            budgetId: selectedMainBudgetId ?? 0,
+            budgetId: budgetState.selectedMainBudgetId ?? 0,
             receiverEmail: ""
         }
     });
 
     function onOpenDeletecategoryModal(budgetCategory: BudgetCategory) {
-        setSelectedBudgetCategory(budgetCategory.id);
+        setSelectedBudgetCategoryId(budgetCategory.id);
         deleteCategoryModalRef.current?.open();
     }
 
@@ -158,8 +159,7 @@ export default function ManageBudgetScreen() {
         }
 
         selectedMainBudget!.budgetCategories!.forEach(category => {
-            let spending: Spending = { id: 0, budgetPeriodId: 0, budgetCategoryId: category.id, date: new Date().toISOString(), amount: calculateRemaining(category.spendings), description: "MOVED TO NEXT PERIOD" };
-
+            let spending: Spending = { id: 0, budgetPeriodId: 0, budgetCategoryId: category.id, date: new Date().toISOString(), amount: calculateRemaining(category.spendings), bankTransaction: null, bankTransactionId: null, description: "MOVED TO NEXT PERIOD" };
             category.spendings = [spending];
         });
 

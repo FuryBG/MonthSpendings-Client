@@ -1,3 +1,9 @@
+export type BudgetState = {
+    budgets: Budget[],
+    budgetLoading: 'loading' | 'ready' | 'failed',
+    selectedMainBudgetId: number | null
+}
+
 export type AppUser = {
     id: number
     email: string
