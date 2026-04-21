@@ -1,15 +1,12 @@
 import { ScreenContainer } from "@/components/ScreenContainer";
-import { useNavigation, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import { Button, Text } from "react-native-paper";
 
-
-
-export default function ConnectBankScreen() {
-    const navigation = useNavigation();
+export default function ConnectBankSuccessScreen() {
     const router = useRouter();
 
-    async function GoHome() {
-        router.replace("/(main)/(tabs)");
+    function GoHome() {
+        router.replace("/(main)/(drawer)/(tabs)");
     }
 
     return (

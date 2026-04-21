@@ -1,17 +1,16 @@
 import { OverlayLoader } from '@/components/OverlayLoader';
 import { ScreenContainer } from '@/components/ScreenContainer';
-import { AuthContext } from '@/context/AuthContext';
+import { useAuthStore } from '@/stores/authStore';
 import { GoogleSignin, GoogleSigninButton } from '@react-native-google-signin/google-signin';
-import { useContext, useState } from 'react';
-import { View } from 'react-native';
+import { useState } from 'react';
+import { StyleSheet, View } from 'react-native';
 import { Portal, Snackbar, Text } from 'react-native-paper';
 import { googleLogin } from '../services/api';
 
 export default function LoginScreen() {
-  const { signIn } = useContext(AuthContext);
+  const signIn = useAuthStore((s) => s.signIn);
   const [visible, setVisible] = useState(false);
   const [signing, setSigning] = useState(false);
-  // const { notification, expoPushToken, error } = useNotification();
 
   async function OnSignIn() {
     try {
@@ -20,25 +19,24 @@ export default function LoginScreen() {
       const googleToken = userInfo.data?.user.id;
 
       if (googleToken != undefined) {
-        setSigning((prev) => true);
+        setSigning(true);
         let jwt = await googleLogin({ id: userInfo.data!.user.id, notificationToken: "", email: userInfo.data!.user.email, familyName: userInfo.data!.user.familyName, givenName: userInfo.data!.user.givenName, photo: userInfo.data!.user.photo });
-        signIn(jwt, userInfo.data?.user);
+        await signIn(jwt);
         setSigning(false);
       }
-    } catch (error) {
+    } catch {
       setVisible(true);
       setSigning(false);
-      console.log(error);
     }
   }
 
   return (
     <ScreenContainer>
-      <View style={{ flex: 1, justifyContent: "center" }}>
-        <Text variant="titleLarge" style={{ textAlign: "center" }}>Month Spendings</Text>
-        <GoogleSigninButton style={{ alignSelf: "center" }} onPress={OnSignIn} />
+      <View style={styles.container}>
+        <Text variant="titleLarge" style={styles.title}>Month Spendings</Text>
+        <GoogleSigninButton style={styles.signInButton} onPress={OnSignIn} />
       </View>
-      <OverlayLoader isVisible={signing} message='Sign in...'></OverlayLoader>
+      <OverlayLoader isVisible={signing} message='Sign in...' />
       <Portal>
         <Snackbar
           visible={visible}
@@ -54,3 +52,16 @@ export default function LoginScreen() {
     </ScreenContainer>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  title: {
+    textAlign: 'center',
+  },
+  signInButton: {
+    alignSelf: 'center',
+  },
+});

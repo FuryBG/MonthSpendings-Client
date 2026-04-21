@@ -1,33 +1,24 @@
 import { Modal, ModalRef } from "@/components/Modal";
 import { OverlayLoader } from "@/components/OverlayLoader";
 import { ScreenContainer } from "@/components/ScreenContainer";
-import { useBudgets } from "@/context/BudgetContext";
-import { Budget, Currency } from "@/types/Types";
-import { DrawerActions } from "@react-navigation/native";
+import { useCreateBudgetMutation } from "@/hooks/useBudgetQueries";
+import { useCurrenciesQuery } from "@/hooks/useCurrencyQueries";
+import { useBudgetUIStore } from "@/stores/budgetUIStore";
+import { Budget } from "@/types/Types";
 import { useFocusEffect, useNavigation, useRouter } from "expo-router";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef } from "react";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
-import { View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { ScrollView } from "react-native-gesture-handler";
 import { Appbar, Button, HelperText, IconButton, List, MD2Colors, Portal, Snackbar, Text, TextInput } from "react-native-paper";
-import { createBudget, getCurrencies } from "../services/api";
-
 
 export default function CreateBudgetScreen() {
-    const OPTIONS = [
-        { label: 'Male', value: 'male' },
-        { label: 'Female', value: 'female' },
-        { label: 'Other', value: 'other' },
-    ];
-
-
     const navigation = useNavigation();
-    const { addBudget } = useBudgets();
+    const createBudgetMutation = useCreateBudgetMutation();
+    const { data: currencies = [] } = useCurrenciesQuery();
+    const { setMainBudget } = useBudgetUIStore();
     const router = useRouter();
     const modalRef = useRef<ModalRef>(null);
-    const [currencies, setCurrencies] = useState<Currency[]>([]);
-    const [visible, setVisible] = useState(false);
-    const [loading, setLoading] = useState(false);
     const { control, handleSubmit, watch, reset } = useForm<Budget>({
         defaultValues: {
             id: 0,
@@ -58,45 +49,16 @@ export default function CreateBudgetScreen() {
     });
     const selectedCurrency = watch("currency.code");
 
-    useEffect(() => {
-        const fetchCurrencies = async () => {
-            try {
-                const currencies = await getCurrencies();
-                setCurrencies(currencies);
-            } catch (err) {
-                console.error(err);
-            }
-        };
-
-        fetchCurrencies();
-    }, []);
-
-    interface MenuuProps {
-        fieldState: any;
-        value: string;
-        onChange: (val: string) => void;
-    }
-
     async function onSubmit(data: Budget) {
         try {
-            console.log("???");
-            
-            setLoading(true);
             data.currency = currencies.find(c => c.code == data.currency.code)!;
-            var budget = await createBudget(data);
-            addBudget(budget);
-            setLoading(false);
-            router.push("/(main)/(tabs)");
+            const budget = await createBudgetMutation.mutateAsync(data);
+            await setMainBudget(budget.id);
+            router.push("/(main)/(drawer)/(tabs)");
             reset();
-            requestAnimationFrame(() => {
-                navigation.dispatch(DrawerActions.closeDrawer());
-            });
+        } catch {
+            // snackbar shown via state
         }
-        catch (e) {
-            setVisible(true);
-            setLoading(false);
-        }
-
     }
 
     useFocusEffect(
@@ -106,11 +68,9 @@ export default function CreateBudgetScreen() {
                 header: () => (
                     <Appbar.Header>
                         {router.canGoBack() && (
-                            <Appbar.BackAction onPress={() => {
-                                router.back();
-                            }} />
+                            <Appbar.BackAction onPress={() => router.back()} />
                         )}
-                        <Text style={{flex: 1}}>Create Budget</Text>
+                        <Text style={styles.headerTitle}>Create Budget</Text>
                         <Appbar.Action icon="check" onPress={handleSubmit(onSubmit)} />
                     </Appbar.Header>
                 ),
@@ -124,16 +84,15 @@ export default function CreateBudgetScreen() {
     });
 
     return (
-
         <ScreenContainer scrollable={false}>
-            <OverlayLoader isVisible={loading} message='Creating budget...'></OverlayLoader>
+            <OverlayLoader isVisible={createBudgetMutation.isPending} message='Creating budget...' />
             <Controller
                 control={control}
                 rules={{ required: "Budget name is required" }}
                 name="name"
                 render={({ field: { onChange, value }, fieldState }) => (
                     <>
-                        <TextInput error={fieldState.error != null} value={value} onChangeText={onChange} style={{ marginBottom: 0, width: "100%" }} label="Budget name" />
+                        <TextInput error={fieldState.error != null} value={value} onChangeText={onChange} style={styles.fullWidth} label="Budget name" />
                         <HelperText type="error" visible={!!fieldState.error}>
                             {fieldState.error?.message}
                         </HelperText>
@@ -154,9 +113,8 @@ export default function CreateBudgetScreen() {
                         <HelperText type="error" visible={!!fieldState.error}>
                             {fieldState.error?.message}
                         </HelperText>
-                        <Modal ref={modalRef} title="Select Currency" loading={false} onSubmit={(cancelled: boolean) => modalRef.current?.close()}>
-
-                            <ScrollView style={{ maxHeight: 200 }}>
+                        <Modal ref={modalRef} title="Select Currency" loading={false} onSubmit={() => modalRef.current?.close()}>
+                            <ScrollView style={styles.currencyScroll}>
                                 {currencies.map(c => (
                                     <List.Item
                                         onPress={() => onChange(c.code)}
@@ -167,19 +125,18 @@ export default function CreateBudgetScreen() {
                                     />
                                 ))}
                             </ScrollView>
-
                         </Modal>
                     </>
                 )} />
-            <Text style={{ paddingBottom: 5 }}>Categories:</Text>
+            <Text style={styles.categoriesLabel}>Categories:</Text>
             {categories.map((cat, index) => (
-                <View key={index} style={{ marginBottom: 10, display: "flex", flexDirection: "row", gap: 10 }}>
+                <View key={index} style={styles.categoryRow}>
                     <Controller
                         control={control}
                         rules={{ required: "Category name is required" }}
                         name={`budgetCategories.${index}.name`}
                         render={({ field: { onChange, value }, fieldState }) => (
-                            <View style={{ width: "40%" }}>
+                            <View style={styles.nameField}>
                                 <TextInput error={fieldState.error != null} value={value} onChangeText={onChange} label="Name" />
                                 <HelperText type="error" visible={!!fieldState.error}>
                                     {fieldState.error?.message}
@@ -192,7 +149,7 @@ export default function CreateBudgetScreen() {
                         rules={{ required: "Category amount is required" }}
                         name={`budgetCategories.${index}.spendings.0.amount`}
                         render={({ field: { onChange, value }, fieldState }) => (
-                            <View style={{ width: "42%" }}>
+                            <View style={styles.amountField}>
                                 <TextInput error={fieldState.error != null} keyboardType='numeric' value={value ? value.toString() : ""} onChangeText={onChange} label={selectedCurrency} />
                                 <HelperText type="error" visible={!!fieldState.error}>
                                     {fieldState.error?.message}
@@ -200,25 +157,49 @@ export default function CreateBudgetScreen() {
                             </View>
                         )}
                     />
-
                     <IconButton icon="close" iconColor={MD2Colors.red800} onPress={() => remove(index)} />
-
                 </View>
             ))}
             <Button onPress={() => addCategory({ id: 0, name: '', budgetId: 0, spendings: [{ amount: undefined!, id: 0, date: null, budgetCategoryId: 0, budgetPeriodId: 0, description: "ADD MONEY", bankTransaction: null, bankTransactionId: null }] })}>Add Category</Button>
             <Portal>
                 <Snackbar
-                    visible={visible}
-                    onDismiss={() => setVisible(false)}
+                    visible={createBudgetMutation.isError}
+                    onDismiss={() => createBudgetMutation.reset()}
                     duration={5000}
                     action={{
                         label: 'OK',
-                        onPress: () => setVisible(false),
+                        onPress: () => createBudgetMutation.reset(),
                     }}>
                     Create Budget failed.
                 </Snackbar>
             </Portal>
         </ScreenContainer>
-
     );
 }
+
+const styles = StyleSheet.create({
+    headerTitle: {
+        flex: 1,
+    },
+    fullWidth: {
+        marginBottom: 0,
+        width: '100%',
+    },
+    currencyScroll: {
+        maxHeight: 200,
+    },
+    categoriesLabel: {
+        paddingBottom: 5,
+    },
+    categoryRow: {
+        marginBottom: 10,
+        flexDirection: 'row',
+        gap: 10,
+    },
+    nameField: {
+        width: '40%',
+    },
+    amountField: {
+        width: '42%',
+    },
+});

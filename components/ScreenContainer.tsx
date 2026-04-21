@@ -1,6 +1,6 @@
-import React, { ReactNode } from "react";
+import React, { ReactNode, useMemo } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
-import { useTheme, } from "react-native-paper";
+import { useTheme } from "react-native-paper";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface ScreenContainerProps {
@@ -13,27 +13,34 @@ export const ScreenContainer = ({ children, scrollable = false, removeSafeBottom
   const theme = useTheme();
   const insets = useSafeAreaInsets();
 
-  const styles = StyleSheet.create({
-    safeArea: {
-      flex: 1,
-      paddingBottom: 0,
-      paddingTop: 10
-    },
-    container: {
-      flex: 1,
-      paddingHorizontal: 16,
-      paddingBottom: 0,
-      marginTop: -insets.top,
-      marginBottom: removeSafeBottom == true ? -insets.bottom : 0,
-    },
-  });
+  const dynamicStyles = useMemo(
+    () =>
+      StyleSheet.create({
+        container: {
+          flex: 1,
+          paddingHorizontal: 16,
+          paddingBottom: 0,
+          marginTop: -insets.top,
+          marginBottom: removeSafeBottom ? -insets.bottom : 0,
+        },
+      }),
+    [insets.top, insets.bottom, removeSafeBottom]
+  );
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.colors.background }]}>
       {scrollable ?
-        <ScrollView style={styles.container}>{children}</ScrollView> :
-        <View style={styles.container}>{children}</View>
+        <ScrollView style={dynamicStyles.container}>{children}</ScrollView> :
+        <View style={dynamicStyles.container}>{children}</View>
       }
     </SafeAreaView>
   );
 };
+
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    paddingBottom: 0,
+    paddingTop: 10,
+  },
+});

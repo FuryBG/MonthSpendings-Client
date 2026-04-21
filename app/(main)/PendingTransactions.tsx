@@ -1,49 +1,32 @@
 import { Modal, ModalRef } from "@/components/Modal";
 import { ScreenContainer } from "@/components/ScreenContainer";
-import { useBankTransactions } from "@/context/BankTransactionsContext";
-import { useBudgets } from "@/context/BudgetContext";
-import { useTitle } from "@/context/NavBarTitleContext";
-import { BankTransaction, Budget, BudgetCategory, Spending } from "@/types/Types";
+import { useCategorizeTransactionMutation, usePendingTransactionsQuery } from "@/hooks/useBankTransactionQueries";
+import { useBudgetsQuery } from "@/hooks/useBudgetQueries";
+import { useTitleStore } from "@/stores/titleStore";
+import { BankTransaction, Budget, BudgetCategory } from "@/types/Types";
 import { Label } from "@react-navigation/elements";
-import { useFocusEffect, useNavigation, useRouter } from "expo-router";
+import { useFocusEffect } from "expo-router";
 import React, { useRef, useState } from "react";
-import { useForm } from "react-hook-form";
-import { FlatList, View } from "react-native";
+import { FlatList, StyleSheet, View } from "react-native";
 import { Button, Card, MD2Colors, Portal, Snackbar, Text } from "react-native-paper";
-import { createSpending } from "../services/api";
-
 
 export default function PendingTransactions() {
-    const navigation = useNavigation();
-    const router = useRouter();
-    const { budgetState, addSpending } = useBudgets();
-    const { setTitle } = useTitle();
-    const [value, setValue] = useState<string>("");
-    const [loading, setLoading] = useState(false);
+    const { data: budgets = [] } = useBudgetsQuery();
+    const { data: transactions = [] } = usePendingTransactionsQuery();
+    const categorizeMutation = useCategorizeTransactionMutation();
+    const setTitle = useTitleStore((s) => s.setTitle);
     const [errorVisible, setErrorVisible] = useState(false);
-    const { transactions, removeTransaction } = useBankTransactions();
     const modalRef = useRef<ModalRef>(null);
-    const { control, handleSubmit, watch, reset } = useForm<Spending>({});
 
     const [selectedBudget, setSelectedBudget] = useState<Budget | null>(null);
     const [selectedCategoryId, setSelectedCategoryId] = useState<number>(0);
     const [selectedTransaction, setSelectedTransaction] = useState<BankTransaction | null>(null);
 
-    async function onSelectTransaction(selectedTransaction: BankTransaction) {
-        console.log(selectedTransaction.amount);
-
-        setSelectedTransaction(selectedTransaction);
-    }
-
-    async function onSelectedBudget(selectedBudget: Budget) {
-        setSelectedBudget(selectedBudget);
-    }
-
-    async function onSelectBudget(budget: Budget) {
+    function onSelectBudget(budget: Budget) {
         setSelectedBudget(budget);
     }
 
-    async function onSelectBudgetCategory(category: BudgetCategory) {
+    function onSelectBudgetCategory(category: BudgetCategory) {
         setSelectedCategoryId(category.id);
     }
 
@@ -57,9 +40,8 @@ export default function PendingTransactions() {
     }
 
     async function onSave() {
-        setLoading(true);
         try {
-            let spending: Spending = await createSpending({
+            await categorizeMutation.mutateAsync({
                 amount: -Number(selectedTransaction!.amount),
                 date: selectedTransaction!.bookingDate,
                 bankTransactionId: selectedTransaction!.id,
@@ -68,23 +50,15 @@ export default function PendingTransactions() {
                 id: 0,
                 description: `FROM TRANSACTION WITH ID: ${selectedTransaction!.id}`,
                 bankTransaction: null
-
             });
-
-            addSpending(spending, selectedCategoryId);
-            removeTransaction(selectedTransaction!.id);
             setSelectedTransaction(null);
             modalRef.current?.close();
-        }
-        catch (e) {
+        } catch {
             setErrorVisible(true);
         }
-
-        setLoading(false);
     }
 
     return (
-
         <ScreenContainer scrollable={false}>
             <FlatList
                 data={transactions}
@@ -93,60 +67,59 @@ export default function PendingTransactions() {
                 maxToRenderPerBatch={5}
                 windowSize={5}
                 renderItem={({ item }) => (
-                    <Card mode="contained" style={{ margin: 10, padding: 5 }} onPress={() => onSelectTransaction(item)}>
-                        <Card.Content style={{}}>
+                    <Card mode="contained" style={styles.transactionCard}>
+                        <Card.Content>
                             <View>
-                                <View style={{ display: 'flex', flexDirection: 'row' }}>
-                                    <Text style={{ fontWeight: 'bold', paddingRight: 5 }}>Amount:</Text>
+                                <View style={styles.row}>
+                                    <Text style={styles.label}>Amount:</Text>
                                     <Text>{item.amount}</Text>
                                 </View>
-                                <View style={{ display: 'flex', flexDirection: 'row' }}>
-                                    <Text style={{ fontWeight: 'bold', paddingRight: 5 }}>Currency:</Text>
+                                <View style={styles.row}>
+                                    <Text style={styles.label}>Currency:</Text>
                                     <Text>{item.currency}</Text>
                                 </View>
-                                <View style={{ display: 'flex', flexDirection: 'row' }}>
-                                    <Text style={{ fontWeight: 'bold', paddingRight: 5 }}>Date:</Text>
+                                <View style={styles.row}>
+                                    <Text style={styles.label}>Date:</Text>
                                     <Text>{new Date(item.bookingDate).toLocaleString(undefined, { day: "numeric", month: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: false })}</Text>
                                 </View>
                             </View>
-                            <View style={{ display: 'flex', flexDirection: 'row', justifyContent: 'flex-end', gap: 10, paddingTop: 25 }}>
+                            <View style={styles.buttonRow}>
                                 <Button mode="contained" onPress={() => onAdd(item)}>Add</Button>
-                                <Button style={{ backgroundColor: MD2Colors.red500 }} mode="contained">Remove</Button>
+                                <Button style={styles.removeButton} mode="contained">Remove</Button>
                             </View>
                         </Card.Content>
                     </Card>
                 )}
             />
 
-            <Modal ref={modalRef} loading={loading} title={"Categorize Transaction"} onSubmit={((cancelled: boolean) => cancelled ? null : onSave())}>
+            <Modal ref={modalRef} loading={categorizeMutation.isPending} title={"Categorize Transaction"} onSubmit={((cancelled: boolean) => cancelled ? null : onSave())}>
                 {selectedTransaction &&
                     <>
-                        <View style={{ paddingBottom: 20, display: 'flex', gap: 10 }}>
+                        <View style={styles.detailContainer}>
                             <View>
-                                <Label style={{ textAlign: "left", fontWeight: 'bold' }}>Amount:</Label>
-                                <Label style={{ textAlign: "left" }}>{` ${selectedTransaction?.amount}`}</Label>
+                                <Label style={styles.detailLabel}>Amount:</Label>
+                                <Label style={styles.detailValue}>{` ${selectedTransaction?.amount}`}</Label>
                             </View>
                             <View>
-                                <Label style={{ textAlign: "left", fontWeight: 'bold' }}>Currency:</Label>
-                                <Label style={{ textAlign: "left" }}>{` ${selectedTransaction?.currency}`}</Label>
+                                <Label style={styles.detailLabel}>Currency:</Label>
+                                <Label style={styles.detailValue}>{` ${selectedTransaction?.currency}`}</Label>
                             </View>
                             <View>
-                                <Label style={{ textAlign: "left", fontWeight: 'bold' }}>Date: </Label>
-                                <Label style={{ textAlign: "left" }}>{`${new Date(selectedTransaction?.bookingDate).toLocaleDateString()}`}</Label>
+                                <Label style={styles.detailLabel}>Date: </Label>
+                                <Label style={styles.detailValue}>{`${new Date(selectedTransaction?.bookingDate).toLocaleDateString()}`}</Label>
                             </View>
                         </View>
-                        <Label style={{ textAlign: "left" }}>Select Budget:</Label>
-                        <View style={{ display: 'flex', gap: 10, flexDirection: 'row', paddingTop: 10, paddingBottom: 10 }}>
-                            {budgetState.budgets.map(b =>
+                        <Label style={styles.detailValue}>Select Budget:</Label>
+                        <View style={styles.selectionRow}>
+                            {budgets.map(b =>
                                 <Button key={b.id} mode={b.name == selectedBudget?.name ? "contained" : "outlined"} onPress={() => onSelectBudget(b)}>
                                     {b.name}
                                 </Button>
-
                             )}
                         </View>
 
-                        <Label style={{ textAlign: "left" }}>Select Category:</Label>
-                        <View style={{ display: 'flex', gap: 10, flexDirection: 'row', paddingTop: 10, paddingBottom: 10 }}>
+                        <Label style={styles.detailValue}>Select Category:</Label>
+                        <View style={styles.selectionRow}>
                             {selectedBudget?.budgetCategories?.map(c =>
                                 <Button key={c.id} mode={c.id == selectedCategoryId ? "contained" : "outlined"} onPress={() => onSelectBudgetCategory(c)}>
                                     {c.name}
@@ -168,7 +141,46 @@ export default function PendingTransactions() {
                     Operation failed.
                 </Snackbar>
             </Portal>
-        </ScreenContainer >
-
+        </ScreenContainer>
     );
 }
+
+const styles = StyleSheet.create({
+    transactionCard: {
+        margin: 10,
+        padding: 5,
+    },
+    row: {
+        flexDirection: 'row',
+    },
+    label: {
+        fontWeight: 'bold',
+        paddingRight: 5,
+    },
+    buttonRow: {
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+        gap: 10,
+        paddingTop: 25,
+    },
+    removeButton: {
+        backgroundColor: MD2Colors.red500,
+    },
+    detailContainer: {
+        paddingBottom: 20,
+        gap: 10,
+    },
+    detailLabel: {
+        textAlign: 'left',
+        fontWeight: 'bold',
+    },
+    detailValue: {
+        textAlign: 'left',
+    },
+    selectionRow: {
+        gap: 10,
+        flexDirection: 'row',
+        paddingTop: 10,
+        paddingBottom: 10,
+    },
+});

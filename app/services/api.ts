@@ -1,7 +1,6 @@
-import { AppUser, BankOption, BankTransaction, Budget, BudgetCategory, BudgetInvite, Currency, Spending } from '@/types/Types';
-import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
+import { AppUser, BankOption, BankTransaction, Budget, BudgetCategory, BudgetInvite, CategorizeTransactionDto, Currency, Spending } from '@/types/Types';
+import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
-
 
 export interface GoogleAuthResponse {
   jwt: string;
@@ -17,165 +16,129 @@ export interface GoogleUserDto {
   notificationToken: string
 }
 
-const BASE_URL = 'https://84c6-88-203-208-219.ngrok-free.app';
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'https://84c6-88-203-208-219.ngrok-free.app';
 
-const api: AxiosInstance = axios.create({
+const api = axios.create({
   baseURL: BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Attach JWT to every request automatically
-api.interceptors.request.use(async (config: AxiosRequestConfig) => {
+api.interceptors.request.use(async (config) => {
   const token = await SecureStore.getItemAsync('token');
-  console.log(token);
-  console.log(token);
-
   if (token && config.headers) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });
 
-export const googleLogin = async (userDto: GoogleUserDto): Promise<string> => {
-  const response = await api.post<GoogleAuthResponse>('/api/user', userDto);
-  const jwt = response.data;
-  return jwt;
+let onUnauthorized: (() => void) | null = null;
 
+export const setOnUnauthorized = (callback: () => void) => {
+  onUnauthorized = callback;
+};
+
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    if (error?.response?.status === 401) {
+      await SecureStore.deleteItemAsync('token');
+      onUnauthorized?.();
+    }
+    return Promise.reject(error);
+  }
+);
+
+export const googleLogin = async (userDto: GoogleUserDto): Promise<string> => {
+  const response = await api.post('/api/user', userDto);
+  return response.data;
 };
 
 export const getUser = async (): Promise<AppUser> => {
-  const response = await api.get<GoogleAuthResponse>('/api/user');
-  const userData = response.data;
-  return userData;
-
+  const response = await api.get('/api/user');
+  return response.data;
 };
 
 export const getBanks = async (bankName: string): Promise<BankOption[]> => {
-  const response = await api.get<BankOption[]>(`/api/bank?bankName=${bankName}`);
-  const banks = response.data;
-  return banks;
-
+  const response = await api.get(`/api/bank?bankName=${bankName}`);
+  return response.data;
 };
 
 export const startBankConnection = async (bankName: string, countryCode: string, bankImgUrl: string, maximumConsentValidity: number): Promise<string> => {
-  console.log(encodeURIComponent(bankImgUrl));
-  const response = await api.get<string>(`/api/Bank/connect?bankName=${bankName}&countryCode=${countryCode}&bankImageUrl=${bankImgUrl}&maximumConsentValidity=${maximumConsentValidity}`);
-  const redirectUrl = response.data;
-  return redirectUrl;
-
+  const response = await api.get(`/api/Bank/connect?bankName=${bankName}&countryCode=${countryCode}&bankImageUrl=${bankImgUrl}&maximumConsentValidity=${maximumConsentValidity}`);
+  return response.data;
 };
 
 export const getNotCategorizedTransactions = async (): Promise<BankTransaction[]> => {
-  const response = await api.get<boolean>('/api/Transactions');
-  const b = response.data;
-  return b;
+  const response = await api.get('/api/Transactions');
+  return response.data;
 };
 
-export const categorizeTransaction = async (transaction: BankTransaction): Promise<Spending> => {
-  const response = await api.post<boolean>('/api/Transactions');
-  console.log(response.data);
-  const b = response.data;
-  return b;
+export const categorizeTransaction = async (transaction: CategorizeTransactionDto): Promise<Spending> => {
+  const response = await api.post('/api/Transactions', transaction);
+  return response.data;
 };
 
 export const createBudget = async (budget: Budget): Promise<Budget> => {
-  const response = await api.post<string>('/api/budget', budget);
-  const b = response.data;
-  return b;
+  const response = await api.post('/api/budget', budget);
+  return response.data;
 };
 
 export const getBudgets = async (): Promise<Budget[]> => {
-  const response = await api.get<boolean>('/api/budget');
-  console.log(response.data);
-
-  const b = response.data;
-  return b;
+  const response = await api.get('/api/budget');
+  return response.data;
 };
 
 export const getCurrencies = async (): Promise<Currency[]> => {
-  const response = await api.get<boolean>('/api/currency');
-
-  const b = response.data;
-  return b;
+  const response = await api.get('/api/currency');
+  return response.data;
 };
 
 export const createSpending = async (spending: Spending): Promise<Spending> => {
-  const response = await api.post<boolean>('/api/spending', spending);
-  console.log(response.data);
-
-  const b = response.data;
-  return b;
+  const response = await api.post('/api/spending', spending);
+  return response.data;
 };
 
 export const createBudgetCategory = async (budgetCategory: BudgetCategory): Promise<BudgetCategory> => {
-  const response = await api.post<boolean>('/api/budgetcategory', budgetCategory);
-  console.log(response.data);
-
-  const b = response.data;
-  return b;
+  const response = await api.post('/api/budgetcategory', budgetCategory);
+  return response.data;
 };
 
 export const deleteSpending = async (spendingId: number): Promise<number> => {
-  const response = await api.delete<number>("/api/spending", {
-    params: { spendingId: spendingId }
+  const response = await api.delete("/api/spending", {
+    params: { spendingId }
   });
-
-  console.log(response.data);
-
-  const b = response.data;
-  return b;
+  return response.data;
 };
 
 export const deleteBudgetCategory = async (budgetCategoryId: number): Promise<number> => {
-  const response = await api.delete<number>("/api/budgetcategory", {
-    params: { budgetCategoryId: budgetCategoryId }
+  const response = await api.delete("/api/budgetcategory", {
+    params: { budgetCategoryId }
   });
-
-  console.log(response.data);
-
-  const b = response.data;
-  return b;
+  return response.data;
 };
 
 export const deleteBudget = async (budgetId: number): Promise<number> => {
-  const response = await api.delete<number>("/api/budget", {
-    params: { budgetId: budgetId }
+  const response = await api.delete("/api/budget", {
+    params: { budgetId }
   });
-
-  console.log(response.data);
-
-  const b = response.data;
-  return b;
+  return response.data;
 };
 
 export const finishBudget = async (budget: Budget): Promise<number> => {
-  const response = await api.post<Budget>("/api/budget/finish", budget);
-
-  console.log(response.data);
-
-  const b = response.data;
-  return b;
+  const response = await api.post("/api/budget/finish", budget);
+  return response.data;
 };
 
 export const createInvite = async (budgetInvite: BudgetInvite): Promise<number> => {
-  const response = await api.post<Budget>("/api/budgetinvite", budgetInvite);
-
-  console.log(response.data);
-
-  const b = response.data;
-  return b;
+  const response = await api.post("/api/budgetinvite", budgetInvite);
+  return response.data;
 };
 
 export const respondToInvite = async (inviteId: number, accepted: boolean): Promise<number> => {
-  const response = await api.patch<Budget>(`/api/budgetinvite/${inviteId}`, accepted);
-
-  console.log(response.data);
-
-  const b = response.data;
-  return b;
+  const response = await api.patch(`/api/budgetinvite/${inviteId}`, accepted);
+  return response.data;
 };
-
 
 export default api;

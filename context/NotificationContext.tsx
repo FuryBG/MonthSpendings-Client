@@ -1,3 +1,5 @@
+import { queryClient } from "@/lib/queryClient";
+import { useAuthStore } from "@/stores/authStore";
 import { AppNotification, AppNotificationType } from "@/types/Types";
 import { registerForPushNotificationsAsync } from "@/utils/registerForPushNotificationsAsync";
 import { EventSubscription } from "expo-modules-core";
@@ -7,11 +9,10 @@ import React, {
   ReactNode,
   useContext,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
-import { useAuth } from "./AuthContext";
-import { useBudgets } from "./BudgetContext";
 
 interface NotificationContextType {
   expoPushToken: string | null;
@@ -45,9 +46,6 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
   const notificationListener = useRef<EventSubscription | null>(null);
   const responseListener = useRef<EventSubscription | null>(null);
 
-  const { reFetchAuth } = useAuth();
-  const { reFetchBudgets } = useBudgets();
-
   useEffect(() => {
     Notifications.setNotificationHandler({
       handleNotification: async (): Promise<Notifications.NotificationBehavior> => ({
@@ -56,68 +54,53 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
         shouldShowBanner: true,
         priority: Notifications.AndroidNotificationPriority.MAX,
         shouldShowList: true,
-
       }),
     });
-    // Register for push notifications and get token
+
     registerForPushNotificationsAsync()
       .then((token) => {
         if (token) setExpoPushToken(token);
       })
       .catch((err) => {
-        console.error("Error registering for push notifications:", err);
         setError(err);
       });
 
-    // When a notification is received while app is open
     notificationListener.current = Notifications.addNotificationReceivedListener(
       (receivedNotification) => {
-        console.log("🔔 Notification Received:", notification);
-        setNotification(notification);
+        setNotification(receivedNotification);
 
-        console.log(receivedNotification.request.content.data);
         const appNotification = receivedNotification.request.content.data as AppNotification;
 
         switch (appNotification.type) {
           case AppNotificationType.ReceivedInvite:
-            onReceivedInvite();
+            useAuthStore.getState().restoreSession();
             break;
-          case AppNotificationType.SpendingAdd || AppNotificationType.SpendingDelete:
-            onSpendingUpdate();
-            break;
+          case AppNotificationType.SpendingAdd:
           case AppNotificationType.SpendingDelete:
-            onSpendingUpdate();
+            queryClient.invalidateQueries({ queryKey: ['budgets'] });
             break;
         }
       }
     );
 
-    function onReceivedInvite() {
-      reFetchAuth();
-    }
-
-    function onSpendingUpdate() {
-      reFetchBudgets();
-    }
-
-    // When user taps on a notification
     responseListener.current =
-      Notifications.addNotificationResponseReceivedListener((response) => {
-        console.log("📲 Notification Response:", response);
+      Notifications.addNotificationResponseReceivedListener(() => {
         // handle notification response here (e.g., navigate based on response)
       });
 
-    // ✅ Cleanup using .remove() instead of removeNotificationSubscription
     return () => {
       notificationListener.current?.remove();
       responseListener.current?.remove();
     };
   }, []);
 
+  const value = useMemo(
+    () => ({ expoPushToken, notification, error }),
+    [expoPushToken, notification, error]
+  );
+
   return (
-    <NotificationContext.Provider
-      value={{ expoPushToken, notification, error }}
-    >
+    <NotificationContext.Provider value={value}>
       {children}
     </NotificationContext.Provider>
   );

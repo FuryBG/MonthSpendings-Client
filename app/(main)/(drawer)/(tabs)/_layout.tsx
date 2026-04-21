@@ -3,7 +3,6 @@ import { IconSymbol } from "@/components/IconSymbol";
 import { Tabs } from "expo-router";
 import { useTheme } from "react-native-paper";
 
-
 export default function TabsLayout() {
   const theme = useTheme();
 

@@ -1,37 +1,43 @@
 import { Modal, ModalRef } from "@/components/Modal";
 import { ScreenContainer } from "@/components/ScreenContainer";
-import { useAuth } from "@/context/AuthContext";
-import { useBudgets } from "@/context/BudgetContext";
-import { useTitle } from "@/context/NavBarTitleContext";
+import {
+    useAddBudgetCategoryMutation,
+    useBudgetsQuery,
+    useDeleteBudgetCategoryMutation,
+    useDeleteBudgetMutation,
+    useFinishBudgetMutation,
+} from "@/hooks/useBudgetQueries";
+import { useTitleStore } from "@/stores/titleStore";
 import { BudgetCategory, BudgetInvite, Spending } from "@/types/Types";
-import { useFocusEffect, useLocalSearchParams, useNavigation, useRouter } from "expo-router";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { Button, HelperText, IconButton, List, MD2Colors, Portal, Snackbar, TextInput } from "react-native-paper";
-import { createBudgetCategory, createInvite, deleteBudget, deleteBudgetCategory, finishBudget } from "../services/api";
-
+import { createInvite } from "../services/api";
 
 export default function ManageBudgetScreen() {
-    const navigation = useNavigation();
     const router = useRouter();
-    const { user } = useAuth();
-    const { reFetchBudgets, budgetState, removeBudgetCategory, addBudgetCategory, removeBudget } = useBudgets();
+    const { data: budgets = [] } = useBudgetsQuery();
+    const deleteBudgetCategoryMutation = useDeleteBudgetCategoryMutation();
+    const addBudgetCategoryMutation = useAddBudgetCategoryMutation();
+    const deleteBudgetMutation = useDeleteBudgetMutation();
+    const finishBudgetMutation = useFinishBudgetMutation();
     const finishPeriodModalRef = useRef<ModalRef>(null);
     const deleteCategoryModalRef = useRef<ModalRef>(null);
     const createCategoryModalRef = useRef<ModalRef>(null);
     const deleteBudgetModalRef = useRef<ModalRef>(null);
     const createInviteModalRef = useRef<ModalRef>(null);
-    const { setTitle } = useTitle();
+    const setTitle = useTitleStore((s) => s.setTitle);
     const params = useLocalSearchParams();
     const [visible, setVisible] = useState(false);
     const [loading, setLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
     const [selectedBudgetCategoryId, setSelectedBudgetCategoryId] = useState<number>(0);
-    const selectedMainBudget = budgetState.budgets.find(b => b.id == Number(params.budgetId));
-    const selectedCategory = budgetState.budgets.filter(b => b.id == Number(params.budgetId)).flatMap(x => x.budgetCategories).find(c => c?.id == selectedBudgetCategoryId);
+    const selectedMainBudget = budgets.find(b => b.id == Number(params.budgetId));
+    const selectedCategory = budgets.filter(b => b.id == Number(params.budgetId)).flatMap(x => x.budgetCategories).find(c => c?.id == selectedBudgetCategoryId);
 
-    const { control, handleSubmit, watch, reset } = useForm<BudgetCategory>({
+    const { control, handleSubmit, reset } = useForm<BudgetCategory>({
         defaultValues: {
             id: 0,
             budgetId: selectedMainBudget?.id,
@@ -50,7 +56,7 @@ export default function ManageBudgetScreen() {
     const { control: inviteControl, handleSubmit: inviteHandleSubmit, reset: inviteReset } = useForm<BudgetInvite>({
         defaultValues: {
             id: 0,
-            budgetId: budgetState.selectedMainBudgetId ?? 0,
+            budgetId: selectedMainBudget?.id ?? 0,
             receiverEmail: ""
         }
     });
@@ -76,45 +82,32 @@ export default function ManageBudgetScreen() {
         createInviteModalRef.current?.open();
     }
 
-
     async function onDeleteCategory(cancelled: boolean) {
-        if (cancelled) {
-            return;
-        }
-
+        if (cancelled) return;
         try {
             setLoading(true);
-            var budgetCategoryId = await deleteBudgetCategory(selectedBudgetCategoryId!);
-            removeBudgetCategory(budgetCategoryId, selectedMainBudget!.id);
+            await deleteBudgetCategoryMutation.mutateAsync(selectedBudgetCategoryId!);
             setLoading(false);
             deleteCategoryModalRef.current?.close();
-        }
-        catch (e) {
+        } catch {
             setErrorMessage("Deleting category was not successful.");
             setVisible(true);
             setLoading(false);
-            console.log(e);
         }
     }
 
     async function onDeleteBudget(cancelled: boolean) {
-        if (cancelled) {
-            return;
-        }
-
+        if (cancelled) return;
         try {
             setLoading(true);
-            var budgetId = await deleteBudget(selectedMainBudget!.id);
-            removeBudget(budgetId);
+            await deleteBudgetMutation.mutateAsync(selectedMainBudget!.id);
             setLoading(false);
             deleteBudgetModalRef.current?.close();
-            router.push("/(main)/(tabs)");
-        }
-        catch (e) {
+            router.push("/(main)/(drawer)/(tabs)");
+        } catch {
             setErrorMessage("Deleting budget was not successful.");
             setVisible(true);
             setLoading(false);
-            console.log(e);
         }
     }
 
@@ -123,17 +116,14 @@ export default function ManageBudgetScreen() {
             setLoading(true);
             budgetCategory.budgetId = selectedMainBudget!.id;
             budgetCategory.spendings[0].budgetPeriodId = selectedMainBudget?.budgetPeriods[0].id ?? 0;
-            const addedBudgetCategory = await createBudgetCategory(budgetCategory);
-            addBudgetCategory(addedBudgetCategory);
+            await addBudgetCategoryMutation.mutateAsync(budgetCategory);
             setLoading(false);
             createCategoryModalRef.current?.close();
             reset();
-        }
-        catch (e) {
+        } catch {
             setErrorMessage("Creating category was not successful.");
             setVisible(true);
             setLoading(false);
-            console.log(e);
         }
     }
 
@@ -143,28 +133,35 @@ export default function ManageBudgetScreen() {
             await createInvite(budgetInvite);
             setLoading(false);
             createInviteModalRef.current?.close();
-            reset();
-        }
-        catch (e) {
+            inviteReset();
+        } catch {
             setErrorMessage("Sending invite was not successful.");
             setVisible(true);
             setLoading(false);
-            console.log(e);
         }
     }
 
     async function onFinishPeriod(cancelled: boolean) {
-        if (cancelled || selectedMainBudget == undefined) {
-            return;
-        }
+        if (cancelled || selectedMainBudget == undefined) return;
 
-        selectedMainBudget!.budgetCategories!.forEach(category => {
-            let spending: Spending = { id: 0, budgetPeriodId: 0, budgetCategoryId: category.id, date: new Date().toISOString(), amount: calculateRemaining(category.spendings), bankTransaction: null, bankTransactionId: null, description: "MOVED TO NEXT PERIOD" };
-            category.spendings = [spending];
-        });
+        const budgetToFinish = {
+            ...selectedMainBudget,
+            budgetCategories: selectedMainBudget.budgetCategories!.map(category => ({
+                ...category,
+                spendings: [{
+                    id: 0,
+                    budgetPeriodId: 0,
+                    budgetCategoryId: category.id,
+                    date: new Date().toISOString(),
+                    amount: calculateRemaining(category.spendings),
+                    bankTransaction: null,
+                    bankTransactionId: null,
+                    description: "MOVED TO NEXT PERIOD"
+                } as Spending],
+            })),
+        };
 
-        await finishBudget(selectedMainBudget);
-        reFetchBudgets();
+        await finishBudgetMutation.mutateAsync(budgetToFinish);
         finishPeriodModalRef.current?.close();
     }
 
@@ -181,24 +178,21 @@ export default function ManageBudgetScreen() {
 
     return (
         <ScreenContainer scrollable={true}>
-            <View style={{ display: "flex", flexDirection: "row", gap: "15", justifyContent: "space-between" }}>
-                <Button onPress={onOpenFinishPeriodModal} style={{ marginBottom: 20 }} mode="contained">Finish</Button>
-                <Button onPress={onOpenCreateInviteModal} style={{ marginBottom: 20 }} mode="contained">Invite</Button>
+            <View style={styles.topButtons}>
+                <Button onPress={onOpenFinishPeriodModal} style={styles.topButton} mode="contained">Finish</Button>
+                <Button onPress={onOpenCreateInviteModal} style={styles.topButton} mode="contained">Invite</Button>
             </View>
-            <List.Accordion style={{ marginBottom: 20 }} title="Categories" id="1">
+            <List.Accordion style={styles.accordion} title="Categories" id="1">
                 {selectedMainBudget != null && selectedMainBudget.budgetCategories?.map(bc =>
-                    <List.Item left={props => <List.Icon {...props} icon="account-cash" />} right={props => <IconButton icon="close" iconColor={MD2Colors.red800} onPress={() => onOpenDeletecategoryModal(bc)} />} key={bc.id} title={bc.name} />
+                    <List.Item left={props => <List.Icon {...props} icon="account-cash" />} right={() => <IconButton icon="close" iconColor={MD2Colors.red800} onPress={() => onOpenDeletecategoryModal(bc)} />} key={bc.id} title={bc.name} />
                 )}
-                <Button onPress={onOpenCreateCategoryModal} style={{ marginBottom: 20 }}>Add Category</Button>
+                <Button onPress={onOpenCreateCategoryModal} style={styles.accordion}>Add Category</Button>
             </List.Accordion>
-            <Button style={{ marginBottom: 20 }} textColor="red" onPress={onOpenDeleteBudgetModal}>Delete Budget</Button>
+            <Button style={styles.accordion} textColor="red" onPress={onOpenDeleteBudgetModal}>Delete Budget</Button>
 
-            <Modal ref={finishPeriodModalRef} loading={loading} title={`Are you sure you wan't to finish ${selectedMainBudget?.name}? All remaining funds in categories will be transfered to the new period.`} onSubmit={(cancelled: boolean) => onFinishPeriod(cancelled)}>
-            </Modal>
-            <Modal ref={deleteCategoryModalRef} loading={loading} title={`Are you sure you wan't to delete ${selectedCategory?.name} category? All spendings history will be lost.`} onSubmit={(cancelled: boolean) => onDeleteCategory(cancelled)}>
-            </Modal>
-            <Modal ref={deleteBudgetModalRef} loading={loading} title={`Are you sure you wan't to delete ${selectedMainBudget?.name} budget? All spending categories and spendings history will be lost.`} onSubmit={(cancelled: boolean) => onDeleteBudget(cancelled)}>
-            </Modal>
+            <Modal ref={finishPeriodModalRef} loading={loading} title={`Are you sure you wan't to finish ${selectedMainBudget?.name}? All remaining funds in categories will be transfered to the new period.`} onSubmit={(cancelled: boolean) => onFinishPeriod(cancelled)} />
+            <Modal ref={deleteCategoryModalRef} loading={loading} title={`Are you sure you wan't to delete ${selectedCategory?.name} category? All spendings history will be lost.`} onSubmit={(cancelled: boolean) => onDeleteCategory(cancelled)} />
+            <Modal ref={deleteBudgetModalRef} loading={loading} title={`Are you sure you wan't to delete ${selectedMainBudget?.name} budget? All spending categories and spendings history will be lost.`} onSubmit={(cancelled: boolean) => onDeleteBudget(cancelled)} />
             <Modal ref={createCategoryModalRef} loading={loading} title={"Create Category"} onSubmit={(cancelled: boolean) => cancelled ? null : handleSubmit(onCreateCategory)()}>
                 <Controller
                     control={control}
@@ -257,3 +251,17 @@ export default function ManageBudgetScreen() {
         </ScreenContainer>
     );
 }
+
+const styles = StyleSheet.create({
+    topButtons: {
+        flexDirection: 'row',
+        gap: 15,
+        justifyContent: 'space-between',
+    },
+    topButton: {
+        marginBottom: 20,
+    },
+    accordion: {
+        marginBottom: 20,
+    },
+});

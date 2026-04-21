@@ -1,26 +1,23 @@
-import { deleteSpending } from '@/app/services/api';
 import { ScreenContainer } from '@/components/ScreenContainer';
-import { useBudgets } from '@/context/BudgetContext';
-import { useTitle } from '@/context/NavBarTitleContext';
-import { DrawerScreenProps } from '@react-navigation/drawer';
+import { useBudgetsQuery, useDeleteSpendingMutation } from '@/hooks/useBudgetQueries';
+import { useBudgetUIStore } from '@/stores/budgetUIStore';
+import { useTitleStore } from '@/stores/titleStore';
 import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import React from 'react';
+import { StyleSheet } from 'react-native';
 import { Card, IconButton, MD2Colors, Text } from 'react-native-paper';
 
-type DrawerParamList = {
-  GroupDetails: { id: string; title: string };
-};
-
-// Props type for React Navigation Drawer screen
-type Props = DrawerScreenProps<DrawerParamList, 'GroupDetails'>;
-
-
 export default function SpendingDetailsScreen() {
-  const { setTitle } = useTitle();
-  const { budgetState, removeSpending } = useBudgets();
+  const setTitle = useTitleStore((s) => s.setTitle);
+  const { data: budgets = [] } = useBudgetsQuery();
+  const { selectedMainBudgetId } = useBudgetUIStore();
+  const deleteSpendingMutation = useDeleteSpendingMutation();
   const { selectedCategoryId } = useLocalSearchParams();
-  const selectedCategory = budgetState.budgets.filter(b => b.id == budgetState.selectedMainBudgetId).flatMap(x => x.budgetCategories).find(c => c?.id == Number(selectedCategoryId));
-  const selectedMainBudget = budgetState.budgets.find(b => b.id == budgetState.selectedMainBudgetId);
+  const selectedCategory = budgets
+    .filter(b => b.id === selectedMainBudgetId)
+    .flatMap(x => x.budgetCategories)
+    .find(c => c?.id === Number(selectedCategoryId));
+  const selectedMainBudget = budgets.find(b => b.id === selectedMainBudgetId);
 
   useFocusEffect(() => {
     setTitle(selectedCategory?.name ? selectedCategory.name : "");
@@ -28,27 +25,34 @@ export default function SpendingDetailsScreen() {
 
   async function onDeleteSpending(spendingId: number) {
     try {
-      await deleteSpending(spendingId);
-      removeSpending(spendingId, Number(selectedCategoryId));
-    }
-    catch (e) {
-      console.log(e);
+      await deleteSpendingMutation.mutateAsync(spendingId);
+    } catch {
+      // error handled by mutation state
     }
   }
 
   return (
     <ScreenContainer scrollable={true}>
-      {selectedCategory?.spendings?.length == 0 ? <Text style={{ textAlign: "center" }}>No spending history</Text> : null}
+      {selectedCategory?.spendings?.length == 0 ? <Text style={styles.emptyText}>No spending history</Text> : null}
       {selectedCategory?.spendings?.map(sp =>
-        <Card key={sp.id} style={{ marginBottom: 12 }}>
+        <Card key={sp.id} style={styles.card}>
           <Card.Title titleStyle={{ color: sp.amount < 0 ? "red" : "green" }}
             title={`${sp.amount} ${selectedMainBudget?.currency.symbol}`}
             subtitle={sp.description}
-            left={(props) => <Text>{sp.date}</Text>}
-            right={(props) =>
+            left={() => <Text>{sp.date}</Text>}
+            right={() =>
               <IconButton iconColor={MD2Colors.red800} icon="close" onPress={() => onDeleteSpending(sp.id)} />} />
         </Card>
       )}
     </ScreenContainer>
   );
 }
+
+const styles = StyleSheet.create({
+  emptyText: {
+    textAlign: 'center',
+  },
+  card: {
+    marginBottom: 12,
+  },
+});

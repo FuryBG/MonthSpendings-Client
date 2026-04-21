@@ -1,13 +1,12 @@
-import { useAuth } from '@/context/AuthContext';
+import { useAuthStore } from '@/stores/authStore';
 import { Redirect, Stack } from 'expo-router';
 import React from 'react';
 
 export default function PagesLayout() {
-  const { user, loading } = useAuth();
+  const user = useAuthStore((s) => s.user);
 
-
-  if (user != undefined) {
-    return <Redirect href="/(main)/(tabs)" />;
+  if (user) {
+    return <Redirect href="/(main)/(drawer)/(tabs)" />;
   }
 
   return (

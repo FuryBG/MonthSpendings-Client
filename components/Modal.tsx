@@ -17,7 +17,7 @@ export type ModalRef = {
 
 
 export const Modal = forwardRef<ModalRef, ModalProps>(
-  ({ title, onSubmit, children, loading }: ModalProps, ref) => {
+  function Modal({ title, onSubmit, children, loading }: ModalProps, ref) {
     const [visible, setVisible] = useState(false);
     const containerStyle = { borderRadius: 10 };
 
