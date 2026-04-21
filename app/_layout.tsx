@@ -1,4 +1,5 @@
 import { setOnUnauthorized } from '@/app/services/api';
+import { GlobalSnackbar } from '@/components/GlobalSnackbar';
 import { NotificationProvider } from '@/context/NotificationContext';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { queryClient } from '@/lib/queryClient';
@@ -58,6 +59,7 @@ export default function RootLayout() {
           <PaperProvider theme={theme}>
             <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
               <Stack screenOptions={{ headerShown: false }} />
+              <GlobalSnackbar />
               <StatusBar style="auto" />
             </ThemeProvider>
           </PaperProvider>

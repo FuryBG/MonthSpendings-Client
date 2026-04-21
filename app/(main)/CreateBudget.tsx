@@ -10,7 +10,7 @@ import { useCallback, useRef } from "react";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { StyleSheet, View } from "react-native";
 import { ScrollView } from "react-native-gesture-handler";
-import { Appbar, Button, HelperText, IconButton, List, MD2Colors, Portal, Snackbar, Text, TextInput } from "react-native-paper";
+import { Appbar, Button, HelperText, IconButton, List, MD2Colors, Text, TextInput } from "react-native-paper";
 
 export default function CreateBudgetScreen() {
     const navigation = useNavigation();
@@ -161,18 +161,6 @@ export default function CreateBudgetScreen() {
                 </View>
             ))}
             <Button onPress={() => addCategory({ id: 0, name: '', budgetId: 0, spendings: [{ amount: undefined!, id: 0, date: null, budgetCategoryId: 0, budgetPeriodId: 0, description: "ADD MONEY", bankTransaction: null, bankTransactionId: null }] })}>Add Category</Button>
-            <Portal>
-                <Snackbar
-                    visible={createBudgetMutation.isError}
-                    onDismiss={() => createBudgetMutation.reset()}
-                    duration={5000}
-                    action={{
-                        label: 'OK',
-                        onPress: () => createBudgetMutation.reset(),
-                    }}>
-                    Create Budget failed.
-                </Snackbar>
-            </Portal>
         </ScreenContainer>
     );
 }

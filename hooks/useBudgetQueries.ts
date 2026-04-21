@@ -11,7 +11,7 @@ import {
 import { queryClient } from '@/lib/queryClient';
 import { useAuthStore } from '@/stores/authStore';
 import { Budget, BudgetCategory, Spending } from '@/types/Types';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { MutationMeta, useMutation, useQuery } from '@tanstack/react-query';
 
 export const useBudgetsQuery = () => {
   const user = useAuthStore((s) => s.user);
@@ -46,34 +46,38 @@ export const useCreateBudgetMutation = () =>
     },
   });
 
-export const useDeleteBudgetMutation = () =>
+export const useDeleteBudgetMutation = (meta?: MutationMeta) =>
   useMutation({
     mutationFn: (budgetId: number) => deleteBudget(budgetId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['budgets'] });
     },
+    meta,
   });
 
-export const useAddBudgetCategoryMutation = () =>
+export const useAddBudgetCategoryMutation = (meta?: MutationMeta) =>
   useMutation({
     mutationFn: (category: BudgetCategory) => createBudgetCategory(category),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['budgets'] });
     },
+    meta,
   });
 
-export const useDeleteBudgetCategoryMutation = () =>
+export const useDeleteBudgetCategoryMutation = (meta?: MutationMeta) =>
   useMutation({
     mutationFn: (categoryId: number) => deleteBudgetCategory(categoryId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['budgets'] });
     },
+    meta,
   });
 
-export const useFinishBudgetMutation = () =>
+export const useFinishBudgetMutation = (meta?: MutationMeta) =>
   useMutation({
     mutationFn: (budget: Budget) => finishBudget(budget),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['budgets'] });
     },
+    meta,
   });

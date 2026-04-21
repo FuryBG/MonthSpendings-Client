@@ -1,5 +1,6 @@
 import { OverlayLoader } from "@/components/OverlayLoader";
 import { ScreenContainer } from "@/components/ScreenContainer";
+import { useSnackbarStore } from "@/stores/snackbarStore";
 import { useTitleStore } from "@/stores/titleStore";
 import { BankOption } from "@/types/Types";
 import { useFocusEffect } from "expo-router";
@@ -7,12 +8,12 @@ import * as WebBrowser from "expo-web-browser";
 import debounce from 'lodash.debounce';
 import { useEffect, useRef, useState } from "react";
 import { FlatList, Image, StyleSheet, View } from "react-native";
-import { Card, Portal, Searchbar, Snackbar, Text } from "react-native-paper";
+import { Card, Searchbar, Text } from "react-native-paper";
 import { getBanks, startBankConnection } from "../services/api";
 
 export default function ConnectBankScreen() {
     const [banks, setBanks] = useState<BankOption[]>([]);
-    const [visible, setVisible] = useState(false);
+    const showError = useSnackbarStore((s) => s.showError);
     const setTitle = useTitleStore((s) => s.setTitle);
     const [loading, setLoading] = useState(false);
     const [loadingBanks, setLoadingBanks] = useState(false);
@@ -25,6 +26,7 @@ export default function ConnectBankScreen() {
             setBanks(banks);
             setLoadingBanks(false);
         } catch {
+            showError("Failed to load banks.");
             setLoadingBanks(false);
         }
     };
@@ -36,7 +38,7 @@ export default function ConnectBankScreen() {
     const debouncedSearch = useRef(
         debounce((text: string) => {
             fetchBanks(text);
-        }, 300)
+        }, 500)
     ).current;
 
     useEffect(() => {
@@ -57,6 +59,7 @@ export default function ConnectBankScreen() {
             setLoading(false);
             await WebBrowser.openAuthSessionAsync(authUrl);
         } catch {
+            showError("Bank connection failed.");
             setLoading(false);
         }
     }
@@ -96,18 +99,6 @@ export default function ConnectBankScreen() {
                     </Card>
                 )}
             />
-            <Portal>
-                <Snackbar
-                    visible={visible}
-                    onDismiss={() => setVisible(false)}
-                    duration={5000}
-                    action={{
-                        label: 'OK',
-                        onPress: () => setVisible(false),
-                    }}>
-                    Connection failed.
-                </Snackbar>
-            </Portal>
         </ScreenContainer>
     );
 }

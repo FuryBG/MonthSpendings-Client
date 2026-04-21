@@ -64,12 +64,16 @@ export default function HomeScreen() {
   }
 
   async function onModalSubmit(spending: Spending) {
-    spending.budgetCategoryId = selectedBudgetCategoryId ?? 0;
-    spending.budgetPeriodId = selectedMainBudget?.budgetPeriods[0].id ?? 0;
-    spending.amount = negativeInput ? -Number(spending.amount) : Number(spending.amount);
-    await addSpendingMutation.mutateAsync(spending);
-    modalRef.current?.close();
-    reset();
+    try {
+      spending.budgetCategoryId = selectedBudgetCategoryId ?? 0;
+      spending.budgetPeriodId = selectedMainBudget?.budgetPeriods[0].id ?? 0;
+      spending.amount = negativeInput ? -Number(spending.amount) : Number(spending.amount);
+      await addSpendingMutation.mutateAsync(spending);
+      modalRef.current?.close();
+      reset();
+    } catch {
+      // global MutationCache shows Snackbar
+    }
   }
 
   const LeftContent = () => <Icon source={"bank"} color={MD2Colors.black} size={48} />;

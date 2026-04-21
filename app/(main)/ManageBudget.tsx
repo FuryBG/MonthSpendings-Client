@@ -7,32 +7,33 @@ import {
     useDeleteBudgetMutation,
     useFinishBudgetMutation,
 } from "@/hooks/useBudgetQueries";
+import { useSnackbarStore } from "@/stores/snackbarStore";
 import { useTitleStore } from "@/stores/titleStore";
 import { BudgetCategory, BudgetInvite, Spending } from "@/types/Types";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { StyleSheet, View } from "react-native";
-import { Button, HelperText, IconButton, List, MD2Colors, Portal, Snackbar, TextInput } from "react-native-paper";
+import { Button, HelperText, IconButton, List, MD2Colors, TextInput } from "react-native-paper";
 import { createInvite } from "../services/api";
 
 export default function ManageBudgetScreen() {
     const router = useRouter();
     const { data: budgets = [] } = useBudgetsQuery();
-    const deleteBudgetCategoryMutation = useDeleteBudgetCategoryMutation();
-    const addBudgetCategoryMutation = useAddBudgetCategoryMutation();
-    const deleteBudgetMutation = useDeleteBudgetMutation();
-    const finishBudgetMutation = useFinishBudgetMutation();
+    const skipGlobal = { skipGlobalError: true };
+    const deleteBudgetCategoryMutation = useDeleteBudgetCategoryMutation(skipGlobal);
+    const addBudgetCategoryMutation = useAddBudgetCategoryMutation(skipGlobal);
+    const deleteBudgetMutation = useDeleteBudgetMutation(skipGlobal);
+    const finishBudgetMutation = useFinishBudgetMutation(skipGlobal);
     const finishPeriodModalRef = useRef<ModalRef>(null);
     const deleteCategoryModalRef = useRef<ModalRef>(null);
     const createCategoryModalRef = useRef<ModalRef>(null);
     const deleteBudgetModalRef = useRef<ModalRef>(null);
     const createInviteModalRef = useRef<ModalRef>(null);
+    const showError = useSnackbarStore((s) => s.showError);
     const setTitle = useTitleStore((s) => s.setTitle);
     const params = useLocalSearchParams();
-    const [visible, setVisible] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [errorMessage, setErrorMessage] = useState("");
     const [selectedBudgetCategoryId, setSelectedBudgetCategoryId] = useState<number>(0);
     const selectedMainBudget = budgets.find(b => b.id == Number(params.budgetId));
     const selectedCategory = budgets.filter(b => b.id == Number(params.budgetId)).flatMap(x => x.budgetCategories).find(c => c?.id == selectedBudgetCategoryId);
@@ -90,8 +91,7 @@ export default function ManageBudgetScreen() {
             setLoading(false);
             deleteCategoryModalRef.current?.close();
         } catch {
-            setErrorMessage("Deleting category was not successful.");
-            setVisible(true);
+            showError("Deleting category was not successful.");
             setLoading(false);
         }
     }
@@ -105,8 +105,7 @@ export default function ManageBudgetScreen() {
             deleteBudgetModalRef.current?.close();
             router.push("/(main)/(drawer)/(tabs)");
         } catch {
-            setErrorMessage("Deleting budget was not successful.");
-            setVisible(true);
+            showError("Deleting budget was not successful.");
             setLoading(false);
         }
     }
@@ -121,8 +120,7 @@ export default function ManageBudgetScreen() {
             createCategoryModalRef.current?.close();
             reset();
         } catch {
-            setErrorMessage("Creating category was not successful.");
-            setVisible(true);
+            showError("Creating category was not successful.");
             setLoading(false);
         }
     }
@@ -135,8 +133,7 @@ export default function ManageBudgetScreen() {
             createInviteModalRef.current?.close();
             inviteReset();
         } catch {
-            setErrorMessage("Sending invite was not successful.");
-            setVisible(true);
+            showError("Sending invite was not successful.");
             setLoading(false);
         }
     }
@@ -236,18 +233,6 @@ export default function ManageBudgetScreen() {
                     )}
                 />
             </Modal>
-            <Portal>
-                <Snackbar
-                    visible={visible}
-                    onDismiss={() => setVisible(false)}
-                    duration={5000}
-                    action={{
-                        label: 'OK',
-                        onPress: () => setVisible(false),
-                    }}>
-                    {errorMessage}
-                </Snackbar>
-            </Portal>
         </ScreenContainer>
     );
 }

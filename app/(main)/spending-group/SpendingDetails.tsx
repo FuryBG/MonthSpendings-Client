@@ -23,12 +23,8 @@ export default function SpendingDetailsScreen() {
     setTitle(selectedCategory?.name ? selectedCategory.name : "");
   });
 
-  async function onDeleteSpending(spendingId: number) {
-    try {
-      await deleteSpendingMutation.mutateAsync(spendingId);
-    } catch {
-      // error handled by mutation state
-    }
+  function onDeleteSpending(spendingId: number) {
+    deleteSpendingMutation.mutate(spendingId);
   }
 
   return (

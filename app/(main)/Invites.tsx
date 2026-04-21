@@ -1,18 +1,19 @@
 import { OverlayLoader } from "@/components/OverlayLoader";
 import { ScreenContainer } from "@/components/ScreenContainer";
 import { useAuthStore } from "@/stores/authStore";
+import { useSnackbarStore } from "@/stores/snackbarStore";
 import { useTitleStore } from "@/stores/titleStore";
 import { useFocusEffect } from "expo-router";
 import { useState } from "react";
 import { StyleSheet, View } from "react-native";
-import { Card, Icon, IconButton, MD2Colors, Portal, Snackbar } from "react-native-paper";
+import { Card, Icon, IconButton, MD2Colors } from "react-native-paper";
 import { respondToInvite } from "../services/api";
 
 export default function InvitesScreen() {
     const user = useAuthStore((s) => s.user);
     const restoreSession = useAuthStore((s) => s.restoreSession);
+    const showError = useSnackbarStore((s) => s.showError);
     const setTitle = useTitleStore((s) => s.setTitle);
-    const [errorVisible, setErrorVisible] = useState(false);
     const [loading, setLoading] = useState(false);
 
     useFocusEffect(() => {
@@ -26,7 +27,7 @@ export default function InvitesScreen() {
             await restoreSession();
             setLoading(false);
         } catch {
-            setErrorVisible(true);
+            showError("Failed to respond to invite.");
             setLoading(false);
         }
     }
@@ -54,18 +55,6 @@ export default function InvitesScreen() {
                         </View>} />
                 </Card>
             )}
-            <Portal>
-                <Snackbar
-                    visible={errorVisible}
-                    onDismiss={() => setErrorVisible(false)}
-                    duration={5000}
-                    action={{
-                        label: 'OK',
-                        onPress: () => setErrorVisible(false),
-                    }}>
-                    Operation failed.
-                </Snackbar>
-            </Portal>
         </ScreenContainer>
     );
 }

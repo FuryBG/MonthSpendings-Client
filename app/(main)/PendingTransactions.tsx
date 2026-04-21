@@ -8,14 +8,13 @@ import { Label } from "@react-navigation/elements";
 import { useFocusEffect } from "expo-router";
 import React, { useRef, useState } from "react";
 import { FlatList, StyleSheet, View } from "react-native";
-import { Button, Card, MD2Colors, Portal, Snackbar, Text } from "react-native-paper";
+import { Button, Card, MD2Colors, Text } from "react-native-paper";
 
 export default function PendingTransactions() {
     const { data: budgets = [] } = useBudgetsQuery();
     const { data: transactions = [] } = usePendingTransactionsQuery();
     const categorizeMutation = useCategorizeTransactionMutation();
     const setTitle = useTitleStore((s) => s.setTitle);
-    const [errorVisible, setErrorVisible] = useState(false);
     const modalRef = useRef<ModalRef>(null);
 
     const [selectedBudget, setSelectedBudget] = useState<Budget | null>(null);
@@ -54,7 +53,7 @@ export default function PendingTransactions() {
             setSelectedTransaction(null);
             modalRef.current?.close();
         } catch {
-            setErrorVisible(true);
+            // global MutationCache shows Snackbar
         }
     }
 
@@ -129,18 +128,6 @@ export default function PendingTransactions() {
                     </>
                 }
             </Modal>
-            <Portal>
-                <Snackbar
-                    visible={errorVisible}
-                    onDismiss={() => setErrorVisible(false)}
-                    duration={5000}
-                    action={{
-                        label: 'OK',
-                        onPress: () => setErrorVisible(false),
-                    }}>
-                    Operation failed.
-                </Snackbar>
-            </Portal>
         </ScreenContainer>
     );
 }
