@@ -4,7 +4,7 @@ import { useBudgetUIStore } from '@/stores/budgetUIStore';
 import { useTitleStore } from '@/stores/titleStore';
 import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import React from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Card, IconButton, MD2Colors, Text } from 'react-native-paper';
 
 export default function SpendingDetailsScreen() {
@@ -32,12 +32,28 @@ export default function SpendingDetailsScreen() {
       {selectedCategory?.spendings?.length == 0 ? <Text style={styles.emptyText}>No spending history</Text> : null}
       {selectedCategory?.spendings?.map(sp =>
         <Card key={sp.id} style={styles.card}>
-          <Card.Title titleStyle={{ color: sp.amount < 0 ? "red" : "green" }}
-            title={`${sp.amount} ${selectedMainBudget?.currency.symbol}`}
-            subtitle={sp.description}
-            left={() => <Text>{sp.date}</Text>}
-            right={() =>
-              <IconButton iconColor={MD2Colors.red800} icon="close" onPress={() => onDeleteSpending(sp.id)} />} />
+          <Card.Content style={styles.cardContent}>
+            <View style={styles.row}>
+              <View style={styles.leftContent}>
+                <Text style={{ color: sp.amount < 0 ? "red" : "green", fontWeight: 'bold' }}>
+                  {sp.amount} {selectedMainBudget?.currency.symbol}
+                </Text>
+                <Text variant="bodySmall" style={styles.description}>{sp.description}</Text>
+              </View>
+              <View style={styles.rightContent}>
+                <Text variant="bodySmall">
+                  {sp.date ? new Date(sp.date).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }) : ''}
+                </Text>
+                <IconButton
+                  iconColor={MD2Colors.red800}
+                  icon="close"
+                  size={20}
+                  style={{ margin: 0 }}
+                  onPress={() => onDeleteSpending(sp.id)}
+                />
+              </View>
+            </View>
+          </Card.Content>
         </Card>
       )}
     </ScreenContainer>
@@ -50,5 +66,25 @@ const styles = StyleSheet.create({
   },
   card: {
     marginBottom: 12,
+  },
+  cardContent: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+  },
+  leftContent: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  rightContent: {
+    flexDirection: 'column',
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+  },
+  description: {
+    marginTop: 2,
   },
 });
