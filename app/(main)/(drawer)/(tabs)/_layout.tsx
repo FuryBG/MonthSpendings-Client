@@ -24,9 +24,9 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="explore"
         options={{
-          title: "Explore",
+          title: "Stats",
           tabBarActiveTintColor: theme.colors.primary,
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={theme.colors.primary} />,
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="chart.bar.fill" color={theme.colors.primary} />,
         }}
       />
     </Tabs>

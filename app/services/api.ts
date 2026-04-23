@@ -141,4 +141,9 @@ export const respondToInvite = async (inviteId: number, accepted: boolean): Prom
   return response.data;
 };
 
+export const updateBudgetCategoryName = async (id: number, newName: string): Promise<BudgetCategory> => {
+  const response = await api.patch(`/api/budgetcategory/${id}/name`, newName);
+  return response.data;
+};
+
 export default api;

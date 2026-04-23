@@ -75,7 +75,7 @@ export default function CreateBudgetScreen() {
                     </Appbar.Header>
                 ),
             });
-        }, [currencies])
+        }, [])
     );
 
     const { fields: categories, append: addCategory, remove } = useFieldArray({

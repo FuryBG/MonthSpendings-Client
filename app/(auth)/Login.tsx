@@ -4,13 +4,14 @@ import { useAuthStore } from '@/stores/authStore';
 import { GoogleSignin, GoogleSigninButton } from '@react-native-google-signin/google-signin';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Portal, Snackbar, Text } from 'react-native-paper';
+import { Icon, Portal, Snackbar, Text, useTheme } from 'react-native-paper';
 import { googleLogin } from '../services/api';
 
 export default function LoginScreen() {
   const signIn = useAuthStore((s) => s.signIn);
   const [visible, setVisible] = useState(false);
   const [signing, setSigning] = useState(false);
+  const theme = useTheme();
 
   async function OnSignIn() {
     try {
@@ -32,8 +33,14 @@ export default function LoginScreen() {
 
   return (
     <ScreenContainer>
-      <View style={styles.container}>
-        <Text variant="titleLarge" style={styles.title}>Month Spendings</Text>
+      <View style={styles.branding}>
+        <Icon source="cash-fast" size={72} color={theme.colors.primary} />
+        <Text style={[styles.title, { color: theme.colors.primary }]}>Month Spendings</Text>
+        <Text variant="bodyLarge" style={[styles.subtitle, { color: theme.colors.onSurface }]}>
+          Your money, clarified.
+        </Text>
+      </View>
+      <View style={styles.actions}>
         <GoogleSigninButton style={styles.signInButton} onPress={OnSignIn} />
       </View>
       <OverlayLoader isVisible={signing} message='Sign in...' />
@@ -42,10 +49,7 @@ export default function LoginScreen() {
           visible={visible}
           onDismiss={() => setVisible(false)}
           duration={5000}
-          action={{
-            label: 'OK',
-            onPress: () => setVisible(false),
-          }}>
+          action={{ label: 'OK', onPress: () => setVisible(false) }}>
           Google login failed. Please try again.
         </Snackbar>
       </Portal>
@@ -54,12 +58,24 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
+  branding: {
     flex: 1,
     justifyContent: 'center',
+    alignItems: 'center',
+    gap: 12,
   },
   title: {
+    fontSize: 30,
+    fontWeight: '800',
+    letterSpacing: -0.5,
+  },
+  subtitle: {
+    opacity: 0.6,
     textAlign: 'center',
+  },
+  actions: {
+    paddingBottom: 60,
+    alignItems: 'center',
   },
   signInButton: {
     alignSelf: 'center',

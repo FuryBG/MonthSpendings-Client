@@ -7,6 +7,7 @@ import {
   deleteSpending,
   finishBudget,
   getBudgets,
+  updateBudgetCategoryName,
 } from '@/app/services/api';
 import { queryClient } from '@/lib/queryClient';
 import { useAuthStore } from '@/stores/authStore';
@@ -76,6 +77,15 @@ export const useDeleteBudgetCategoryMutation = (meta?: MutationMeta) =>
 export const useFinishBudgetMutation = (meta?: MutationMeta) =>
   useMutation({
     mutationFn: (budget: Budget) => finishBudget(budget),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['budgets'] });
+    },
+    meta,
+  });
+
+export const useUpdateBudgetCategoryNameMutation = (meta?: MutationMeta) =>
+  useMutation({
+    mutationFn: ({ id, newName }: { id: number; newName: string }) => updateBudgetCategoryName(id, newName),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['budgets'] });
     },
