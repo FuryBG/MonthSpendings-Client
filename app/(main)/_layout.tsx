@@ -5,7 +5,7 @@ import { useBudgetUIStore } from "@/stores/budgetUIStore";
 import { useTitleStore } from "@/stores/titleStore";
 import { Redirect, Stack, useRouter } from "expo-router";
 import React, { useEffect } from "react";
-import { Appbar, Text } from "react-native-paper";
+import { Appbar } from "react-native-paper";
 
 export default function MainLayout() {
   const router = useRouter();
@@ -39,12 +39,13 @@ export default function MainLayout() {
     <Stack
       screenOptions={{
         headerShown: true,
-        header: ({ navigation }) => (
+        header: ({ navigation, options }) => (
           <Appbar.Header>
             {navigation.canGoBack() && (
               <Appbar.BackAction onPress={() => router.back()} />
             )}
-            <Text style={{ paddingLeft: 20 }}>{title}</Text>
+            <Appbar.Content title={options.title ?? title} />
+            {options.headerRight?.({ canGoBack: navigation.canGoBack() })}
           </Appbar.Header>
         ),
       }}

@@ -34,23 +34,22 @@ app/
     └── spending-group/SpendingDetails.tsx
 ```
 
-### State Management (React Context API)
+### State Management
 
-All global state lives in `context/`. No Redux/Zustand.
+Global state is split between **Zustand stores** (persistent UI/auth state) and **TanStack React Query** (server data).
 
-| Context | Purpose |
-|---------|---------|
-| `AuthContext` | JWT token (SecureStore), user profile, sign in/out |
-| `BudgetContext` | Budgets, categories, spending CRUD; selected budget persisted in AsyncStorage |
-| `BankTransactionsContext` | Uncategorized bank transactions pending user action |
-| `NotificationContext` | Expo push notifications; triggers reFetch on relevant events |
-| `NavBarTitleContext` | Dynamic header title |
+| Store (`stores/`) | Purpose |
+|-------------------|---------|
+| `authStore.ts` | JWT token (SecureStore), user profile, sign in/out |
+| `budgetUIStore.ts` | Selected budget ID (AsyncStorage) |
+| `snackbarStore.ts` | Toast notification queue |
+| `titleStore.ts` | Dynamic header title |
 
-Providers are stacked in `app/_layout.tsx` in this order: Auth → Budget → BankTransactions → Notifications → Title → Paper/Theme.
+Server data (budgets, categories, spendings, transactions) is fetched and cached via React Query. `NotificationContext` (in `context/`) handles Expo push notifications and triggers query invalidation on relevant events.
 
 ### API Layer (`app/services/api.ts`)
 
-Single Axios instance. A request interceptor automatically attaches the Bearer JWT from SecureStore to every request. Base URL is an ngrok tunnel (dev only) — update this for production.
+Single Axios instance. A request interceptor automatically attaches the Bearer JWT from `authStore` to every request. A response interceptor signs the user out on 401. Base URL is read from `EXPO_PUBLIC_API_URL` (falls back to a hardcoded ngrok URL for local dev — update this when the tunnel changes).
 
 Key endpoint groups: `user`, `budget`, `budgetcategory`, `spending`, `budgetinvite`, `bank`, `Transactions`, `currency`.
 
@@ -60,7 +59,7 @@ All shared TypeScript types are defined here. Key types: `AppUser`, `Budget`, `B
 
 ### Theming
 
-Custom light/dark themes defined in `app/_layout.tsx` with primary color `#BADA55`. `ScreenContainer` component handles safe area insets and theme-aware backgrounds — use it as the root wrapper for all screens.
+Custom light/dark themes defined in `app/_layout.tsx`. Primary color: `#5C7A1A` (light) / `#BADA55` (dark). `ScreenContainer` component handles safe area insets and theme-aware backgrounds — use it as the root wrapper for all screens.
 
 ### Path Alias
 

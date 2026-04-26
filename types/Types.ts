@@ -55,6 +55,9 @@ export type Spending = {
     budgetPeriodId: number
     bankTransactionId: number | null
     bankTransaction: BankTransaction | null
+    createdByUserId: number
+    createdByEmail: string | null
+    createdByName: string | null
 }
 
 export type BankTransaction = {
