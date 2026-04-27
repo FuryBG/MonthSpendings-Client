@@ -95,6 +95,16 @@ export function DrawerContent(props: any) {
                         />
                     </View>
 
+                    {/* Savings */}
+                    <View style={[styles.section, { borderTopColor: theme.colors.outline }]}>
+                        <SectionLabel label="SAVINGS" />
+                        <NavItem
+                            icon="piggy-bank-outline"
+                            label="Savings Pots"
+                            onPress={() => router.push('/(main)/SavingsPots')}
+                        />
+                    </View>
+
                     {/* Banking */}
                     <View style={[styles.section, { borderTopColor: theme.colors.outline }]}>
                         <SectionLabel label="BANKING" />

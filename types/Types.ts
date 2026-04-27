@@ -103,3 +103,68 @@ export enum AppNotificationType {
 export type AppNotification = {
     type: AppNotificationType
 }
+
+// Savings
+export type SavingsPot = {
+    id: number
+    name: string
+    currency: Currency
+    totalSaved: number
+    createdByUserId: number
+    createdAt: string
+    users: AppUser[]
+    recentContributions: SavingsContribution[]
+}
+
+export type SavingsContribution = {
+    id: number
+    savingsPotId: number
+    amount: number
+    date: string
+    note: string | null
+    addedByUserId: number
+    addedByName: string | null
+    addedByEmail: string | null
+}
+
+export type SavingsPotInvite = {
+    id: number
+    savingsPotId: number
+    receiverEmail: string
+    validTo: string | null
+    accepted: boolean | null
+}
+
+export type SavingsHistoryDto = {
+    runningTotal: number
+    months: MonthlyContributionDto[]
+}
+
+export type MonthlyContributionDto = {
+    year: number
+    month: number
+    total: number
+    contributions: SavingsContribution[]
+}
+
+// Statistics
+export type PeriodComparisonDto = {
+    currentPeriod: PeriodSummaryDto
+    previousPeriod: PeriodSummaryDto | null
+    totalDelta: number
+    totalDeltaPercent: number | null
+}
+
+export type PeriodSummaryDto = {
+    periodId: number
+    startDate: string
+    endDate: string | null
+    totalSpent: number
+    categories: CategoryComparisonDto[]
+}
+
+export type CategoryComparisonDto = {
+    categoryId: number
+    categoryName: string
+    amount: number
+}

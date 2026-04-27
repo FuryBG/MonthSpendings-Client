@@ -8,6 +8,7 @@ import {
     useFinishBudgetMutation,
     useUpdateBudgetCategoryNameMutation,
 } from "@/hooks/useBudgetQueries";
+import { useSavingsPotsQuery } from "@/hooks/useSavingsQueries";
 import { useAuthStore } from "@/stores/authStore";
 import { useSnackbarStore } from "@/stores/snackbarStore";
 import { useTitleStore } from "@/stores/titleStore";
@@ -52,6 +53,9 @@ export default function ManageBudgetScreen() {
     const setTitle = useTitleStore((s) => s.setTitle);
     const params = useLocalSearchParams();
     const [loading, setLoading] = useState(false);
+    const { data: savingsPots = [] } = useSavingsPotsQuery();
+    const [finishStep, setFinishStep] = useState<'choice' | 'selectPot'>('choice');
+    const [selectedSavingsPotId, setSelectedSavingsPotId] = useState<number | null>(null);
 
     const sheetRef = useRef<BottomSheetRef>(null);
     const [activeSheet, setActiveSheet] = useState<SheetType>(null);
@@ -92,6 +96,10 @@ export default function ManageBudgetScreen() {
         if (type === 'renameCategory' && category) {
             setRenameCategoryTarget(category);
             renameSetValue('name', category.name);
+        }
+        if (type === 'finishPeriod') {
+            setFinishStep('choice');
+            setSelectedSavingsPotId(null);
         }
         setActiveSheet(type);
         setSheetVisible(true);
@@ -167,7 +175,7 @@ export default function ManageBudgetScreen() {
         }
     }
 
-    async function onFinishPeriod() {
+    async function onFinishPeriod(savingsPotId?: number) {
         if (!selectedMainBudget) return;
         try {
             setLoading(true);
@@ -187,7 +195,7 @@ export default function ManageBudgetScreen() {
                     } as Spending],
                 })),
             };
-            await finishBudgetMutation.mutateAsync(budgetToFinish);
+            await finishBudgetMutation.mutateAsync({ budget: budgetToFinish, savingsPotId });
             sheetRef.current?.close();
         } catch {
             showError("Finishing period was not successful.");
@@ -367,24 +375,94 @@ export default function ManageBudgetScreen() {
         }
 
         if (activeSheet === 'finishPeriod') {
-            return (
-                <View style={sheetStyles.sheetCenteredContent}>
-                    <View style={[sheetStyles.sheetConfirmIcon, { backgroundColor: 'rgba(245,158,11,0.12)' }]}>
-                        <Icon source="calendar-check" size={28} color={COLOR_AMBER} />
+            if (finishStep === 'choice') {
+                return (
+                    <View style={sheetStyles.sheetCenteredContent}>
+                        <View style={[sheetStyles.sheetConfirmIcon, { backgroundColor: 'rgba(245,158,11,0.12)' }]}>
+                            <Icon source="calendar-check" size={28} color={COLOR_AMBER} />
+                        </View>
+                        <Text style={sheetStyles.sheetConfirmTitle}>Finish Budget Period</Text>
+                        <Text style={sheetStyles.sheetConfirmDesc}>
+                            What should happen with the remaining balance in "{selectedMainBudget?.name}"?
+                        </Text>
+                        <View style={{ width: '100%', gap: 10, marginBottom: 8 }}>
+                            <Button
+                                mode="contained"
+                                buttonColor={COLOR_AMBER}
+                                textColor="#0C0E12"
+                                loading={loading}
+                                onPress={() => onFinishPeriod(undefined)}
+                                icon="arrow-right-circle-outline"
+                            >
+                                Carry over to new period
+                            </Button>
+                            <Button
+                                mode="outlined"
+                                textColor="#4ADE80"
+                                loading={loading}
+                                onPress={() => setFinishStep('selectPot')}
+                                icon="piggy-bank-outline"
+                            >
+                                Move to savings pot
+                            </Button>
+                            <Button mode="text" onPress={() => sheetRef.current?.close()}>Cancel</Button>
+                        </View>
                     </View>
-                    <Text style={sheetStyles.sheetConfirmTitle}>Finish Budget Period</Text>
-                    <Text style={sheetStyles.sheetConfirmDesc}>
-                        Close the current period for "{selectedMainBudget?.name}"? Remaining funds in all categories will be carried over to the next period.
-                    </Text>
+                );
+            }
+
+            // Step 2: select savings pot
+            const matchingPots = savingsPots.filter(
+                p => p.currency.code === selectedMainBudget?.currency?.code
+            );
+            return (
+                <>
+                    <Text style={sheetStyles.sheetTitle}>Select Savings Pot</Text>
+                    {matchingPots.length === 0 ? (
+                        <View style={{ paddingVertical: 16, alignItems: 'center', gap: 8 }}>
+                            <Icon source="piggy-bank-outline" size={28} color="#4ADE80" />
+                            <Text style={{ textAlign: 'center', opacity: 0.6, fontSize: 13 }}>
+                                No savings pots with {selectedMainBudget?.currency?.code} currency. Create one first.
+                            </Text>
+                        </View>
+                    ) : (
+                        matchingPots.map(pot => (
+                            <TouchableOpacity
+                                key={pot.id}
+                                style={{
+                                    flexDirection: 'row', alignItems: 'center', gap: 12,
+                                    borderRadius: 10, borderWidth: 1, padding: 12, marginBottom: 6,
+                                    borderColor: selectedSavingsPotId === pot.id ? '#4ADE80' : theme.colors.surfaceVariant,
+                                    backgroundColor: selectedSavingsPotId === pot.id ? 'rgba(74,222,128,0.08)' : 'transparent',
+                                }}
+                                onPress={() => setSelectedSavingsPotId(pot.id)}
+                            >
+                                <Icon source="piggy-bank-outline" size={20} color={selectedSavingsPotId === pot.id ? '#4ADE80' : theme.colors.onSurfaceVariant} />
+                                <View style={{ flex: 1 }}>
+                                    <Text style={{ fontWeight: '600', fontSize: 14 }}>{pot.name}</Text>
+                                    <Text style={{ fontSize: 11, opacity: 0.55 }}>
+                                        {pot.currency.symbol}{pot.totalSaved.toFixed(0)} saved
+                                    </Text>
+                                </View>
+                                {selectedSavingsPotId === pot.id && <Icon source="check-circle" size={18} color="#4ADE80" />}
+                            </TouchableOpacity>
+                        ))
+                    )}
                     <View style={sheetStyles.sheetActions}>
-                        <Button mode="text" onPress={() => sheetRef.current?.close()}>Cancel</Button>
-                        <Button mode="contained" buttonColor={COLOR_AMBER} textColor="#0C0E12"
-                            loading={loading} onPress={onFinishPeriod}
-                            contentStyle={sheetStyles.sheetConfirmContent}>
+                        <Button mode="text" onPress={() => setFinishStep('choice')}>Back</Button>
+                        <Button
+                            mode="contained"
+                            buttonColor="#4ADE80"
+                            textColor="#0C0E12"
+                            loading={loading}
+                            disabled={!selectedSavingsPotId}
+                            onPress={() => onFinishPeriod(selectedSavingsPotId ?? undefined)}
+                            contentStyle={sheetStyles.sheetConfirmContent}
+                        >
                             Confirm
                         </Button>
                     </View>
-                </View>
+                </>
             );
         }
 

@@ -76,9 +76,11 @@ export const useDeleteBudgetCategoryMutation = (meta?: MutationMeta) =>
 
 export const useFinishBudgetMutation = (meta?: MutationMeta) =>
   useMutation({
-    mutationFn: (budget: Budget) => finishBudget(budget),
+    mutationFn: ({ budget, savingsPotId }: { budget: Budget; savingsPotId?: number }) =>
+      finishBudget(budget, savingsPotId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['budgets'] });
+      queryClient.invalidateQueries({ queryKey: ['savings'] });
     },
     meta,
   });

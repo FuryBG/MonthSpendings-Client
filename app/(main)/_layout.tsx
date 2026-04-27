@@ -59,6 +59,8 @@ export default function MainLayout() {
       <Stack.Screen name="ConnectBankError" options={{ title: 'Error' }} />
       <Stack.Screen name="Invites" options={{ title: 'Invitations' }} />
       <Stack.Screen name="spending-group/SpendingDetails" options={{ title: 'Spending Details' }} />
+      <Stack.Screen name="SavingsPots" options={{ headerShown: false }} />
+      <Stack.Screen name="SavingsPotDetail" options={{ title: 'Savings Pot' }} />
     </Stack>
   );
 }

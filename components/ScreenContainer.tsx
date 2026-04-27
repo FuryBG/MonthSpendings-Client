@@ -1,17 +1,22 @@
 import React, { ReactNode, useMemo } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { useTheme } from "react-native-paper";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { Edge, SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface ScreenContainerProps {
   children: ReactNode;
   scrollable?: boolean | null;
   removeSafeBottom?: boolean | null;
+  topEdge?: boolean;
 }
 
-export const ScreenContainer = ({ children, scrollable = false, removeSafeBottom = false }: ScreenContainerProps) => {
+export const ScreenContainer = ({ children, scrollable = false, removeSafeBottom = false, topEdge = false }: ScreenContainerProps) => {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+
+  const edges: Edge[] = topEdge
+    ? ['top', 'bottom', 'left', 'right']
+    : ['bottom', 'left', 'right'];
 
   const dynamicStyles = useMemo(
     () =>
@@ -20,15 +25,14 @@ export const ScreenContainer = ({ children, scrollable = false, removeSafeBottom
           flex: 1,
           paddingHorizontal: 16,
           paddingBottom: 0,
-          marginTop: -insets.top,
           marginBottom: removeSafeBottom ? -insets.bottom : 0,
         },
       }),
-    [insets.top, insets.bottom, removeSafeBottom]
+    [insets.bottom, removeSafeBottom]
   );
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.colors.background }]}>
+    <SafeAreaView edges={edges} style={[styles.safeArea, { backgroundColor: theme.colors.background }]}>
       {scrollable ?
         <ScrollView style={dynamicStyles.container}>{children}</ScrollView> :
         <View style={dynamicStyles.container}>{children}</View>
