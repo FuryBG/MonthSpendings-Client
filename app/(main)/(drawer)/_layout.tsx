@@ -7,7 +7,7 @@ import { useRouter } from 'expo-router';
 import { Drawer } from 'expo-router/drawer';
 import React, { useCallback } from 'react';
 import { View } from 'react-native';
-import { Appbar } from 'react-native-paper';
+import { Appbar, Button } from 'react-native-paper';
 
 export default function DrawerLayout() {
   const router = useRouter();
@@ -31,6 +31,11 @@ export default function DrawerLayout() {
     [router]
   );
 
+  const onCreate = useCallback((() =>
+    router.push('/CreateBudget')
+  ),
+    [router]);
+
   return (
     <Drawer
       drawerContent={(props) => <DrawerContent {...props} />}
@@ -48,8 +53,15 @@ export default function DrawerLayout() {
                 selectedMainBudgetId={selectedMainBudgetId}
                 onSelect={onSelectMainBudget}
                 onManage={onManageBudget}
+                onCreate={onCreate}
               />
-              <View style={{ flex: 1 }} />
+              {budgets.length == 0 &&
+                <Button icon={'plus'} mode="contained" onPress={() => onCreate()}>
+                  Create Budget
+                </Button>
+              }
+
+              <View style={{ flex: 1, }} />
               <Appbar.Action
                 icon="menu"
                 onPress={() => props.navigation.toggleDrawer()}

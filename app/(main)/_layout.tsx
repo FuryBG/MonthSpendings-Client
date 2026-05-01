@@ -57,6 +57,10 @@ export default function MainLayout() {
       <Stack.Screen name="ConnectBank" options={{ title: 'Connect Bank' }} />
       <Stack.Screen name="ConnectBankSuccess" options={{ title: 'Success' }} />
       <Stack.Screen name="ConnectBankError" options={{ title: 'Error' }} />
+      <Stack.Screen name="ConnectSaltEdgeBank" options={{ title: 'Connect Salt Edge Bank' }} />
+      <Stack.Screen name="ConnectSaltEdgePending" options={{ title: 'Connecting Bank' }} />
+      <Stack.Screen name="ConnectSaltEdgeSuccess" options={{ title: 'Success' }} />
+      <Stack.Screen name="ConnectSaltEdgeError" options={{ title: 'Error' }} />
       <Stack.Screen name="Invites" options={{ title: 'Invitations' }} />
       <Stack.Screen name="spending-group/SpendingDetails" options={{ title: 'Spending Details' }} />
       <Stack.Screen name="SavingsPots" options={{ headerShown: false }} />

@@ -1,4 +1,4 @@
-import { forwardRef, ReactNode, useEffect, useImperativeHandle, useRef } from 'react';
+import { forwardRef, ReactNode, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { Animated, Keyboard, KeyboardAvoidingView, Modal as RNModal, StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
 import { useTheme } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -32,9 +32,13 @@ export const BottomSheet = forwardRef<BottomSheetRef, BottomSheetProps>(
 
     const backdropOpacity = useRef(new Animated.Value(0)).current;
     const sheetTranslateY = useRef(new Animated.Value(400)).current;
+    const [isClosing, setIsClosing] = useState(false);
+    const [renderedChildren, setRenderedChildren] = useState<ReactNode>(children);
 
     useEffect(() => {
       if (!visible) return;
+      setIsClosing(false);
+      setRenderedChildren(children);
       backdropOpacity.setValue(0);
       sheetTranslateY.setValue(400);
       Animated.parallel([
@@ -43,12 +47,22 @@ export const BottomSheet = forwardRef<BottomSheetRef, BottomSheetProps>(
       ]).start();
     }, [visible]);
 
+    useEffect(() => {
+      if (!visible || isClosing) return;
+      setRenderedChildren(children);
+    }, [children, isClosing, visible]);
+
     function animateClose(onDone?: () => void) {
+      if (isClosing) return;
+      setIsClosing(true);
       Keyboard.dismiss();
       Animated.parallel([
         Animated.timing(backdropOpacity, { toValue: 0, duration: 200, useNativeDriver: true }),
         Animated.timing(sheetTranslateY, { toValue: 400, duration: 200, useNativeDriver: true }),
-      ]).start(() => onClose(onDone));
+      ]).start(() => {
+        setIsClosing(false);
+        onClose(onDone);
+      });
     }
 
     useImperativeHandle(ref, () => ({ close: animateClose }));
@@ -66,7 +80,7 @@ export const BottomSheet = forwardRef<BottomSheetRef, BottomSheetProps>(
             panelStyle,
             { transform: [{ translateY: sheetTranslateY }] },
           ]}>
-            {children}
+            {renderedChildren}
           </Animated.View>
         </KeyboardAvoidingView>
       </RNModal>

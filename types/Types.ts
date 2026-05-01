@@ -93,6 +93,27 @@ export type BankOption = {
     maximumConsentValidity: number
 }
 
+export type SaltEdgeProvider = {
+    code: string
+    name: string
+    countryCode: string
+    logoUrl: string | null
+    mode: string | null
+    regulated: boolean
+}
+
+export type StartSaltEdgeConnectionResponse = {
+    connectUrl: string
+    localSessionId: string
+}
+
+export type SaltEdgeConnectionStatusResponse = {
+    localSessionId: string
+    state: 'Initiated' | 'Connected' | 'ConnectionFailed' | 'Removed' | string
+    providerName: string
+    errorMessage: string | null
+}
+
 export enum AppNotificationType {
     ReceivedInvite,
     InviteResponse,

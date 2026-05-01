@@ -1,15 +1,15 @@
+import { BottomSheet, BottomSheetRef, sheetStyles } from '@/components/BottomSheet';
 import { ScreenContainer } from '@/components/ScreenContainer';
-import { useAddSpendingMutation, useBudgetsQuery, useUpdateBudgetCategoryNameMutation } from '@/hooks/useBudgetQueries';
 import { usePendingTransactionsQuery } from '@/hooks/useBankTransactionQueries';
+import { useAddSpendingMutation, useBudgetsQuery, useUpdateBudgetCategoryNameMutation } from '@/hooks/useBudgetQueries';
 import { useBudgetUIStore } from '@/stores/budgetUIStore';
 import { BudgetCategory, Spending } from '@/types/Types';
 import { useRouter } from 'expo-router';
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import { Button, Card, HelperText, Icon, IconButton, Text, TextInput, useTheme } from 'react-native-paper';
-import { BottomSheet, BottomSheetRef, sheetStyles } from '@/components/BottomSheet';
 
 const COLOR_EXPENSE = '#F87171';
 const COLOR_INCOME = '#4ADE80';
@@ -29,6 +29,7 @@ export default function HomeScreen() {
   const theme = useTheme();
   const sheetRef = useRef<BottomSheetRef>(null);
   const renameSheetRef = useRef<BottomSheetRef>(null);
+  const amountInputRef = useRef<any>(null);
   const swipeableRefs = useRef<Map<number, Swipeable | null>>(new Map());
 
   const selectedMainBudget = budgets.find(b => b.id === selectedMainBudgetId);
@@ -68,11 +69,37 @@ export default function HomeScreen() {
   function openSheet(budgetCategory: BudgetCategory, isNegative: boolean) {
     setSelectedBudgetCategoryId(budgetCategory.id);
     setNegativeInput(isNegative);
+    reset({
+      id: 0,
+      amount: undefined,
+      budgetCategoryId: 0,
+      description: "",
+      budgetPeriodId: 0,
+      date: null,
+      bankTransactionId: null,
+      bankTransaction: null,
+      createdByUserId: 0,
+      createdByEmail: null,
+      createdByName: null,
+    });
     setSheetVisible(true);
   }
 
   function handleSheetClose(onDone?: () => void) {
     setSheetVisible(false);
+    reset({
+      id: 0,
+      amount: undefined,
+      budgetCategoryId: 0,
+      description: "",
+      budgetPeriodId: 0,
+      date: null,
+      bankTransactionId: null,
+      bankTransaction: null,
+      createdByUserId: 0,
+      createdByEmail: null,
+      createdByName: null,
+    });
     onDone?.();
   }
 
@@ -117,6 +144,18 @@ export default function HomeScreen() {
     }
   }
 
+  useEffect(() => {
+    if (!sheetVisible) {
+      return;
+    }
+
+    const focusTimer = setTimeout(() => {
+      amountInputRef.current?.focus?.();
+    }, 350);
+
+    return () => clearTimeout(focusTimer);
+  }, [sheetVisible]);
+
   const renderCategoryRenameAction = (bc: BudgetCategory) => (
     <TouchableOpacity style={styles.renameAction} onPress={() => {
       swipeableRefs.current.get(bc.id)?.close();
@@ -141,7 +180,7 @@ export default function HomeScreen() {
           </TouchableOpacity>
         )}
 
-        {selectedMainBudgetId == null && budgets.length === 0 && (
+        {selectedMainBudgetId == null || budgets.length === 0 && (
           <View style={styles.emptyContainer}>
             <Icon source="cash-fast" size={64} color={theme.colors.primary} />
             <Text variant="titleLarge" style={styles.emptyTitle}>
@@ -226,11 +265,15 @@ export default function HomeScreen() {
           render={({ field: { onChange, value }, fieldState }) => (
             <>
               <TextInput
+                ref={amountInputRef}
                 keyboardType="numeric"
+                returnKeyType="done"
                 left={<TextInput.Icon icon={negativeInput ? "minus" : "plus"} />}
                 error={fieldState.error != null}
                 value={value ? value.toString() : ""}
                 onChangeText={onChange}
+                onSubmitEditing={handleSubmit(onModalSubmit)}
+                blurOnSubmit
                 style={sheetStyles.sheetInput}
                 label="Amount"
               />
@@ -247,6 +290,9 @@ export default function HomeScreen() {
             <TextInput
               value={value}
               onChangeText={onChange}
+              returnKeyType="done"
+              onSubmitEditing={handleSubmit(onModalSubmit)}
+              blurOnSubmit
               style={sheetStyles.sheetInput}
               label="Description (optional)"
             />

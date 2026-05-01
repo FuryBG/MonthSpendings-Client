@@ -113,6 +113,11 @@ export function DrawerContent(props: any) {
                             label="Connect Bank"
                             onPress={() => router.push('/(main)/ConnectBank')}
                         />
+                        <NavItem
+                            icon="bank-plus"
+                            label="Connect Salt Edge Bank"
+                            onPress={() => router.push('/(main)/ConnectSaltEdgeBank')}
+                        />
                     </View>
 
                     {/* Account */}

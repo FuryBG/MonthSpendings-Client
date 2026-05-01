@@ -19,12 +19,12 @@ export default function CreateBudgetScreen() {
     const createBudgetMutation = useCreateBudgetMutation();
     const { data: currencies = [] } = useCurrenciesQuery();
     const { setMainBudget } = useBudgetUIStore();
-
     const currencySheetRef = useRef<BottomSheetRef>(null);
     const [currencySheetVisible, setCurrencySheetVisible] = useState(false);
     const [currencySearch, setCurrencySearch] = useState('');
+    const [isCreatingBudget, setIsCreatingBudget] = useState(false);
 
-    const { control, handleSubmit, watch, reset, setValue } = useForm<Budget>({
+    const { control, handleSubmit, watch, setValue } = useForm<Budget>({
         defaultValues: {
             id: 0,
             name: '',
@@ -40,6 +40,9 @@ export default function CreateBudgetScreen() {
                     description: 'ADD MONEY',
                     budgetCategoryId: 0,
                     budgetPeriodId: 0,
+                    createdByEmail: '',
+                    createdByName: '',
+                    createdByUserId: 0
                 }],
             }],
         },
@@ -55,13 +58,14 @@ export default function CreateBudgetScreen() {
 
     async function onSubmit(data: Budget) {
         try {
-            data.currency = currencies.find(c => c.code === data.currency.code)!;
+            setIsCreatingBudget(true);
             const budget = await createBudgetMutation.mutateAsync(data);
             await setMainBudget(budget.id);
-            reset();
-            router.push('/(main)/(drawer)/(tabs)');
+            router.replace('/(main)/(drawer)/(tabs)');
         } catch {
             // global snackbar handles errors
+        } finally {
+            setIsCreatingBudget(false);
         }
     }
 
@@ -79,7 +83,7 @@ export default function CreateBudgetScreen() {
     }, [handleSubmit]);
 
     function selectCurrency(c: Currency) {
-        setValue('currency.code', c.code);
+        setValue('currency', c);
         currencySheetRef.current?.close(() => {
             setCurrencySheetVisible(false);
             setCurrencySearch('');
@@ -93,7 +97,7 @@ export default function CreateBudgetScreen() {
 
     return (
         <View style={[styles.root, { backgroundColor: theme.colors.background }]}>
-            <OverlayLoader isVisible={createBudgetMutation.isPending} message="Creating budget..." />
+            <OverlayLoader isVisible={createBudgetMutation.isPending || isCreatingBudget} message="Creating budget..." />
 
             <ScrollView
                 style={styles.scroll}
@@ -253,6 +257,10 @@ export default function CreateBudgetScreen() {
                             description: 'ADD MONEY',
                             bankTransaction: null,
                             bankTransactionId: null,
+                            createdByEmail: '',
+                            createdByName: '',
+                            createdByUserId: 0
+
                         }],
                     })}
                 >

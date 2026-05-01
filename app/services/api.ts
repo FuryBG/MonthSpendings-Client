@@ -1,4 +1,4 @@
-import { AppUser, BankOption, BankTransaction, Budget, BudgetCategory, BudgetInvite, CategorizeTransactionDto, Currency, PeriodComparisonDto, SavingsContribution, SavingsHistoryDto, SavingsPot, SavingsPotInvite, Spending } from '@/types/Types';
+import { AppUser, BankOption, BankTransaction, Budget, BudgetCategory, BudgetInvite, CategorizeTransactionDto, Currency, PeriodComparisonDto, SaltEdgeConnectionStatusResponse, SaltEdgeProvider, SavingsContribution, SavingsHistoryDto, SavingsPot, SavingsPotInvite, Spending, StartSaltEdgeConnectionResponse } from '@/types/Types';
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 
@@ -67,6 +67,21 @@ export const getBanks = async (bankName: string): Promise<BankOption[]> => {
 
 export const startBankConnection = async (bankName: string, countryCode: string, bankImgUrl: string, maximumConsentValidity: number): Promise<string> => {
   const response = await api.get(`/api/Bank/connect?bankName=${bankName}&countryCode=${countryCode}&bankImageUrl=${bankImgUrl}&maximumConsentValidity=${maximumConsentValidity}`);
+  return response.data;
+};
+
+export const getSaltEdgeBanks = async (bankName: string): Promise<SaltEdgeProvider[]> => {
+  const response = await api.get(`/api/saltedgebank?bankName=${bankName}`);
+  return response.data;
+};
+
+export const startSaltEdgeConnection = async (providerCode: string, providerName: string, countryCode: string, bankImageUrl: string): Promise<StartSaltEdgeConnectionResponse> => {
+  const response = await api.get(`/api/saltedgebank/connect?providerCode=${providerCode}&providerName=${providerName}&countryCode=${countryCode}&bankImageUrl=${bankImageUrl}`);
+  return response.data;
+};
+
+export const getSaltEdgeConnectionStatus = async (localSessionId: string): Promise<SaltEdgeConnectionStatusResponse> => {
+  const response = await api.get(`/api/saltedgebank/connect-status?localSessionId=${localSessionId}`);
   return response.data;
 };
 

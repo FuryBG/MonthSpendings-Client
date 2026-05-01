@@ -8,6 +8,7 @@ interface HeaderMenuProps {
   selectedMainBudgetId: number | null;
   onSelect: (budget: Budget) => void;
   onManage: (budgetId: number) => void;
+  onCreate: () => void
 }
 
 export const HeaderMenu = React.memo(function HeaderMenu({
@@ -15,6 +16,7 @@ export const HeaderMenu = React.memo(function HeaderMenu({
   selectedMainBudgetId,
   onSelect,
   onManage,
+  onCreate
 }: HeaderMenuProps) {
   const { colors } = useTheme();
 

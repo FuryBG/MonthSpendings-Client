@@ -1,4 +1,5 @@
 import { BottomSheet, BottomSheetRef, sheetStyles } from "@/components/BottomSheet";
+import { OverlayLoader } from "@/components/OverlayLoader";
 import { ScreenContainer } from "@/components/ScreenContainer";
 import {
     useAddBudgetCategoryMutation,
@@ -53,6 +54,7 @@ export default function ManageBudgetScreen() {
     const setTitle = useTitleStore((s) => s.setTitle);
     const params = useLocalSearchParams();
     const [loading, setLoading] = useState(false);
+    const [isDeletingBudget, setIsDeletingBudget] = useState(false);
     const { data: savingsPots = [] } = useSavingsPotsQuery();
     const [finishStep, setFinishStep] = useState<'choice' | 'selectPot'>('choice');
     const [selectedSavingsPotId, setSelectedSavingsPotId] = useState<number | null>(null);
@@ -127,9 +129,11 @@ export default function ManageBudgetScreen() {
     async function onDeleteBudget() {
         try {
             setLoading(true);
+            setIsDeletingBudget(true);
             await deleteBudgetMutation.mutateAsync(selectedMainBudget!.id);
-            sheetRef.current?.close(() => router.push("/(main)/(drawer)/(tabs)"));
+            sheetRef.current?.close(() => router.replace("/(main)/(drawer)/(tabs)"));
         } catch {
+            setIsDeletingBudget(false);
             showError("Deleting budget was not successful.");
         } finally {
             setLoading(false);
@@ -493,6 +497,7 @@ export default function ManageBudgetScreen() {
 
     return (
         <>
+            <OverlayLoader isVisible={isDeletingBudget} message="Deleting budget..." />
             <ScreenContainer scrollable={true}>
 
                 {/* Header */}
