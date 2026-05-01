@@ -5,9 +5,10 @@ import { useCurrenciesQuery } from '@/hooks/useCurrencyQueries';
 import { useBudgetUIStore } from '@/stores/budgetUIStore';
 import { Budget, Currency } from '@/types/Types';
 import { useNavigation, useRouter } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Controller, useFieldArray, useForm } from 'react-hook-form';
 import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { HelperText, Icon, IconButton, Text, TextInput, useTheme } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -99,11 +100,9 @@ export default function CreateBudgetScreen() {
         <View style={[styles.root, { backgroundColor: theme.colors.background }]}>
             <OverlayLoader isVisible={createBudgetMutation.isPending || isCreatingBudget} message="Creating budget..." />
 
-            <ScrollView
+            <KeyboardAwareScrollView
                 style={styles.scroll}
-                contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 40 }]}
-                keyboardShouldPersistTaps="handled"
-            >
+                contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 40 }]}>
                 <Text style={[styles.sectionLabel, { color: theme.colors.onBackground }]}>BUDGET DETAILS</Text>
                 <View style={[styles.card, { backgroundColor: theme.colors.surface, borderColor: theme.colors.outline }]}>
                     <Controller
@@ -267,7 +266,7 @@ export default function CreateBudgetScreen() {
                     <Icon source="plus" size={18} color={theme.colors.primary} />
                     <Text style={[styles.addCategoryText, { color: theme.colors.primary }]}>Add Category</Text>
                 </TouchableOpacity>
-            </ScrollView>
+            </KeyboardAwareScrollView>
 
             <BottomSheet
                 ref={currencySheetRef}
