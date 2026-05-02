@@ -25,7 +25,9 @@ export default function LoginScreen() {
         await signIn(jwt);
         setSigning(false);
       }
-    } catch {
+    } catch(e) {
+      console.log(e);
+      
       setVisible(true);
       setSigning(false);
     }

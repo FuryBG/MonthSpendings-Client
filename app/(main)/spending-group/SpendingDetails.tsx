@@ -255,6 +255,15 @@ export default function SpendingDetailsScreen() {
                             Bank
                           </Chip>
                         )}
+                        {sp.transactionDate != null && (
+                          <Text
+                            variant="labelSmall"
+                            style={[s.transactionDate, { color: theme.colors.onSurfaceVariant }]}
+                            numberOfLines={1}
+                          >
+                            {getDateLabel(sp.transactionDate)} · {formatTime(sp.transactionDate)}
+                          </Text>
+                        )}
                         {sp.createdByEmail != null && (
                           <Text
                             variant="labelSmall"
@@ -386,6 +395,11 @@ const s = StyleSheet.create({
   creatorEmail: {
     fontSize:       10,
     opacity:        0.7,
+    maxWidth:       110,
+  },
+  transactionDate: {
+    fontSize:       10,
+    opacity:        0.6,
     maxWidth:       110,
   },
   deleteAction: {

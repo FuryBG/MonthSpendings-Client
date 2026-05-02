@@ -258,7 +258,8 @@ export default function CreateBudgetScreen() {
                             bankTransactionId: null,
                             createdByEmail: '',
                             createdByName: '',
-                            createdByUserId: 0
+                            createdByUserId: 0,
+                            transactionDate: null
 
                         }],
                     })}

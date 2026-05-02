@@ -181,6 +181,7 @@ export default function SavingsPotDetailScreen() {
 
   const user = useAuthStore((s) => s.user);
   const showError = useSnackbarStore((s) => s.showError);
+  const showSuccess = useSnackbarStore((s) => s.showSuccess);
 
   const { data: pots = [] } = useSavingsPotsQuery();
   const { data: history, isLoading: historyLoading } = useSavingsHistoryQuery(potId);
@@ -223,9 +224,9 @@ export default function SavingsPotDetailScreen() {
     try {
       setLoading(true);
       await addMutation.mutateAsync({ amount: parsed, note: note.trim() || null });
-      sheetRef.current?.close(fundsReset);
+      sheetRef.current?.close(() => { fundsReset(); showSuccess('Funds added.'); });
     } catch {
-      showError('Failed to add funds.');
+      sheetRef.current?.close(() => showError('Failed to add funds.'));
     } finally {
       setLoading(false);
     }
@@ -234,6 +235,7 @@ export default function SavingsPotDetailScreen() {
   async function onDeleteContribution(contributionId: number) {
     try {
       await removeMutation.mutateAsync(contributionId);
+      showSuccess('Contribution removed.');
     } catch {
       showError('Failed to remove contribution.');
     }
@@ -243,9 +245,9 @@ export default function SavingsPotDetailScreen() {
     try {
       setLoading(true);
       await inviteMutation.mutateAsync({ savingsPotId: potId, receiverEmail: email.trim() });
-      sheetRef.current?.close(inviteReset);
+      sheetRef.current?.close(() => { inviteReset(); showSuccess('Invite sent.'); });
     } catch {
-      showError('Failed to send invite. Make sure the user exists.');
+      sheetRef.current?.close(() => showError('Failed to send invite. Make sure the user exists.'));
     } finally {
       setLoading(false);
     }
@@ -257,7 +259,7 @@ export default function SavingsPotDetailScreen() {
       await deletePotMutation.mutateAsync(potId);
       sheetRef.current?.close(() => router.back());
     } catch {
-      showError('Failed to delete savings pot.');
+      sheetRef.current?.close(() => showError('Failed to delete savings pot.'));
     } finally {
       setLoading(false);
     }

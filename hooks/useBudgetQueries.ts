@@ -23,12 +23,13 @@ export const useBudgetsQuery = () => {
   });
 };
 
-export const useAddSpendingMutation = () =>
+export const useAddSpendingMutation = (meta?: MutationMeta) =>
   useMutation({
     mutationFn: (spending: Spending) => createSpending(spending),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['budgets'] });
     },
+    meta,
   });
 
 export const useDeleteSpendingMutation = () =>

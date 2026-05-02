@@ -33,12 +33,15 @@ export const BottomSheet = forwardRef<BottomSheetRef, BottomSheetProps>(
     const backdropOpacity = useRef(new Animated.Value(0)).current;
     const sheetTranslateY = useRef(new Animated.Value(400)).current;
     const [isClosing, setIsClosing] = useState(false);
-    const [renderedChildren, setRenderedChildren] = useState<ReactNode>(children);
+    const frozenChildrenRef = useRef<ReactNode>(children);
+
+    if (!isClosing) {
+      frozenChildrenRef.current = children;
+    }
 
     useEffect(() => {
       if (!visible) return;
       setIsClosing(false);
-      setRenderedChildren(children);
       backdropOpacity.setValue(0);
       sheetTranslateY.setValue(400);
       Animated.parallel([
@@ -46,11 +49,6 @@ export const BottomSheet = forwardRef<BottomSheetRef, BottomSheetProps>(
         Animated.timing(sheetTranslateY, { toValue: 0, duration: 300, useNativeDriver: true }),
       ]).start();
     }, [visible]);
-
-    useEffect(() => {
-      if (!visible || isClosing) return;
-      setRenderedChildren(children);
-    }, [children, isClosing, visible]);
 
     function animateClose(onDone?: () => void) {
       if (isClosing) return;
@@ -80,7 +78,7 @@ export const BottomSheet = forwardRef<BottomSheetRef, BottomSheetProps>(
             panelStyle,
             { transform: [{ translateY: sheetTranslateY }] },
           ]}>
-            {renderedChildren}
+            {isClosing ? frozenChildrenRef.current : children}
           </Animated.View>
         </KeyboardAvoidingView>
       </RNModal>

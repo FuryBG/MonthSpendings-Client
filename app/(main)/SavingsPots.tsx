@@ -104,6 +104,7 @@ export default function SavingsPotsScreen() {
   const insets = useSafeAreaInsets();
   const user = useAuthStore((s) => s.user);
   const showError = useSnackbarStore((s) => s.showError);
+  const showSuccess = useSnackbarStore((s) => s.showSuccess);
 
   const { data: pots = [], isLoading } = useSavingsPotsQuery();
   const { data: currencies = [] } = useQuery({ queryKey: ['currencies'], queryFn: getCurrencies });
@@ -137,9 +138,9 @@ export default function SavingsPotsScreen() {
     try {
       setSubmitting(true);
       await createMutation.mutateAsync({ name: getValues('name'), currency: selectedCurrency });
-      sheetRef.current?.close(() => { reset(); setSelectedCurrency(null); setStep('name'); });
+      sheetRef.current?.close(() => { reset(); setSelectedCurrency(null); setStep('name'); showSuccess('Savings pot created.'); });
     } catch {
-      showError('Failed to create savings pot.');
+      sheetRef.current?.close(() => showError('Failed to create savings pot.'));
     } finally {
       setSubmitting(false);
     }

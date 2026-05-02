@@ -4,12 +4,13 @@ import { NotificationProvider } from '@/context/NotificationContext';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { queryClient } from '@/lib/queryClient';
 import { useAuthStore } from '@/stores/authStore';
-import { QueryClientProvider } from '@tanstack/react-query';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { MD3DarkTheme, MD3LightTheme, PaperProvider } from 'react-native-paper';
 import 'react-native-reanimated';
 
@@ -62,17 +63,19 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView>
-      <QueryClientProvider client={queryClient}>
-        <NotificationProvider>
-          <PaperProvider theme={theme}>
-            <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-              <Stack screenOptions={{ headerShown: false }} />
-              <GlobalSnackbar />
-              <StatusBar style="auto" />
-            </ThemeProvider>
-          </PaperProvider>
-        </NotificationProvider>
-      </QueryClientProvider>
+      <KeyboardProvider>
+        <QueryClientProvider client={queryClient}>
+          <NotificationProvider>
+            <PaperProvider theme={theme}>
+              <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+                <Stack screenOptions={{ headerShown: false }} />
+                <GlobalSnackbar />
+                <StatusBar style="auto" />
+              </ThemeProvider>
+            </PaperProvider>
+          </NotificationProvider>
+        </QueryClientProvider>
+      </KeyboardProvider>
     </GestureHandlerRootView>
   );
 }

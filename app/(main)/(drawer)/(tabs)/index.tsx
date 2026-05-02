@@ -3,6 +3,7 @@ import { ScreenContainer } from '@/components/ScreenContainer';
 import { usePendingTransactionsQuery } from '@/hooks/useBankTransactionQueries';
 import { useAddSpendingMutation, useBudgetsQuery, useUpdateBudgetCategoryNameMutation } from '@/hooks/useBudgetQueries';
 import { useBudgetUIStore } from '@/stores/budgetUIStore';
+import { useSnackbarStore } from '@/stores/snackbarStore';
 import { BudgetCategory, Spending } from '@/types/Types';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
@@ -18,8 +19,11 @@ export default function HomeScreen() {
   const { data: budgets = [] } = useBudgetsQuery();
   const { data: transactions = [] } = usePendingTransactionsQuery();
   const { selectedMainBudgetId } = useBudgetUIStore();
-  const addSpendingMutation = useAddSpendingMutation();
-  const updateCategoryNameMutation = useUpdateBudgetCategoryNameMutation();
+  const skipGlobal = { skipGlobalError: true };
+  const addSpendingMutation = useAddSpendingMutation(skipGlobal);
+  const updateCategoryNameMutation = useUpdateBudgetCategoryNameMutation(skipGlobal);
+  const showSuccess = useSnackbarStore((s) => s.showSuccess);
+  const showError = useSnackbarStore((s) => s.showError);
   const [negativeInput, setNegativeInput] = useState<boolean>(false);
   const [selectedBudgetCategoryId, setSelectedBudgetCategoryId] = useState<number>(0);
   const [sheetVisible, setSheetVisible] = useState(false);
@@ -118,9 +122,9 @@ export default function HomeScreen() {
     if (!renameCategory) return;
     try {
       await updateCategoryNameMutation.mutateAsync({ id: renameCategory.id, newName: name });
-      renameSheetRef.current?.close(renameReset);
+      renameSheetRef.current?.close(() => { renameReset(); showSuccess('Category renamed.'); });
     } catch {
-      // global MutationCache shows Snackbar
+      renameSheetRef.current?.close(() => showError('Renaming category was not successful.'));
     }
   }
 
@@ -138,9 +142,9 @@ export default function HomeScreen() {
       spending.budgetPeriodId = selectedMainBudget?.budgetPeriods[0].id ?? 0;
       spending.amount = negativeInput ? -Number(spending.amount) : Number(spending.amount);
       await addSpendingMutation.mutateAsync(spending);
-      sheetRef.current?.close(reset);
+      sheetRef.current?.close(() => { reset(); showSuccess('Spending added.'); });
     } catch {
-      // global MutationCache shows Snackbar
+      sheetRef.current?.close(() => showError('Adding spending was not successful.'));
     }
   }
 

@@ -55,6 +55,7 @@ export type Spending = {
     budgetPeriodId: number
     bankTransactionId: number | null
     bankTransaction: BankTransaction | null
+    transactionDate: string | null
     createdByUserId: number
     createdByEmail: string | null
     createdByName: string | null
@@ -81,6 +82,9 @@ export type BudgetInvite = {
     id: number
     receiverEmail: string
     budgetId: number
+    budgetName: string
+    senderEmail: string
+    senderName: string
     validTo: string | null
     accepted: boolean | null
 }

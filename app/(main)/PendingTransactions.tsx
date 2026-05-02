@@ -185,7 +185,8 @@ export default function PendingTransactions() {
         try {
             await categorizeMutation.mutateAsync({
                 amount: -Number(selectedTransaction!.amount),
-                date: selectedTransaction!.bookingDate,
+                date: new Date().toISOString(),
+                transactionDate: selectedTransaction!.bookingDate,
                 bankTransactionId: selectedTransaction!.id,
                 budgetCategoryId: selectedCategoryId,
                 budgetPeriodId: selectedBudget!.budgetPeriods[0].id,

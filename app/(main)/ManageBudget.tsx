@@ -1,5 +1,4 @@
 import { BottomSheet, BottomSheetRef, sheetStyles } from "@/components/BottomSheet";
-import { OverlayLoader } from "@/components/OverlayLoader";
 import { ScreenContainer } from "@/components/ScreenContainer";
 import {
     useAddBudgetCategoryMutation,
@@ -15,7 +14,7 @@ import { useSnackbarStore } from "@/stores/snackbarStore";
 import { useTitleStore } from "@/stores/titleStore";
 import { BudgetCategory, BudgetInvite, Spending } from "@/types/Types";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 import {
@@ -51,6 +50,7 @@ export default function ManageBudgetScreen() {
     const finishBudgetMutation = useFinishBudgetMutation(skipGlobal);
     const updateCategoryNameMutation = useUpdateBudgetCategoryNameMutation(skipGlobal);
     const showError = useSnackbarStore((s) => s.showError);
+    const showSuccess = useSnackbarStore((s) => s.showSuccess);
     const setTitle = useTitleStore((s) => s.setTitle);
     const params = useLocalSearchParams();
     const [loading, setLoading] = useState(false);
@@ -60,10 +60,17 @@ export default function ManageBudgetScreen() {
     const [selectedSavingsPotId, setSelectedSavingsPotId] = useState<number | null>(null);
 
     const sheetRef = useRef<BottomSheetRef>(null);
+    const renameInputRef = useRef<any>(null);
     const [activeSheet, setActiveSheet] = useState<SheetType>(null);
     const [sheetVisible, setSheetVisible] = useState(false);
     const [confirmDeleteCategory, setConfirmDeleteCategory] = useState<BudgetCategory | null>(null);
     const [renameCategoryTarget, setRenameCategoryTarget] = useState<BudgetCategory | null>(null);
+
+    useEffect(() => {
+        if (activeSheet !== 'renameCategory') return;
+        const t = setTimeout(() => renameInputRef.current?.focus(), 350);
+        return () => clearTimeout(t);
+    }, [activeSheet]);
 
     const selectedMainBudget = budgets.find(b => b.id == Number(params.budgetId));
 
@@ -118,9 +125,9 @@ export default function ManageBudgetScreen() {
         try {
             setLoading(true);
             await deleteBudgetCategoryMutation.mutateAsync(confirmDeleteCategory.id);
-            sheetRef.current?.close(() => setConfirmDeleteCategory(null));
+            sheetRef.current?.close(() => { setConfirmDeleteCategory(null); showSuccess("Category deleted."); });
         } catch {
-            showError("Deleting category was not successful.");
+            sheetRef.current?.close(() => showError("Deleting category was not successful."));
         } finally {
             setLoading(false);
         }
@@ -134,7 +141,7 @@ export default function ManageBudgetScreen() {
             sheetRef.current?.close(() => router.replace("/(main)/(drawer)/(tabs)"));
         } catch {
             setIsDeletingBudget(false);
-            showError("Deleting budget was not successful.");
+            sheetRef.current?.close(() => showError("Deleting budget was not successful."));
         } finally {
             setLoading(false);
         }
@@ -146,9 +153,9 @@ export default function ManageBudgetScreen() {
             budgetCategory.budgetId = selectedMainBudget!.id;
             budgetCategory.spendings[0].budgetPeriodId = selectedMainBudget?.budgetPeriods[0].id ?? 0;
             await addBudgetCategoryMutation.mutateAsync(budgetCategory);
-            sheetRef.current?.close(reset);
+            sheetRef.current?.close(() => { reset(); showSuccess("Category created."); });
         } catch {
-            showError("Creating category was not successful.");
+            sheetRef.current?.close(() => showError("Creating category was not successful."));
         } finally {
             setLoading(false);
         }
@@ -159,9 +166,9 @@ export default function ManageBudgetScreen() {
         try {
             setLoading(true);
             await updateCategoryNameMutation.mutateAsync({ id: renameCategoryTarget.id, newName: name });
-            sheetRef.current?.close(renameReset);
+            sheetRef.current?.close(() => { renameReset(); showSuccess("Category renamed."); });
         } catch {
-            showError("Renaming category was not successful.");
+            sheetRef.current?.close(() => showError("Renaming category was not successful."));
         } finally {
             setLoading(false);
         }
@@ -171,9 +178,9 @@ export default function ManageBudgetScreen() {
         try {
             setLoading(true);
             await createInvite(budgetInvite);
-            sheetRef.current?.close(inviteReset);
+            sheetRef.current?.close(() => { inviteReset(); showSuccess("Invite sent."); });
         } catch {
-            showError("Sending invite was not successful.");
+            sheetRef.current?.close(() => showError("Sending invite was not successful."));
         } finally {
             setLoading(false);
         }
@@ -200,9 +207,9 @@ export default function ManageBudgetScreen() {
                 })),
             };
             await finishBudgetMutation.mutateAsync({ budget: budgetToFinish, savingsPotId });
-            sheetRef.current?.close();
+            sheetRef.current?.close(() => showSuccess("Budget period finished successfully."));
         } catch {
-            showError("Finishing period was not successful.");
+            sheetRef.current?.close(() => showError("Finishing period was not successful."));
         } finally {
             setLoading(false);
         }
@@ -213,6 +220,7 @@ export default function ManageBudgetScreen() {
             setLoading(true);
             await respondToInvite(inviteId, accepted);
             await restoreSession();
+            showSuccess(accepted ? "Invite accepted." : "Invite declined.");
         } catch {
             showError("Failed to respond to invite.");
         } finally {
@@ -276,12 +284,12 @@ export default function ManageBudgetScreen() {
                         render={({ field: { onChange, value }, fieldState }) => (
                             <>
                                 <TextInput
+                                    ref={renameInputRef}
                                     label="Category name"
                                     value={value}
                                     onChangeText={onChange}
                                     error={fieldState.error != null}
                                     style={sheetStyles.sheetInput}
-                                    autoFocus
                                 />
                                 <HelperText type="error" visible={!!fieldState.error}>
                                     {fieldState.error?.message}
@@ -497,7 +505,6 @@ export default function ManageBudgetScreen() {
 
     return (
         <>
-            <OverlayLoader isVisible={isDeletingBudget} message="Deleting budget..." />
             <ScreenContainer scrollable={true}>
 
                 {/* Header */}
@@ -516,55 +523,45 @@ export default function ManageBudgetScreen() {
                 </Card>
 
                 {/* Pending Invitations */}
-                {(user?.receivedBudgetInvites.length ?? 0) > 0 && (
+                {(user?.receivedBudgetInvites.filter(i => i.accepted === null).length ?? 0) > 0 && (
                     <Card style={styles.sectionCard}>
                         <Card.Content>
                             <View style={styles.sectionTitleRow}>
                                 <Text style={styles.sectionTitle}>Pending Invitations</Text>
                                 <View style={[styles.inviteBadge, { backgroundColor: theme.colors.primary }]}>
                                     <Text style={[styles.inviteBadgeText, { color: theme.colors.onPrimary }]}>
-                                        {user!.receivedBudgetInvites.length}
+                                        {user!.receivedBudgetInvites.filter(i => i.accepted === null).length}
                                     </Text>
                                 </View>
                             </View>
                             <Divider style={styles.divider} />
-                            {user!.receivedBudgetInvites.map(invite => (
+                            {user!.receivedBudgetInvites.filter(i => i.accepted === null).map(invite => (
                                 <View key={invite.id} style={styles.inviteRow}>
                                     <View style={styles.inviteInfo}>
                                         <View style={styles.inviteIconWrap}>
                                             <Icon source="email-outline" size={18} color={theme.colors.primary} />
                                         </View>
-                                        <View>
-                                            <Text style={styles.inviteTitle}>Budget Invitation</Text>
-                                            <Text style={styles.inviteSubtitle}>#{invite.budgetId}</Text>
+                                        <View style={{ flex: 1, marginRight: 8 }}>
+                                            <Text style={styles.inviteTitle}>{invite.budgetName}</Text>
+                                            <Text style={styles.inviteSubtitle}>
+                                                {invite.senderName} ({invite.senderEmail})
+                                            </Text>
                                         </View>
                                     </View>
-                                    {invite.accepted != null
-                                        ? <View style={[styles.inviteStatusBadge, {
-                                            backgroundColor: invite.accepted
-                                                ? 'rgba(74,222,128,0.15)' : 'rgba(248,113,113,0.15)',
-                                        }]}>
-                                            <Icon
-                                                source={invite.accepted ? "check" : "close"}
-                                                size={14}
-                                                color={invite.accepted ? COLOR_INCOME : COLOR_EXPENSE}
-                                            />
-                                        </View>
-                                        : <View style={styles.inviteActions}>
-                                            <TouchableOpacity
-                                                style={[styles.inviteBtn, styles.inviteAccept]}
-                                                onPress={() => onRespondToInvite(invite.id, true)}
-                                            >
-                                                <Icon source="check" size={16} color="#fff" />
-                                            </TouchableOpacity>
-                                            <TouchableOpacity
-                                                style={[styles.inviteBtn, styles.inviteDecline]}
-                                                onPress={() => onRespondToInvite(invite.id, false)}
-                                            >
-                                                <Icon source="close" size={16} color="#fff" />
-                                            </TouchableOpacity>
-                                        </View>
-                                    }
+                                    <View style={styles.inviteActions}>
+                                        <TouchableOpacity
+                                            style={[styles.inviteBtn, styles.inviteAccept]}
+                                            onPress={() => onRespondToInvite(invite.id, true)}
+                                        >
+                                            <Icon source="check" size={16} color="#fff" />
+                                        </TouchableOpacity>
+                                        <TouchableOpacity
+                                            style={[styles.inviteBtn, styles.inviteDecline]}
+                                            onPress={() => onRespondToInvite(invite.id, false)}
+                                        >
+                                            <Icon source="close" size={16} color="#fff" />
+                                        </TouchableOpacity>
+                                    </View>
                                 </View>
                             ))}
                         </Card.Content>
@@ -576,11 +573,24 @@ export default function ManageBudgetScreen() {
                     <Card.Content>
                         <Text style={styles.sectionTitle}>Members</Text>
                         <Divider style={styles.divider} />
-                        <List.Item
-                            title={user?.email}
-                            titleStyle={styles.memberEmail}
-                            left={props => <List.Icon {...props} icon="account-circle" />}
-                        />
+                        {selectedMainBudget?.users?.map(member => (
+                            <View key={member.id} style={styles.memberRow}>
+                                <Icon source="account-circle" size={24} color={theme.colors.onSurfaceVariant} />
+                                <View style={styles.memberInfo}>
+                                    <Text style={styles.memberEmail} numberOfLines={1}>{member.email}</Text>
+                                    {(member.firstName || member.lastName) && (
+                                        <Text style={styles.memberName}>
+                                            {`${member.firstName} ${member.lastName}`.trim()}
+                                        </Text>
+                                    )}
+                                </View>
+                                {member.id === user?.id && (
+                                    <View style={[styles.youBadge, { backgroundColor: theme.colors.primaryContainer }]}>
+                                        <Text style={[styles.youBadgeText, { color: theme.colors.onPrimaryContainer }]}>You</Text>
+                                    </View>
+                                )}
+                            </View>
+                        ))}
                         <Divider style={styles.divider} />
                         <TouchableOpacity style={styles.actionRow} onPress={() => openSheet('invite')}>
                             <Icon source="account-plus" size={20} color={theme.colors.primary} />
@@ -735,8 +745,32 @@ const styles = StyleSheet.create({
     divider: {
         marginVertical: 8,
     },
+    memberRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+        paddingVertical: 8,
+    },
+    memberInfo: {
+        flex: 1,
+    },
     memberEmail: {
         fontSize: 14,
+    },
+    memberName: {
+        fontSize: 12,
+        opacity: 0.5,
+        marginTop: 1,
+    },
+    youBadge: {
+        borderRadius: 12,
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        flexShrink: 0,
+    },
+    youBadgeText: {
+        fontSize: 11,
+        fontWeight: '700',
     },
     actionRow: {
         flexDirection: 'row',

@@ -63,7 +63,7 @@ export default function MainLayout() {
       <Stack.Screen name="ConnectSaltEdgeError" options={{ title: 'Error' }} />
       <Stack.Screen name="Invites" options={{ title: 'Invitations' }} />
       <Stack.Screen name="spending-group/SpendingDetails" options={{ title: 'Spending Details' }} />
-      <Stack.Screen name="SavingsPots" options={{ headerShown: false }} />
+      <Stack.Screen name="SavingsPots" options={{ title: 'Savings Pots' }} />
       <Stack.Screen name="SavingsPotDetail" options={{ title: 'Savings Pot' }} />
     </Stack>
   );
