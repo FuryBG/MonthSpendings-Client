@@ -108,14 +108,14 @@ export function DrawerContent(props: any) {
                     {/* Banking */}
                     <View style={[styles.section, { borderTopColor: theme.colors.outline }]}>
                         <SectionLabel label="BANKING" />
-                        <NavItem
+                        {/* <NavItem
                             icon="bank-outline"
                             label="Connect Bank"
                             onPress={() => router.push('/(main)/ConnectBank')}
-                        />
+                        /> */}
                         <NavItem
                             icon="bank-plus"
-                            label="Connect Salt Edge Bank"
+                            label="Connect Bank"
                             onPress={() => router.push('/(main)/ConnectSaltEdgeBank')}
                         />
                     </View>

@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "month-spendings",
-    "slug": "month-spendings",
+    "name": "Tavira",
+    "slug": "tavira",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "monthspendings",
+    "scheme": "tavira",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
@@ -17,7 +17,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#0B1B3A",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
@@ -39,9 +39,9 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff",
+          "backgroundColor": "#F2F4F8",
           "dark": {
-            "backgroundColor": "#000000"
+            "backgroundColor": "#0B1B3A"
           }
         }
       ],
