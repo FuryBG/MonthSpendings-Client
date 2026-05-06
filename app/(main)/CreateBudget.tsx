@@ -1,9 +1,11 @@
 import { BottomSheet, BottomSheetRef, sheetStyles } from '@/components/BottomSheet';
 import { OverlayLoader } from '@/components/OverlayLoader';
+import { Tavira } from '@/constants/theme';
 import { useCreateBudgetMutation } from '@/hooks/useBudgetQueries';
 import { useCurrenciesQuery } from '@/hooks/useCurrencyQueries';
 import { useBudgetUIStore } from '@/stores/budgetUIStore';
 import { Budget, Currency } from '@/types/Types';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import { Controller, useFieldArray, useForm } from 'react-hook-form';
@@ -74,14 +76,14 @@ export default function CreateBudgetScreen() {
         navigation.setOptions({
             headerRight: () => (
                 <TouchableOpacity
-                    style={[styles.createBtn, { backgroundColor: theme.colors.primary }]}
+                    style={[styles.createBtn, { backgroundColor: theme.dark ? Tavira.teal : theme.colors.primary }]}
                     onPress={handleSubmit(onSubmit)}
                 >
-                    <Text style={[styles.createBtnText, { color: theme.colors.onPrimary }]}>Create</Text>
+                    <Text style={[styles.createBtnText, { color: theme.dark ? Tavira.navy : theme.colors.onPrimary }]}>Create</Text>
                 </TouchableOpacity>
             ),
         });
-    }, [handleSubmit]);
+    }, [handleSubmit, theme]);
 
     function selectCurrency(c: Currency) {
         setValue('currency', c);
@@ -97,14 +99,14 @@ export default function CreateBudgetScreen() {
     );
 
     return (
-        <View style={[styles.root, { backgroundColor: theme.colors.background }]}>
+        <LinearGradient colors={theme.dark ? Tavira.gradNavy : [theme.colors.background, theme.colors.background]} style={styles.root}>
             <OverlayLoader isVisible={createBudgetMutation.isPending || isCreatingBudget} message="Creating budget..." />
 
             <KeyboardAwareScrollView
                 style={styles.scroll}
                 contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 40 }]}>
                 <Text style={[styles.sectionLabel, { color: theme.colors.onBackground }]}>BUDGET DETAILS</Text>
-                <View style={[styles.card, { backgroundColor: theme.colors.surface, borderColor: theme.colors.outline }]}>
+                <View style={[styles.card, { backgroundColor: theme.dark ? Tavira.glassBg : theme.colors.surface, borderColor: theme.dark ? Tavira.glassBorder : theme.colors.outline }]}>
                     <Controller
                         control={control}
                         rules={{ required: 'Budget name is required' }}
@@ -247,6 +249,7 @@ export default function CreateBudgetScreen() {
                         id: 0,
                         name: '',
                         budgetId: 0,
+                        isDeleted: false,
                         spendings: [{
                             id: 0,
                             amount: undefined as any,
@@ -260,7 +263,6 @@ export default function CreateBudgetScreen() {
                             createdByName: '',
                             createdByUserId: 0,
                             transactionDate: null
-
                         }],
                     })}
                 >
@@ -318,7 +320,7 @@ export default function CreateBudgetScreen() {
                     })}
                 </ScrollView>
             </BottomSheet>
-        </View>
+        </LinearGradient>
     );
 }
 

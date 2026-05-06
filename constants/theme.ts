@@ -1,41 +1,73 @@
-/**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
- */
+import { Platform, ViewStyle } from 'react-native';
 
-import { Platform } from 'react-native';
+export const Tavira = {
+  navy:        '#0B1B3A',
+  navyDeep:    '#071228',
+  navyCard:    '#0F2244',
+  teal:        '#3EC6C6',
+  purple:      '#5B7BFF',
+  lightBg:     '#F2F4F8',
+  white:       '#FFFFFF',
 
-const tintColorLight = '#0a7ea4';
-const tintColorDark = '#fff';
+  // glass surfaces (dark)
+  glassBg:     'rgba(255,255,255,0.07)',
+  glassBgMid:  'rgba(255,255,255,0.10)',
+  glassBgHi:   'rgba(255,255,255,0.15)',
+  glassBorder: 'rgba(255,255,255,0.14)',
 
+  // glows
+  glowTeal:    'rgba(62,198,198,0.22)',
+  glowPurple:  'rgba(91,123,255,0.22)',
+
+  // semantic
+  expense:     '#FF6B6B',
+  income:      '#3EC6C6',
+  warning:     '#F59E0B',
+
+  // gradients (for LinearGradient)
+  gradTeal:    ['#3EC6C6', '#5B7BFF'] as const,
+  gradNavy:    ['#0B1B3A', '#071228'] as const,
+  gradCard:    ['rgba(62,198,198,0.13)', 'rgba(91,123,255,0.08)'] as const,
+  gradCardAlt: ['rgba(91,123,255,0.13)', 'rgba(62,198,198,0.08)'] as const,
+} as const;
+
+export const glassCard: ViewStyle = {
+  backgroundColor: Tavira.glassBg,
+  borderWidth: 1,
+  borderColor: Tavira.glassBorder,
+  borderRadius: 18,
+};
+
+export const gradientButton: ViewStyle = {
+  borderRadius: 14,
+  overflow: 'hidden',
+};
+
+// Legacy colors (kept for backward compatibility)
 export const Colors = {
   light: {
-    text: '#11181C',
-    background: '#fff',
-    tint: tintColorLight,
+    text: '#0B1B3A',
+    background: '#F2F4F8',
+    tint: '#0B1B3A',
     icon: '#687076',
     tabIconDefault: '#687076',
-    tabIconSelected: tintColorLight,
+    tabIconSelected: '#0B1B3A',
   },
   dark: {
-    text: '#ECEDEE',
-    background: '#151718',
-    tint: tintColorDark,
+    text: '#F2F4F8',
+    background: '#0B1B3A',
+    tint: '#3EC6C6',
     icon: '#9BA1A6',
     tabIconDefault: '#9BA1A6',
-    tabIconSelected: tintColorDark,
+    tabIconSelected: '#3EC6C6',
   },
 };
 
 export const Fonts = Platform.select({
   ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
     sans: 'system-ui',
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
     serif: 'ui-serif',
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
     rounded: 'ui-rounded',
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
     mono: 'ui-monospace',
   },
   default: {

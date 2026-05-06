@@ -1,5 +1,6 @@
 import { OverlayLoader } from "@/components/OverlayLoader";
 import { ScreenContainer } from "@/components/ScreenContainer";
+import { Tavira } from "@/constants/theme";
 import { queryClient } from "@/lib/queryClient";
 import { useAuthStore } from "@/stores/authStore";
 import { useSnackbarStore } from "@/stores/snackbarStore";
@@ -37,7 +38,7 @@ function EmptyState() {
             </View>
             <Text style={[s.emptyTitle, { color: colors.onBackground }]}>No invitations yet</Text>
             <Text style={[s.emptySub, { color: colors.onSurfaceVariant }]}>
-                When someone invites you to{'\n'}join a budget, it'll appear here.
+                {"When someone invites you to\njoin a budget, it'll appear here."}
             </Text>
         </Animated.View>
     );
@@ -66,22 +67,23 @@ function InviteCard({ invite, index, onRespond }: InviteCardProps) {
 
     const isPending = invite.accepted === null;
     const isAccepted = invite.accepted === true;
+    const isDark = colors.background === Tavira.navy;
 
-    const accentColor = isPending ? colors.primary : isAccepted ? '#4CAF50' : '#EF5350';
+    const accentColor = isPending ? Tavira.teal : isAccepted ? Tavira.income : Tavira.expense;
 
     const expiry = invite.validTo
         ? new Date(invite.validTo).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
         : null;
 
     const status = !isPending
-        ? { label: isAccepted ? 'Accepted' : 'Declined', color: isAccepted ? '#4CAF50' : colors.error }
+        ? { label: isAccepted ? 'Accepted' : 'Declined', color: isAccepted ? Tavira.income : Tavira.expense }
         : null;
 
     const budgetLabel = invite.budgetName || `Budget #${invite.budgetId}`;
     const senderLabel = invite.senderName || invite.senderEmail || 'Unknown';
 
     return (
-        <Animated.View style={[c.card, { backgroundColor: colors.surface, opacity: fade, transform: [{ translateY: slide }] }]}>
+        <Animated.View style={[c.card, { backgroundColor: isDark ? Tavira.glassBg : colors.surface, borderColor: isDark ? Tavira.glassBorder : 'transparent', borderWidth: isDark ? 1 : 0, opacity: fade, transform: [{ translateY: slide }] }]}>
             <View style={[c.accent, { backgroundColor: accentColor }]} />
             <View style={c.body}>
 

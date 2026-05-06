@@ -1,6 +1,7 @@
 // --- FILE: app/(main)/SavingsPotDetail.tsx ---
 import { BottomSheet, BottomSheetRef, sheetStyles } from '@/components/BottomSheet';
 import { ScreenContainer } from '@/components/ScreenContainer';
+import { Tavira } from '@/constants/theme';
 import {
   useAddContributionMutation,
   useDeleteSavingsPotMutation,
@@ -29,14 +30,14 @@ import {
   useTheme,
 } from 'react-native-paper';
 
-const C_SAVINGS = '#4ADE80';
-const C_AMBER = '#F59E0B';
-const C_EXPENSE = '#F87171';
+const C_SAVINGS = Tavira.teal;
+const C_AMBER = Tavira.warning;
+const C_EXPENSE = Tavira.expense;
 
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December'];
 
-const AVATAR_COLORS = ['#4ADE80', '#F59E0B', '#60A5FA', '#F87171', '#C084FC', '#34D399', '#FB923C'];
+const AVATAR_COLORS = [Tavira.teal, Tavira.warning, '#60A5FA', Tavira.expense, '#C084FC', '#34D399', '#FB923C'];
 
 function avatarColor(userId: number): string {
   return AVATAR_COLORS[Math.abs(userId) % AVATAR_COLORS.length];
@@ -308,7 +309,7 @@ export default function SavingsPotDetailScreen() {
               loading={loading}
               onPress={fundsSubmit(onAddFunds)}
               buttonColor={C_SAVINGS}
-              textColor="#0C0E12"
+              textColor={Tavira.navy}
               contentStyle={sheetStyles.sheetConfirmContent}
             >
               Add
@@ -372,7 +373,7 @@ export default function SavingsPotDetailScreen() {
             <Button
               mode="contained"
               buttonColor={C_EXPENSE}
-              textColor="#fff"
+              textColor="#FFFFFF"
               loading={loading}
               onPress={onDeletePot}
               contentStyle={sheetStyles.sheetConfirmContent}
@@ -402,7 +403,7 @@ export default function SavingsPotDetailScreen() {
       <ScreenContainer scrollable>
 
         {/* ── HERO CARD ── */}
-        <Card style={[styles.heroCard, { borderColor: `${C_SAVINGS}30` }]}>
+        <Card mode="outlined" style={[styles.heroCard, { borderColor: `${C_SAVINGS}30` }]}>
           <Card.Content>
             <View style={styles.heroTop}>
               <Text style={[styles.heroName, { color: theme.colors.onSurface }]}>{pot.name}</Text>
@@ -461,7 +462,7 @@ export default function SavingsPotDetailScreen() {
         </View>
 
         {/* ── HISTORY ── */}
-        <Card style={styles.historyCard}>
+        <Card mode="outlined" style={styles.historyCard}>
           <Card.Content style={styles.historyContent}>
             <Text style={[styles.sectionLabel, { color: theme.colors.onSurface }]}>CONTRIBUTION HISTORY</Text>
             <Divider style={styles.divider} />

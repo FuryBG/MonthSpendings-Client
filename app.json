@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Tavira",
-    "slug": "tavira",
+    "slug": "month-spendings",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",

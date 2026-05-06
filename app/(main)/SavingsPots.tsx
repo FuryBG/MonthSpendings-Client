@@ -1,6 +1,7 @@
 // --- FILE: app/(main)/SavingsPots.tsx ---
 import { BottomSheet, BottomSheetRef, sheetStyles } from '@/components/BottomSheet';
 import { ScreenContainer } from '@/components/ScreenContainer';
+import { Tavira } from '@/constants/theme';
 import { getCurrencies } from '@/app/services/api';
 import { useCreateSavingsPotMutation, useSavingsPotsQuery } from '@/hooks/useSavingsQueries';
 import { useAuthStore } from '@/stores/authStore';
@@ -24,8 +25,8 @@ import {
   useTheme,
 } from 'react-native-paper';
 
-const C_SAVINGS = '#4ADE80';
-const C_AMBER = '#F59E0B';
+const C_SAVINGS = Tavira.teal;
+const C_AMBER = Tavira.warning;
 
 type CreateForm = { name: string };
 
@@ -45,7 +46,7 @@ function PotCard({
 
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.78}>
-      <Card style={styles.potCard}>
+      <Card mode="outlined" style={[styles.potCard, { backgroundColor: theme.dark ? Tavira.glassBg : theme.colors.surface, borderColor: theme.dark ? Tavira.glassBorder : 'rgba(11,27,58,0.08)' }]}>
         <Card.Content>
           {/* top row */}
           <View style={styles.cardTopRow}>
@@ -221,7 +222,7 @@ export default function SavingsPotsScreen() {
             disabled={!selectedCurrency}
             onPress={onSubmit}
             buttonColor={C_SAVINGS}
-            textColor="#0C0E12"
+            textColor={Tavira.navy}
             contentStyle={sheetStyles.sheetConfirmContent}
           >
             Create
@@ -246,7 +247,7 @@ export default function SavingsPotsScreen() {
               </View>
               <Text style={[styles.emptyTitle, { color: theme.colors.onSurface }]}>No Savings Pots Yet</Text>
               <Text style={[styles.emptySub, { color: theme.colors.onSurfaceVariant }]}>
-                Create your first pot to start tracking money you're setting aside — share it with others too.
+                {"Create your first pot to start tracking money you're setting aside — share it with others too."}
               </Text>
             </View>
           ) : (
@@ -268,8 +269,8 @@ export default function SavingsPotsScreen() {
 
         <FAB
           icon="plus"
-          style={[styles.fab, { backgroundColor: C_SAVINGS, bottom: 16 + insets.bottom }]}
-          color="#0C0E12"
+          style={[styles.fab, { backgroundColor: Tavira.teal, bottom: 16 + insets.bottom }]}
+          color={Tavira.navy}
           onPress={openCreate}
         />
       </View>

@@ -1,5 +1,6 @@
 import { BottomSheet, BottomSheetRef, sheetStyles } from "@/components/BottomSheet";
 import { ScreenContainer } from "@/components/ScreenContainer";
+import { Tavira } from "@/constants/theme";
 import {
     useAddBudgetCategoryMutation,
     useBudgetsQuery,
@@ -31,9 +32,9 @@ import {
 } from "react-native-paper";
 import { createInvite, respondToInvite } from "../services/api";
 
-const COLOR_EXPENSE = '#F87171';
-const COLOR_INCOME  = '#4ADE80';
-const COLOR_AMBER   = '#F59E0B';
+const COLOR_EXPENSE = Tavira.expense;
+const COLOR_INCOME  = Tavira.income;
+const COLOR_AMBER   = Tavira.warning;
 
 type SheetType = 'invite' | 'addCategory' | 'deleteCategory' | 'renameCategory' | 'deleteBudget' | 'finishPeriod' | null;
 
@@ -401,7 +402,7 @@ export default function ManageBudgetScreen() {
                             <Button
                                 mode="contained"
                                 buttonColor={COLOR_AMBER}
-                                textColor="#0C0E12"
+                                textColor={Tavira.navy}
                                 loading={loading}
                                 onPress={() => onFinishPeriod(undefined)}
                                 icon="arrow-right-circle-outline"
@@ -444,12 +445,12 @@ export default function ManageBudgetScreen() {
                                 style={{
                                     flexDirection: 'row', alignItems: 'center', gap: 12,
                                     borderRadius: 10, borderWidth: 1, padding: 12, marginBottom: 6,
-                                    borderColor: selectedSavingsPotId === pot.id ? '#4ADE80' : theme.colors.surfaceVariant,
+                                    borderColor: selectedSavingsPotId === pot.id ? Tavira.teal : theme.colors.surfaceVariant,
                                     backgroundColor: selectedSavingsPotId === pot.id ? 'rgba(74,222,128,0.08)' : 'transparent',
                                 }}
                                 onPress={() => setSelectedSavingsPotId(pot.id)}
                             >
-                                <Icon source="piggy-bank-outline" size={20} color={selectedSavingsPotId === pot.id ? '#4ADE80' : theme.colors.onSurfaceVariant} />
+                                <Icon source="piggy-bank-outline" size={20} color={selectedSavingsPotId === pot.id ? Tavira.teal : theme.colors.onSurfaceVariant} />
                                 <View style={{ flex: 1 }}>
                                     <Text style={{ fontWeight: '600', fontSize: 14 }}>{pot.name}</Text>
                                     <Text style={{ fontSize: 11, opacity: 0.55 }}>
@@ -464,8 +465,8 @@ export default function ManageBudgetScreen() {
                         <Button mode="text" onPress={() => setFinishStep('choice')}>Back</Button>
                         <Button
                             mode="contained"
-                            buttonColor="#4ADE80"
-                            textColor="#0C0E12"
+                            buttonColor={Tavira.teal}
+                            textColor={Tavira.navy}
                             loading={loading}
                             disabled={!selectedSavingsPotId}
                             onPress={() => onFinishPeriod(selectedSavingsPotId ?? undefined)}
@@ -508,7 +509,7 @@ export default function ManageBudgetScreen() {
             <ScreenContainer scrollable={true}>
 
                 {/* Header */}
-                <Card style={styles.headerCard}>
+                <Card mode="outlined" style={styles.headerCard}>
                     <Card.Content style={styles.headerContent}>
                         <View style={styles.headerLeft}>
                             <Icon source="account-cash" size={28} color={theme.colors.primary} />
@@ -524,7 +525,7 @@ export default function ManageBudgetScreen() {
 
                 {/* Pending Invitations */}
                 {(user?.receivedBudgetInvites.filter(i => i.accepted === null).length ?? 0) > 0 && (
-                    <Card style={styles.sectionCard}>
+                    <Card mode="outlined" style={styles.sectionCard}>
                         <Card.Content>
                             <View style={styles.sectionTitleRow}>
                                 <Text style={styles.sectionTitle}>Pending Invitations</Text>
@@ -569,7 +570,7 @@ export default function ManageBudgetScreen() {
                 )}
 
                 {/* Members */}
-                <Card style={styles.sectionCard}>
+                <Card mode="outlined" style={styles.sectionCard}>
                     <Card.Content>
                         <Text style={styles.sectionTitle}>Members</Text>
                         <Divider style={styles.divider} />
@@ -602,7 +603,7 @@ export default function ManageBudgetScreen() {
                 </Card>
 
                 {/* Categories */}
-                <Card style={styles.sectionCard}>
+                <Card mode="outlined" style={styles.sectionCard}>
                     <Card.Content>
                         <Text style={styles.sectionTitle}>Categories</Text>
                         <Divider style={styles.divider} />
@@ -641,7 +642,7 @@ export default function ManageBudgetScreen() {
                 </Card>
 
                 {/* Period */}
-                <Card style={[styles.sectionCard, styles.periodCard]}>
+                <Card mode="outlined" style={[styles.sectionCard, styles.periodCard]}>
                     <Card.Content>
                         <View style={styles.sectionTitleRow}>
                             <Icon source="calendar-month" size={18} color={COLOR_AMBER} />
@@ -655,7 +656,7 @@ export default function ManageBudgetScreen() {
                         <Button
                             mode="contained"
                             buttonColor={COLOR_AMBER}
-                            textColor="#0C0E12"
+                            textColor={Tavira.navy}
                             style={styles.periodButton}
                             onPress={() => openSheet('finishPeriod')}
                         >
@@ -836,10 +837,10 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     inviteAccept: {
-        backgroundColor: '#4ADE80',
+        backgroundColor: Tavira.teal,
     },
     inviteDecline: {
-        backgroundColor: '#F87171',
+        backgroundColor: Tavira.expense,
     },
     categoryItemActions: {
         flexDirection: 'row',

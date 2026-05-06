@@ -12,6 +12,8 @@ export default function PagesLayout() {
   return (
     <Stack>
       <Stack.Screen name="Login" options={{ headerShown: false }} />
+      <Stack.Screen name="TermsOfService" options={{ headerShown: false }} />
+      <Stack.Screen name="PrivacyPolicy" options={{ headerShown: false }} />
     </Stack>
   );
 }

@@ -44,6 +44,7 @@ export type BudgetCategory = {
     budgetId: number
     name: string
     spendings: Spending[]
+    isDeleted: boolean
 }
 
 export type Spending = {
@@ -192,4 +193,5 @@ export type CategoryComparisonDto = {
     categoryId: number
     categoryName: string
     amount: number
+    isDeleted: boolean
 }

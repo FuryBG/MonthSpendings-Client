@@ -14,45 +14,67 @@ import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { MD3DarkTheme, MD3LightTheme, PaperProvider } from 'react-native-paper';
 import 'react-native-reanimated';
 
-const customThemeLight = {
-  ...MD3LightTheme,
-  colors: {
-    ...MD3LightTheme.colors,
-    primary: '#5C7A1A',
-    onPrimary: '#FFFFFF',
-    secondaryContainer: '#E8F5C8',
-    onSecondaryContainer: '#3D5212',
-    surface: '#FFFFFF',
-    surfaceVariant: '#EDF0F5',
-    background: '#F5F7FA',
-    onBackground: '#0C0E12',
-    onSurface: '#0C0E12',
-    outline: '#D0D5DF',
-    error: '#D94F4F',
-  },
-};
-
-const customThemeDark = {
+const taviraDark = {
   ...MD3DarkTheme,
   colors: {
     ...MD3DarkTheme.colors,
-    primary: '#BADA55',
-    onPrimary: '#0C0E12',
-    secondaryContainer: '#1D2A0A',
-    onSecondaryContainer: '#BADA55',
-    surface: '#161B22',
-    surfaceVariant: '#1E242E',
-    background: '#0C0E12',
-    onBackground: '#EDF0F5',
-    onSurface: '#EDF0F5',
-    outline: '#2E3440',
-    error: '#FF6B6B',
+    primary:            '#3EC6C6',
+    onPrimary:          '#0B1B3A',
+    primaryContainer:   'rgba(62,198,198,0.15)',
+    onPrimaryContainer: '#3EC6C6',
+    secondary:          '#5B7BFF',
+    onSecondary:        '#FFFFFF',
+    secondaryContainer: 'rgba(91,123,255,0.15)',
+    onSecondaryContainer: '#5B7BFF',
+    surface:            'rgba(255,255,255,0.07)',
+    surfaceVariant:     'rgba(255,255,255,0.12)',
+    background:         '#0B1B3A',
+    onBackground:       '#F2F4F8',
+    onSurface:          '#F2F4F8',
+    onSurfaceVariant:   'rgba(242,244,248,0.65)',
+    outline:            'rgba(255,255,255,0.15)',
+    outlineVariant:     'rgba(255,255,255,0.08)',
+    error:              '#FF6B6B',
+    onError:            '#FFFFFF',
+    elevation: {
+      level0: 'transparent',
+      level1: 'rgba(255,255,255,0.07)',
+      level2: 'rgba(255,255,255,0.07)',
+      level3: 'rgba(255,255,255,0.07)',
+      level4: 'rgba(255,255,255,0.07)',
+      level5: 'rgba(255,255,255,0.07)',
+    },
+  },
+};
+
+const taviraLight = {
+  ...MD3LightTheme,
+  colors: {
+    ...MD3LightTheme.colors,
+    primary:            '#0B1B3A',
+    onPrimary:          '#FFFFFF',
+    primaryContainer:   'rgba(11,27,58,0.08)',
+    onPrimaryContainer: '#0B1B3A',
+    secondary:          '#5B7BFF',
+    onSecondary:        '#FFFFFF',
+    secondaryContainer: 'rgba(91,123,255,0.10)',
+    onSecondaryContainer: '#3B57B5',
+    surface:            '#FFFFFF',
+    surfaceVariant:     '#F2F4F8',
+    background:         '#F2F4F8',
+    onBackground:       '#0B1B3A',
+    onSurface:          '#0B1B3A',
+    onSurfaceVariant:   'rgba(11,27,58,0.55)',
+    outline:            'rgba(11,27,58,0.15)',
+    outlineVariant:     'rgba(11,27,58,0.08)',
+    error:              '#D94F4F',
+    onError:            '#FFFFFF',
   },
 };
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
-  const theme = colorScheme === 'dark' ? customThemeDark : customThemeLight;
+  const theme = colorScheme === 'dark' ? taviraDark : taviraLight;
 
   useEffect(() => {
     useAuthStore.getState().restoreSession();
@@ -70,7 +92,7 @@ export default function RootLayout() {
               <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
                 <Stack screenOptions={{ headerShown: false }} />
                 <GlobalSnackbar />
-                <StatusBar style="auto" />
+                <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
               </ThemeProvider>
             </PaperProvider>
           </NotificationProvider>

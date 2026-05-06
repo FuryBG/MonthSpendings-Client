@@ -28,6 +28,7 @@ export const useAddSpendingMutation = (meta?: MutationMeta) =>
     mutationFn: (spending: Spending) => createSpending(spending),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['budgets'] });
+      queryClient.invalidateQueries({ queryKey: ['period-comparison'] });
     },
     meta,
   });
@@ -37,6 +38,7 @@ export const useDeleteSpendingMutation = () =>
     mutationFn: (spendingId: number) => deleteSpending(spendingId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['budgets'] });
+      queryClient.invalidateQueries({ queryKey: ['period-comparison'] });
     },
   });
 
@@ -82,6 +84,7 @@ export const useFinishBudgetMutation = (meta?: MutationMeta) =>
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['budgets'] });
       queryClient.invalidateQueries({ queryKey: ['savings'] });
+      queryClient.invalidateQueries({ queryKey: ['period-comparison'] });
     },
     meta,
   });

@@ -19,5 +19,6 @@ export const useCategorizeTransactionMutation = () =>
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pendingTransactions'] });
       queryClient.invalidateQueries({ queryKey: ['budgets'] });
+      queryClient.invalidateQueries({ queryKey: ['period-comparison'] });
     },
   });

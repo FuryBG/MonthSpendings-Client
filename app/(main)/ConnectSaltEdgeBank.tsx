@@ -1,6 +1,7 @@
 import { getSaltEdgeBanks, startSaltEdgeConnection } from "@/app/services/api";
 import { OverlayLoader } from "@/components/OverlayLoader";
 import { ScreenContainer } from "@/components/ScreenContainer";
+import { Tavira } from "@/constants/theme";
 import { useSnackbarStore } from "@/stores/snackbarStore";
 import { useTitleStore } from "@/stores/titleStore";
 import { SaltEdgeProvider } from "@/types/Types";
@@ -10,9 +11,10 @@ import * as WebBrowser from "expo-web-browser";
 import debounce from 'lodash.debounce';
 import { useEffect, useRef, useState } from "react";
 import { FlatList, Image, StyleSheet, View } from "react-native";
-import { Card, Searchbar, Text } from "react-native-paper";
+import { Card, Searchbar, Text, useTheme } from "react-native-paper";
 
 export default function ConnectSaltEdgeBankScreen() {
+    const theme = useTheme();
     const [banks, setBanks] = useState<SaltEdgeProvider[]>([]);
     const showError = useSnackbarStore((s) => s.showError);
     const setTitle = useTitleStore((s) => s.setTitle);
@@ -95,7 +97,7 @@ export default function ConnectSaltEdgeBankScreen() {
                 maxToRenderPerBatch={10}
                 windowSize={5}
                 renderItem={({ item }) => (
-                    <Card style={styles.bankCard} onPress={() => onSelectBank(item)}>
+                    <Card mode="outlined" style={[styles.bankCard, theme.dark ? { backgroundColor: Tavira.glassBg, borderColor: Tavira.glassBorder } : {}]} onPress={() => onSelectBank(item)}>
                         <View style={styles.logoContainer}>
                             <Image
                                 source={{ uri: item.logoUrl ?? undefined }}

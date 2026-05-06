@@ -1,4 +1,5 @@
 import { ScreenContainer } from '@/components/ScreenContainer';
+import { Tavira } from '@/constants/theme';
 import { useBudgetsQuery, useDeleteSpendingMutation } from '@/hooks/useBudgetQueries';
 import { useBudgetUIStore } from '@/stores/budgetUIStore';
 import { useTitleStore } from '@/stores/titleStore';
@@ -9,9 +10,8 @@ import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import { Button, Card, Chip, Dialog, Divider, Icon, Portal, Surface, Text, useTheme } from 'react-native-paper';
 
-// Semantic signal colours — intentional, not theme-derived
-const COLOR_EXPENSE = '#F87171';
-const COLOR_INCOME  = '#4ADE80';
+const COLOR_EXPENSE = Tavira.expense;
+const COLOR_INCOME  = Tavira.income;
 
 // ─── Pure helpers ─────────────────────────────────────────────────────────────
 
@@ -101,7 +101,7 @@ function SummaryHeaderCard({ spendings, symbol }: SummaryProps) {
   const balanceColor = netBalance >= 0 ? COLOR_INCOME : COLOR_EXPENSE;
 
   return (
-    <Surface style={[s.summaryCard, { backgroundColor: theme.colors.surfaceVariant }]} elevation={0}>
+    <Surface style={[s.summaryCard, { backgroundColor: theme.dark ? Tavira.glassBg : theme.colors.surfaceVariant, borderWidth: 1, borderColor: theme.dark ? Tavira.glassBorder : 'transparent' }]} elevation={0}>
       <View style={s.summaryCenter}>
         <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
           NET BALANCE
@@ -223,7 +223,7 @@ export default function SpendingDetailsScreen() {
                 ref={(r) => { swipeableRefs.current.set(sp.id, r); }}
                 renderRightActions={() => renderDeleteAction(sp.id)}
               >
-                <Card style={s.card}>
+                <Card mode="outlined" style={[s.card, theme.dark ? { backgroundColor: Tavira.glassBg, borderColor: Tavira.glassBorder } : {}]}>
                   <Card.Content style={s.cardContent}>
                     <View style={s.row}>
                       <View style={s.leftContent}>

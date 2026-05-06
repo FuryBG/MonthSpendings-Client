@@ -1,3 +1,4 @@
+import { Tavira } from '@/constants/theme';
 import { Budget } from '@/types/Types';
 import React from 'react';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
@@ -8,7 +9,7 @@ interface HeaderMenuProps {
   selectedMainBudgetId: number | null;
   onSelect: (budget: Budget) => void;
   onManage: (budgetId: number) => void;
-  onCreate: () => void
+  onCreate: () => void;
 }
 
 export const HeaderMenu = React.memo(function HeaderMenu({
@@ -16,31 +17,59 @@ export const HeaderMenu = React.memo(function HeaderMenu({
   selectedMainBudgetId,
   onSelect,
   onManage,
-  onCreate
+  onCreate,
 }: HeaderMenuProps) {
-  const { colors } = useTheme();
+  const theme = useTheme();
+  const isDark = theme.dark;
 
   return (
     <View style={styles.container}>
       {budgets.map((b) => {
         const isSelected = b.id === selectedMainBudgetId;
         return (
-          <TouchableOpacity key={b.id} onPress={() => onSelect(b)}>
+          <TouchableOpacity key={b.id} onPress={() => onSelect(b)} activeOpacity={0.75}>
             <View
               style={[
                 styles.budgetPill,
                 {
-                  borderColor: isSelected ? colors.primary : colors.primary,
-                  backgroundColor: isSelected ? colors.primary : 'transparent',
+                  borderColor: isSelected
+                    ? isDark ? Tavira.teal : theme.colors.primary
+                    : isDark ? 'rgba(255,255,255,0.14)' : theme.colors.outline,
+                  backgroundColor: isSelected
+                    ? isDark ? 'rgba(62,198,198,0.15)' : theme.colors.primaryContainer
+                    : 'transparent',
                 },
               ]}
             >
               <View style={styles.pillContent}>
-                <Icon source="account-cash" size={18} />
-                <Text>{b.name}</Text>
+                <Icon
+                  source="wallet-outline"
+                  size={15}
+                  color={isSelected
+                    ? isDark ? Tavira.teal : theme.colors.primary
+                    : isDark ? 'rgba(242,244,248,0.5)' : theme.colors.onSurfaceVariant
+                  }
+                />
+                <Text
+                  style={[
+                    styles.pillText,
+                    {
+                      color: isSelected
+                        ? isDark ? Tavira.teal : theme.colors.primary
+                        : isDark ? 'rgba(242,244,248,0.7)' : theme.colors.onSurfaceVariant,
+                    },
+                  ]}
+                  numberOfLines={1}
+                >
+                  {b.name}
+                </Text>
                 {isSelected && (
-                  <TouchableOpacity onPress={() => onManage(b.id)}>
-                    <Icon source="cog" size={24} />
+                  <TouchableOpacity onPress={() => onManage(b.id)} hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}>
+                    <Icon
+                      source="cog-outline"
+                      size={16}
+                      color={isDark ? 'rgba(62,198,198,0.7)' : theme.colors.primary}
+                    />
                   </TouchableOpacity>
                 )}
               </View>
@@ -54,19 +83,27 @@ export const HeaderMenu = React.memo(function HeaderMenu({
 
 const styles = StyleSheet.create({
   container: {
-    paddingLeft: 20,
+    paddingLeft: 16,
     flexDirection: 'row',
-    gap: 5,
+    gap: 6,
+    flex: 1,
   },
   budgetPill: {
     borderWidth: 1,
-    padding: 10,
-    height: 45,
-    maxWidth: 115,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    maxWidth: 130,
     borderRadius: 10,
+    justifyContent: 'center',
   },
   pillContent: {
     flexDirection: 'row',
+    alignItems: 'center',
     gap: 5,
+  },
+  pillText: {
+    fontSize: 13,
+    fontWeight: '600',
+    flex: 1,
   },
 });
