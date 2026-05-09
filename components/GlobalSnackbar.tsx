@@ -15,8 +15,8 @@ export function GlobalSnackbar() {
         onDismiss={hide}
         duration={5000}
         style={isSuccess
-          ? { backgroundColor: 'rgba(62,198,198,0.15)', borderWidth: 1, borderColor: 'rgba(62,198,198,0.3)' }
-          : { backgroundColor: 'rgba(255,107,107,0.12)', borderWidth: 1, borderColor: 'rgba(255,107,107,0.25)' }
+          ? { backgroundColor: '#0D3D3D', borderWidth: 1, borderColor: Tavira.teal }
+          : { backgroundColor: '#3D0D0D', borderWidth: 1, borderColor: Tavira.expense }
         }
         theme={{
           colors: {

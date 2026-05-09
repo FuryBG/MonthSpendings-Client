@@ -63,6 +63,9 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
         if (token) setExpoPushToken(token);
       })
       .catch((err) => {
+        console.log("FAILED");
+        console.log(err);
+        
         setError(err);
       });
 
