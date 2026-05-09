@@ -2,11 +2,13 @@ import { DrawerContent } from '@/components/DrawerContent';
 import { HeaderMenu } from '@/components/HeaderMenu';
 import { Tavira } from '@/constants/theme';
 import { useBudgetsQuery } from '@/hooks/useBudgetQueries';
+import { useAuthStore } from '@/stores/authStore';
 import { useBudgetUIStore } from '@/stores/budgetUIStore';
+import { useOrderStore } from '@/stores/orderStore';
 import { Budget } from '@/types/Types';
 import { useRouter } from 'expo-router';
 import { Drawer } from 'expo-router/drawer';
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { StyleSheet } from 'react-native';
 import { Appbar, useTheme } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -17,6 +19,17 @@ export default function DrawerLayout() {
   const insets = useSafeAreaInsets();
   const { data: budgets = [] } = useBudgetsQuery();
   const { selectedMainBudgetId, setMainBudget } = useBudgetUIStore();
+  const user = useAuthStore((s) => s.user);
+  const { loadOrders } = useOrderStore();
+
+  const budgetIdsKey = budgets.map((b) => b.id).join(',');
+
+  useEffect(() => {
+    if (user && budgets.length > 0) {
+      loadOrders(user.id, budgets.map((b) => b.id));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, budgetIdsKey]);
 
   const onSelectMainBudget = useCallback((budget: Budget) => {
     setMainBudget(budget.id);

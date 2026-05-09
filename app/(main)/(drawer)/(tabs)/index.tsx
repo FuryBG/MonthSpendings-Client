@@ -3,20 +3,101 @@ import { ScreenContainer } from '@/components/ScreenContainer';
 import { Tavira } from '@/constants/theme';
 import { usePendingTransactionsQuery } from '@/hooks/useBankTransactionQueries';
 import { useAddSpendingMutation, useBudgetsQuery, useUpdateBudgetCategoryNameMutation } from '@/hooks/useBudgetQueries';
+import { useAuthStore } from '@/stores/authStore';
 import { useBudgetUIStore } from '@/stores/budgetUIStore';
+import { applyOrder, useOrderStore } from '@/stores/orderStore';
 import { useSnackbarStore } from '@/stores/snackbarStore';
 import { BudgetCategory, Spending } from '@/types/Types';
+import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
-import { Button, HelperText, Icon, IconButton, Text, TextInput, useTheme } from 'react-native-paper';
+import { Button, HelperText, Icon, Text, TextInput, useTheme } from 'react-native-paper';
+import ReorderableList, { reorderItems, useReorderableDrag } from 'react-native-reorderable-list';
+
+const ACCENT_COLORS = [Tavira.teal, Tavira.purple, '#7B8FFF', '#2DE6D0', '#8B5CF6', '#10B981'];
+
+interface CategoryCardProps {
+  bc: BudgetCategory;
+  currencySymbol: string;
+  isDark: boolean;
+  primaryColor: string;
+  getSwipeableRef: (r: Swipeable | null) => void;
+  onPress: () => void;
+  onRenamePress: () => void;
+  onMinus: () => void;
+  onPlus: () => void;
+}
+
+function CategoryCard({ bc, currencySymbol, isDark, primaryColor, getSwipeableRef, onPress, onRenamePress, onMinus, onPlus }: CategoryCardProps) {
+  const drag = useReorderableDrag();
+  const remaining = bc.spendings!.reduce((sum, s) => (s.amount > 0 ? sum + s.amount : sum - Math.abs(s.amount)), 0);
+  const accentColor = ACCENT_COLORS[bc.id % ACCENT_COLORS.length];
+  const isPositive = remaining > 0;
+  const minusDisabled = remaining <= 0;
+
+  return (
+    <Swipeable
+      ref={getSwipeableRef}
+      renderRightActions={() => (
+        <TouchableOpacity style={styles.renameAction} onPress={onRenamePress}>
+          <Icon source="pencil-outline" size={20} color="#fff" />
+          <Text style={styles.renameActionText}>Edit</Text>
+        </TouchableOpacity>
+      )}
+    >
+      <TouchableOpacity
+        style={[
+          styles.categoryCard,
+          isDark
+            ? { backgroundColor: Tavira.glassBg, borderColor: Tavira.glassBorder }
+            : { backgroundColor: '#FFFFFF', borderColor: 'rgba(11,27,58,0.08)' },
+        ]}
+        onPress={onPress}
+        onLongPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); drag(); }}
+        delayLongPress={300}
+        activeOpacity={0.75}
+      >
+        <View style={[styles.cardAccentLine, { backgroundColor: accentColor }]} />
+        <View style={styles.cardInner}>
+          <View style={[styles.cardIconWrap, { backgroundColor: `${accentColor}18` }]}>
+            <Icon source="cash-fast" size={22} color={accentColor} />
+          </View>
+          <View style={styles.cardInfo}>
+            <Text style={[styles.categoryName, { color: isDark ? '#F2F4F8' : '#000' }]}>{bc.name}</Text>
+            <Text style={[styles.categoryBalance, { color: isPositive ? Tavira.income : Tavira.expense }]}>
+              {remaining.toFixed(2)} {currencySymbol}
+            </Text>
+          </View>
+          <View style={styles.cardActions}>
+            <TouchableOpacity
+              style={[styles.actionBtn, { backgroundColor: minusDisabled ? 'rgba(255,107,107,0.06)' : 'rgba(255,107,107,0.12)' }]}
+              disabled={minusDisabled}
+              onPress={onMinus}
+            >
+              <Icon source="minus" size={16} color={minusDisabled ? 'rgba(255,107,107,0.3)' : Tavira.expense} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.actionBtn, { backgroundColor: 'rgba(62,198,198,0.12)' }]}
+              onPress={onPlus}
+            >
+              <Icon source="plus" size={16} color={Tavira.income} />
+            </TouchableOpacity>
+          </View>
+        </View>
+      </TouchableOpacity>
+    </Swipeable>
+  );
+}
 
 export default function HomeScreen() {
   const { data: budgets = [] } = useBudgetsQuery();
   const { data: transactions = [] } = usePendingTransactionsQuery();
   const { selectedMainBudgetId } = useBudgetUIStore();
+  const user = useAuthStore((s) => s.user);
+  const { categoryOrders, setCategoryOrder } = useOrderStore();
   const skipGlobal = { skipGlobalError: true };
   const addSpendingMutation = useAddSpendingMutation(skipGlobal);
   const updateCategoryNameMutation = useUpdateBudgetCategoryNameMutation(skipGlobal);
@@ -41,6 +122,23 @@ export default function HomeScreen() {
     .flatMap(x => x.budgetCategories)
     .find(c => c?.id === selectedBudgetCategoryId);
 
+  const rawCategories = useMemo(
+    () => selectedMainBudget?.budgetCategories ?? [],
+    [selectedMainBudget]
+  );
+
+  const sortedCategories = useMemo(
+    () => applyOrder(rawCategories, user ? (categoryOrders[selectedMainBudget?.id ?? 0] ?? []) : []),
+    [rawCategories, categoryOrders, user, selectedMainBudget?.id]
+  );
+
+  const [listData, setListData] = useState<BudgetCategory[]>(sortedCategories);
+
+  useEffect(() => {
+    setListData(sortedCategories);
+  }, [rawCategories, categoryOrders]); // eslint-disable-line react-hooks/exhaustive-deps
+
+
   const { control, handleSubmit, reset } = useForm<Spending>({
     defaultValues: { id: 0, amount: undefined, budgetCategoryId: 0, description: '' },
   });
@@ -50,9 +148,6 @@ export default function HomeScreen() {
 
   function onCreateBudget() { router.push('/(main)/CreateBudget'); }
   function onPendingTransactions() { router.push('/(main)/PendingTransactions'); }
-
-  const calculateRemaining = (spendings: Spending[]) =>
-    spendings.reduce((sum, s) => (s.amount > 0 ? sum + s.amount : sum - Math.abs(s.amount)), 0);
 
   const emptySpending: Spending = {
     id: 0, amount: undefined as any, budgetCategoryId: 0, description: '',
@@ -105,36 +200,31 @@ export default function HomeScreen() {
     return () => clearTimeout(t);
   }, [sheetVisible]);
 
-  const ACCENT_COLORS = [Tavira.teal, Tavira.purple, '#7B8FFF', '#2DE6D0', '#8B5CF6', '#10B981'];
+  function handleReorder({ from, to }: { from: number; to: number }) {
+    const newData = reorderItems(listData, from, to);
+    setListData(newData);
+    if (!user || !selectedMainBudget) return;
+    setCategoryOrder(user.id, selectedMainBudget.id, newData.map(c => c.id));
+  }
 
-  const renderRenameAction = (bc: BudgetCategory) => (
-    <TouchableOpacity
-      style={styles.renameAction}
-      onPress={() => { swipeableRefs.current.get(bc.id)?.close(); openRenameSheet(bc); }}
-    >
-      <Icon source="pencil-outline" size={20} color="#fff" />
-      <Text style={styles.renameActionText}>Edit</Text>
-    </TouchableOpacity>
+  const renderItem = ({ item: bc }: { item: BudgetCategory }) => (
+    <CategoryCard
+      bc={bc}
+      currencySymbol={selectedMainBudget?.currency.symbol ?? ''}
+      isDark={isDark}
+      primaryColor={theme.colors.primary}
+      getSwipeableRef={(r) => swipeableRefs.current.set(bc.id, r)}
+      onPress={() => onSpendingDetails(bc)}
+      onRenamePress={() => { swipeableRefs.current.get(bc.id)?.close(); openRenameSheet(bc); }}
+      onMinus={() => openSheet(bc, true)}
+      onPlus={() => openSheet(bc, false)}
+    />
   );
 
   return (
     <>
-      <ScreenContainer scrollable glowColor="teal">
-        {transactions.length > 0 && (
-          <TouchableOpacity onPress={onPendingTransactions} style={styles.pendingBanner}>
-            <View style={styles.pendingLeft}>
-              <View style={styles.pendingIconWrap}>
-                <Icon source="bank-transfer" size={18} color={Tavira.warning} />
-              </View>
-              <Text style={styles.pendingText}>Pending Bank Transactions</Text>
-            </View>
-            <View style={styles.pendingBadge}>
-              <Text style={styles.pendingBadgeText}>{transactions.length}</Text>
-            </View>
-          </TouchableOpacity>
-        )}
-
-        {(selectedMainBudgetId == null || budgets.length === 0) && (
+      <ScreenContainer glowColor="teal" removeSafeBottom={true}>
+        {(selectedMainBudgetId == null || budgets.length === 0) ? (
           <View style={styles.emptyContainer}>
             <View style={styles.emptyIconRing}>
               <View style={styles.emptyIconGlow} />
@@ -151,81 +241,41 @@ export default function HomeScreen() {
               <Text style={styles.createBudgetBtnText}>Create Budget</Text>
             </TouchableOpacity>
           </View>
-        )}
-
-        {selectedMainBudget != null && (
+        ) : (
           <>
+            {transactions.length > 0 && (
+              <TouchableOpacity onPress={onPendingTransactions} style={styles.pendingBanner}>
+                <View style={styles.pendingLeft}>
+                  <View style={styles.pendingIconWrap}>
+                    <Icon source="bank-transfer" size={18} color={Tavira.warning} />
+                  </View>
+                  <Text style={styles.pendingText}>Pending Bank Transactions</Text>
+                </View>
+                <View style={styles.pendingBadge}>
+                  <Text style={styles.pendingBadgeText}>{transactions.length}</Text>
+                </View>
+              </TouchableOpacity>
+            )}
+
             <View style={styles.budgetHeader}>
               <Text style={[styles.budgetName, { color: isDark ? 'rgba(242,244,248,0.45)' : theme.colors.onSurfaceVariant }]}>
-                {selectedMainBudget.name.toUpperCase()}
+                {selectedMainBudget?.name.toUpperCase()}
               </Text>
               <View style={styles.currencyPill}>
-                <Text style={styles.currencyText}>{selectedMainBudget.currency.symbol} {selectedMainBudget.currency.code}</Text>
+                <Text style={styles.currencyText}>{selectedMainBudget?.currency.symbol} {selectedMainBudget?.currency.code}</Text>
               </View>
             </View>
 
-            {selectedMainBudget.budgetCategories?.map((bc, index) => {
-              const remaining = calculateRemaining(bc.spendings!);
-              const accentColor = ACCENT_COLORS[index % ACCENT_COLORS.length];
-              const isPositive = remaining > 0;
-
-              return (
-                <Swipeable
-                  key={bc.id}
-                  ref={(r) => { swipeableRefs.current.set(bc.id, r); }}
-                  renderRightActions={() => renderRenameAction(bc)}
-                >
-                  <TouchableOpacity
-                    style={[
-                      styles.categoryCard,
-                      isDark
-                        ? { backgroundColor: Tavira.glassBg, borderColor: Tavira.glassBorder }
-                        : { backgroundColor: '#FFFFFF', borderColor: 'rgba(11,27,58,0.08)' },
-                    ]}
-                    onPress={() => onSpendingDetails(bc)}
-                    activeOpacity={0.75}
-                  >
-                    <View style={[styles.cardAccentLine, { backgroundColor: accentColor }]} />
-                    <View style={styles.cardInner}>
-                      <View style={[styles.cardIconWrap, { backgroundColor: `${accentColor}18` }]}>
-                        <Icon source="cash-fast" size={22} color={accentColor} />
-                      </View>
-                      <View style={styles.cardInfo}>
-                        <Text style={[styles.categoryName, { color: isDark ? '#F2F4F8' : theme.colors.onBackground }]}>
-                          {bc.name}
-                        </Text>
-                        <Text style={[
-                          styles.categoryBalance,
-                          { color: isPositive ? Tavira.income : Tavira.expense },
-                        ]}>
-                          {remaining.toFixed(2)} {selectedMainBudget.currency.symbol}
-                        </Text>
-                      </View>
-                      <View style={styles.cardActions}>
-                        <TouchableOpacity
-                          style={[
-                            styles.actionBtn,
-                            { backgroundColor: remaining <= 0 ? 'rgba(255,107,107,0.06)' : 'rgba(255,107,107,0.12)' },
-                          ]}
-                          disabled={remaining <= 0}
-                          onPress={() => remaining > 0 && openSheet(bc, true)}
-                        >
-                          <Icon source="minus" size={16} color={remaining <= 0 ? 'rgba(255,107,107,0.3)' : Tavira.expense} />
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                          style={[styles.actionBtn, { backgroundColor: 'rgba(62,198,198,0.12)' }]}
-                          onPress={() => openSheet(bc, false)}
-                        >
-                          <Icon source="plus" size={16} color={Tavira.income} />
-                        </TouchableOpacity>
-                      </View>
-                    </View>
-                  </TouchableOpacity>
-                </Swipeable>
-              );
-            })}
-
-            <View style={styles.bottomSpacer} />
+            <View style={styles.categoriesList}>
+              <ReorderableList
+                data={listData}
+                renderItem={renderItem}
+                keyExtractor={(c) => c.id.toString()}
+                onReorder={handleReorder}
+                showsVerticalScrollIndicator={false}
+                style={styles.categoriesList}
+              />
+            </View>
           </>
         )}
       </ScreenContainer>
@@ -460,6 +510,12 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 0.5,
   },
+  categoriesList: {
+    flex: 1,
+  },
+  categoriesContent: {
+    paddingBottom: 0,
+  },
   categoryCard: {
     borderRadius: 18,
     borderWidth: 1,
@@ -524,8 +580,5 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 11,
     fontWeight: '600',
-  },
-  bottomSpacer: {
-    height: 24,
   },
 });

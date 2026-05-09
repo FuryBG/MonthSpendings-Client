@@ -1,43 +1,26 @@
 {
   "project_info": {
-    "project_number": "374802258679",
-    "project_id": "month-spendings-e7741",
-    "storage_bucket": "month-spendings-e7741.firebasestorage.app"
+    "project_number": "39532728902",
+    "project_id": "tavira-b294f",
+    "storage_bucket": "tavira-b294f.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:374802258679:android:a01212d1213b6f94cad1f2",
+        "mobilesdk_app_id": "1:39532728902:android:20bc6cf46bef687a3d7047",
         "android_client_info": {
-          "package_name": "app.expo.monthspendings"
+          "package_name": "app.expo.tavira"
         }
       },
-      "oauth_client": [
-        {
-          "client_id": "374802258679-4dne2re8q80o7p1r3tt4rfm3vmd8seh1.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "app.expo.monthspendings",
-            "certificate_hash": "7c2d0460ae5d944ec621e5d735370a460d2811cf"
-          }
-        }
-      ],
+      "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyDAxYduBiS7AGDZ8b3uIz2DyBB065o9sxU"
+          "current_key": "AIzaSyAht9lDHT5w_wpoFsTJGFMoLNRr9YE83ck"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "374802258679-adeuvr8alat7fu2kidn7kk222l0oc7p7.apps.googleusercontent.com",
-              "client_type": 2,
-              "ios_info": {
-                "bundle_id": "app.expo.monthspendings"
-              }
-            }
-          ]
+          "other_platform_oauth_client": []
         }
       }
     }

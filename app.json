@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Tavira",
-    "slug": "month-spendings",
+    "slug": "tavira",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -10,7 +10,7 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "app.expo.monthspendings",
+      "bundleIdentifier": "app.expo.tavira",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -25,7 +25,7 @@
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "googleServicesFile": "./google-services.json",
-      "package": "app.expo.monthspendings"
+      "package": "app.expo.tavira"
     },
     "web": {
       "output": "static",
@@ -66,7 +66,7 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "02fdaaf3-7d70-4da9-93ce-6a679cb84a73"
+        "projectId": "039507df-edf6-4e92-b0a8-8d1ebb06da17"
       }
     },
     "owner": "robartstoyanov"
