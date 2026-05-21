@@ -163,8 +163,7 @@ export function DrawerContent(props: any) {
               icon="bank-plus"
               label="Connect Bank"
               accent="#2DE6D0"
-              soon
-              onPress={() => router.push('/(main)/ConnectSaltEdgeBank')}
+              onPress={() => router.push('/(main)/ConnectBank')}
             />
           </View>
 

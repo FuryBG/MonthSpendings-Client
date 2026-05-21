@@ -1,4 +1,4 @@
-import { setOnUnauthorized } from '@/app/services/api';
+import { setOnUnauthorized, updateUserActivity } from '@/app/services/api';
 import { GlobalSnackbar } from '@/components/GlobalSnackbar';
 import { NotificationProvider } from '@/context/NotificationContext';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -75,6 +75,7 @@ const taviraLight = {
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const theme = colorScheme === 'dark' ? taviraDark : taviraLight;
+  const user = useAuthStore((s) => s.user);
 
   useEffect(() => {
     useAuthStore.getState().restoreSession();
@@ -82,6 +83,13 @@ export default function RootLayout() {
       useAuthStore.getState().clearUser();
     });
   }, []);
+
+  useEffect(() => {
+    if (user) {
+      updateUserActivity({ timezone: Intl.DateTimeFormat().resolvedOptions().timeZone })
+        .catch(() => {});
+    }
+  }, [user?.id]);
 
   return (
     <GestureHandlerRootView>

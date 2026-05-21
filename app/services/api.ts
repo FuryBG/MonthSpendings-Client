@@ -1,4 +1,4 @@
-import { AppUser, BankOption, BankTransaction, Budget, BudgetCategory, BudgetInvite, CategorizeTransactionDto, Currency, PeriodComparisonDto, SaltEdgeConnectionStatusResponse, SaltEdgeProvider, SavingsContribution, SavingsHistoryDto, SavingsPot, SavingsPotInvite, Spending, StartSaltEdgeConnectionResponse } from '@/types/Types';
+import { AppUser, BankOption, BankTransaction, Budget, BudgetCategory, BudgetInvite, CategorizeBankTransactionDto, CategorizeTransactionDto, Currency, PeriodComparisonDto, SaltEdgeConnectionStatusResponse, SaltEdgeProvider, SavingsContribution, SavingsHistoryDto, SavingsPot, SavingsPotInvite, Spending, StartSaltEdgeConnectionResponse, UpdateUserActivityDto } from '@/types/Types';
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 
@@ -16,7 +16,7 @@ export interface GoogleUserDto {
   notificationToken: string
 }
 
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'https://3981-88-203-208-219.ngrok-free.app';
+const BASE_URL = process.env.API_URL ?? "https://498c-88-203-208-219.ngrok-free.app";
 
 const api = axios.create({
   baseURL: BASE_URL,
@@ -60,6 +60,10 @@ export const getUser = async (): Promise<AppUser> => {
   return response.data;
 };
 
+export const updateUserActivity = async (dto: UpdateUserActivityDto): Promise<void> => {
+  await api.put('/api/user/activity', dto);
+};
+
 export const getBanks = async (bankName: string): Promise<BankOption[]> => {
   const response = await api.get(`/api/bank?bankName=${bankName}`);
   return response.data;
@@ -92,6 +96,11 @@ export const getNotCategorizedTransactions = async (): Promise<BankTransaction[]
 
 export const categorizeTransaction = async (transaction: CategorizeTransactionDto): Promise<Spending> => {
   const response = await api.post('/api/Transactions', transaction);
+  return response.data;
+};
+
+export const categorizeBankTransaction = async (dto: CategorizeBankTransactionDto): Promise<Spending> => {
+  const response = await api.post('/api/Transactions', dto);
   return response.data;
 };
 

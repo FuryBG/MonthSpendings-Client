@@ -16,6 +16,10 @@ export type AppUser = {
     sentBudgetInvites: BudgetInvite[]
 }
 
+export interface UpdateUserActivityDto {
+    timezone: string
+}
+
 export type Budget = {
     id: number
     name: string
@@ -69,6 +73,24 @@ export type BankTransaction = {
     currency: string
     amount: string
     bookingDate: string
+    creditorName: string | null
+    description: string | null
+}
+
+export type CategorizeBankTransactionDto = {
+    id: number
+    transactionId: string
+    bankAccountId: number
+    currency: string
+    amount: number
+    merchantCode: string | null
+    creditorName: string | null
+    description: string | null
+    status: string
+    bookingDate: string
+    categorized: boolean
+    categoryId: number
+    createRule: boolean
 }
 
 export type CategorizeTransactionDto = {

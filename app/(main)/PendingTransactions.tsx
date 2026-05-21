@@ -7,8 +7,8 @@ import { useTitleStore } from '@/stores/titleStore';
 import { BankTransaction, Budget, BudgetCategory } from '@/types/Types';
 import { useFocusEffect } from 'expo-router';
 import React, { useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { Button, Chip, Icon, Text, useTheme } from 'react-native-paper';
+import { ActivityIndicator, FlatList, ScrollView, StyleSheet, Switch, TouchableOpacity, View } from 'react-native';
+import { Chip, Icon, Text, useTheme } from 'react-native-paper';
 
 function formatDate(iso: string): string {
   const d = new Date(iso);
@@ -40,6 +40,9 @@ type CardProps = { item: BankTransaction; onCategorize: (t: BankTransaction) => 
 function TransactionCard({ item, onCategorize }: CardProps) {
   const theme = useTheme();
   const isDark = theme.dark;
+  const hasCreditor = !!item.creditorName;
+  const hasDescription = !!item.description;
+
   return (
     <View style={[s.card, {
       backgroundColor: isDark ? Tavira.glassBg : '#FFFFFF',
@@ -50,6 +53,22 @@ function TransactionCard({ item, onCategorize }: CardProps) {
           <Icon source="bank-outline" size={20} color={isDark ? Tavira.teal : theme.colors.onSurfaceVariant} />
         </View>
         <View style={s.cardMeta}>
+          {hasCreditor && (
+            <Text
+              style={[s.creditorName, { color: isDark ? '#F2F4F8' : Tavira.navy }]}
+              numberOfLines={1}
+            >
+              {item.creditorName}
+            </Text>
+          )}
+          {hasDescription && (
+            <Text
+              style={[s.descriptionText, { color: theme.colors.onSurfaceVariant }]}
+              numberOfLines={1}
+            >
+              {item.description}
+            </Text>
+          )}
           <Text style={[s.dateText, { color: theme.colors.onSurfaceVariant }]}>{formatDate(item.bookingDate)}</Text>
           <View style={[s.currencyBadge, {
             backgroundColor: isDark ? 'rgba(91,123,255,0.15)' : theme.colors.surfaceVariant,
@@ -78,13 +97,27 @@ type ModalBodyProps = {
   budgets: Budget[];
   selectedBudget: Budget | null;
   selectedCategoryId: number;
+  createRule: boolean;
   onSelectBudget: (b: Budget) => void;
   onSelectCategory: (c: BudgetCategory) => void;
+  onToggleRule: (v: boolean) => void;
 };
 
-function CategorizeBody({ transaction, budgets, selectedBudget, selectedCategoryId, onSelectBudget, onSelectCategory }: ModalBodyProps) {
+function CategorizeBody({
+  transaction,
+  budgets,
+  selectedBudget,
+  selectedCategoryId,
+  createRule,
+  onSelectBudget,
+  onSelectCategory,
+  onToggleRule,
+}: ModalBodyProps) {
   const theme = useTheme();
   const isDark = theme.dark;
+
+  const canAutoRule = !!(transaction.creditorName || transaction.description);
+
   return (
     <View>
       <View style={[s.summary, {
@@ -139,6 +172,48 @@ function CategorizeBody({ transaction, budgets, selectedBudget, selectedCategory
       ) : (
         <Text style={[s.hint, { color: theme.colors.onSurfaceVariant }]}>Select a budget first</Text>
       )}
+
+      {canAutoRule && (
+        <>
+          <View style={[s.ruleDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : theme.colors.outlineVariant }]} />
+          <View style={[s.ruleRow, {
+            backgroundColor: isDark
+              ? createRule ? 'rgba(62,198,198,0.07)' : 'transparent'
+              : createRule ? 'rgba(62,198,198,0.06)' : 'transparent',
+            borderRadius: 12,
+            padding: 4,
+          }]}>
+            <View style={s.ruleLabelGroup}>
+              <View style={s.ruleTitleRow}>
+                <Icon
+                  source="lightning-bolt"
+                  size={14}
+                  color={createRule ? Tavira.teal : (isDark ? 'rgba(242,244,248,0.4)' : theme.colors.onSurfaceVariant)}
+                />
+                <Text style={[
+                  s.ruleLabel,
+                  { color: createRule ? (isDark ? Tavira.teal : '#0B9EA0') : (isDark ? 'rgba(242,244,248,0.8)' : theme.colors.onSurface) },
+                ]}>
+                  Auto-categorize similar
+                </Text>
+              </View>
+              <Text style={[s.ruleHint, { color: isDark ? 'rgba(242,244,248,0.38)' : theme.colors.onSurfaceVariant }]}>
+                Save this choice for future transactions from the same source
+              </Text>
+            </View>
+            <Switch
+              value={createRule}
+              onValueChange={onToggleRule}
+              trackColor={{
+                false: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)',
+                true: 'rgba(62,198,198,0.45)',
+              }}
+              thumbColor={createRule ? Tavira.teal : (isDark ? 'rgba(255,255,255,0.6)' : '#f4f3f4')}
+              ios_backgroundColor={isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'}
+            />
+          </View>
+        </>
+      )}
     </View>
   );
 }
@@ -155,6 +230,7 @@ export default function PendingTransactions() {
   const [selectedBudget, setSelectedBudget] = useState<Budget | null>(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState<number>(0);
   const [selectedTransaction, setSelectedTransaction] = useState<BankTransaction | null>(null);
+  const [createRule, setCreateRule] = useState<boolean>(false);
 
   useFocusEffect(() => { setTitle('Transactions'); });
 
@@ -162,24 +238,27 @@ export default function PendingTransactions() {
     setSelectedTransaction(transaction);
     setSelectedBudget(null);
     setSelectedCategoryId(0);
+    setCreateRule(false);
     modalRef.current?.open();
   }
 
   async function onSave() {
     try {
+      const t = selectedTransaction!;
       await categorizeMutation.mutateAsync({
-        amount: -Number(selectedTransaction!.amount),
-        date: new Date().toISOString(),
-        transactionDate: selectedTransaction!.bookingDate,
-        bankTransactionId: selectedTransaction!.id,
-        budgetCategoryId: selectedCategoryId,
-        budgetPeriodId: selectedBudget!.budgetPeriods[0].id,
-        id: 0,
-        description: `FROM TRANSACTION WITH ID: ${selectedTransaction!.id}`,
-        bankTransaction: null,
-        createdByUserId: 0,
-        createdByEmail: null,
-        createdByName: null,
+        id: t.id,
+        transactionId: t.transactionId,
+        bankAccountId: Number(t.bankAccountId),
+        currency: t.currency,
+        amount: Number(t.amount),
+        merchantCode: null,
+        creditorName: t.creditorName ?? null,
+        description: t.description ?? null,
+        status: 'BOOK',
+        bookingDate: t.bookingDate,
+        categorized: false,
+        categoryId: selectedCategoryId,
+        createRule,
       });
       setSelectedTransaction(null);
       modalRef.current?.close();
@@ -229,8 +308,10 @@ export default function PendingTransactions() {
             budgets={budgets}
             selectedBudget={selectedBudget}
             selectedCategoryId={selectedCategoryId}
+            createRule={createRule}
             onSelectBudget={setSelectedBudget}
             onSelectCategory={(c) => setSelectedCategoryId(c.id)}
+            onToggleRule={setCreateRule}
           />
         )}
       </Modal>
@@ -250,7 +331,9 @@ const s = StyleSheet.create({
   },
   cardRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   iconWrap: { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
-  cardMeta: { flex: 1, gap: 5 },
+  cardMeta: { flex: 1, gap: 3 },
+  creditorName: { fontSize: 13, fontWeight: '700', letterSpacing: 0.1 },
+  descriptionText: { fontSize: 11, lineHeight: 15 },
   dateText: { fontSize: 12 },
   currencyBadge: { alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 7 },
   currencyText: { fontSize: 11, fontWeight: '700', letterSpacing: 0.5 },
@@ -280,4 +363,10 @@ const s = StyleSheet.create({
   chipRow: { flexDirection: 'row', gap: 8, paddingBottom: 6 },
   chip: { borderRadius: 10 },
   hint: { fontStyle: 'italic', marginBottom: 8, fontSize: 13 },
+  ruleDivider: { height: 1, borderRadius: 1, marginTop: 18, marginBottom: 14 },
+  ruleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
+  ruleLabelGroup: { flex: 1, gap: 3 },
+  ruleTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  ruleLabel: { fontSize: 13, fontWeight: '600', letterSpacing: 0.1 },
+  ruleHint: { fontSize: 11, lineHeight: 15 },
 });
