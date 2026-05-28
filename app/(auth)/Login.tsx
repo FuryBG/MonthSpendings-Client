@@ -91,7 +91,7 @@ export default function LoginScreen() {
 
   async function onSignIn() {
     try {
-      await GoogleSignin.configure();
+      await GoogleSignin.configure({ webClientId: "39532728902-fqpfrpmt101jr4v956vr1ufmsnea76bg.apps.googleusercontent.com" });
       const userInfo = await GoogleSignin.signIn();
       const googleToken = userInfo.data?.user.id;
       if (googleToken != undefined) {
