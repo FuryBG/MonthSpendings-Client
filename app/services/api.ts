@@ -16,8 +16,8 @@ export interface GoogleUserDto {
   notificationToken: string
 }
 
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL!;
-console.log(process.env.EXPO_PUBLIC_API_URL);
+const BASE_URL = "https://02f1-88-203-208-219.ngrok-free.app";
+console.log(`API ADDRESS: ${process.env.EXPO_PUBLIC_API_URL}`);
 
 
 const api = axios.create({

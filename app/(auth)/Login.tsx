@@ -92,6 +92,7 @@ export default function LoginScreen() {
   async function onSignIn() {
     try {
       await GoogleSignin.configure({ webClientId: "39532728902-fqpfrpmt101jr4v956vr1ufmsnea76bg.apps.googleusercontent.com" });
+      
       const userInfo = await GoogleSignin.signIn();
       const googleToken = userInfo.data?.user.id;
       if (googleToken != undefined) {
@@ -104,11 +105,13 @@ export default function LoginScreen() {
           givenName: userInfo.data!.user.givenName,
           photo: userInfo.data!.user.photo,
         });
+        console.log(`GOOGLE TOKEN ID: ${googleToken}`);
+        
         await signIn(jwt);
         setSigning(false);
       }
     } catch (e) {
-      console.log(e);
+      console.log(`$REALLY BAD ERROR: ${e}`);
       setVisible(true);
       setSigning(false);
     }
