@@ -4,6 +4,7 @@ import { useBudgetsQuery } from "@/hooks/useBudgetQueries";
 import { useAuthStore } from "@/stores/authStore";
 import { useBudgetUIStore } from "@/stores/budgetUIStore";
 import { useTitleStore } from "@/stores/titleStore";
+import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import { Redirect, Stack, useRouter } from "expo-router";
 import React, { useEffect } from "react";
 import { StyleSheet } from "react-native";
@@ -21,6 +22,7 @@ export default function MainLayout() {
   const insets = useSafeAreaInsets();
 
   useEffect(() => {
+    GoogleSignin.configure({ webClientId: "39532728902-fqpfrpmt101jr4v956vr1ufmsnea76bg.apps.googleusercontent.com" });
     useBudgetUIStore.getState().loadMainBudgetId();
   }, []);
 
