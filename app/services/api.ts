@@ -16,8 +16,8 @@ export interface GoogleUserDto {
   notificationToken: string
 }
 
-const BASE_URL = "https://02f1-88-203-208-219.ngrok-free.app";
-console.log(`API ADDRESS: ${process.env.EXPO_PUBLIC_API_URL}`);
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? "https://02f1-88-203-208-219.ngrok-free.app";
+console.log(`API ADDRESS: ${BASE_URL}`);
 
 
 const api = axios.create({
@@ -44,7 +44,11 @@ export const setOnUnauthorized = (callback: () => void) => {
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    if (error?.response?.status === 401) {
+    const status = error?.response?.status;
+    const url = error?.config?.url;
+    const method = error?.config?.method?.toUpperCase();
+    console.log(`API ERROR: ${method} ${url} → ${status}`);
+    if (status === 401) {
       await SecureStore.deleteItemAsync('token');
       onUnauthorized?.();
     }
