@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Image, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Icon, Portal, Snackbar, Text } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useNotification } from '@/context/NotificationContext';
 import { googleLogin } from '../services/api';
 
 function TaviraLogoMark() {
@@ -74,6 +75,7 @@ function GoogleButton({ onPress, loading }: { onPress: () => void; loading: bool
 
 export default function LoginScreen() {
   const signIn = useAuthStore((s) => s.signIn);
+  const { expoPushToken } = useNotification();
   const router = useRouter();
   const [visible, setVisible] = useState(false);
   const [signing, setSigning] = useState(false);
@@ -97,7 +99,7 @@ export default function LoginScreen() {
         setSigning(true);
         const jwt = await googleLogin({
           id: userInfo.data!.user.id,
-          notificationToken: '',
+          notificationToken: expoPushToken ?? '',
           email: userInfo.data!.user.email,
           familyName: userInfo.data!.user.familyName,
           givenName: userInfo.data!.user.givenName,
