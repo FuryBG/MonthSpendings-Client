@@ -2,8 +2,8 @@ import { queryClient } from "@/lib/queryClient";
 import { useAuthStore } from "@/stores/authStore";
 import { AppNotification, AppNotificationType } from "@/types/Types";
 import { registerForPushNotificationsAsync } from "@/utils/registerForPushNotificationsAsync";
-import { EventSubscription } from "expo-modules-core";
 import * as Notifications from "expo-notifications";
+import { EventSubscription } from "expo-notifications";
 import React, {
   createContext,
   ReactNode,

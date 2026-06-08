@@ -1,6 +1,6 @@
 import { Tavira } from '@/constants/theme';
 import { useAuthStore } from '@/stores/authStore';
-import { DrawerContentScrollView } from '@react-navigation/drawer';
+import { DrawerContentScrollView } from 'expo-router/build/react-navigation/drawer';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';

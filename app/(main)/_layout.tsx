@@ -6,7 +6,7 @@ import { useBudgetUIStore } from "@/stores/budgetUIStore";
 import { useTitleStore } from "@/stores/titleStore";
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import { Redirect, Stack, useRouter } from "expo-router";
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { StyleSheet } from "react-native";
 import { Appbar, useTheme } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
