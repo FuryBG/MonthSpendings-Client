@@ -1,4 +1,5 @@
 import { Tavira } from '@/constants/theme';
+import { useNotification } from '@/context/NotificationContext';
 import { useAuthStore } from '@/stores/authStore';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -7,7 +8,6 @@ import { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Image, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Icon, Portal, Snackbar, Text } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useNotification } from '@/context/NotificationContext';
 import { googleLogin } from '../services/api';
 
 function TaviraLogoMark() {
@@ -97,14 +97,16 @@ export default function LoginScreen() {
       const googleToken = userInfo.data?.user.id;
       if (googleToken != undefined) {
         setSigning(true);
-        const jwt = await googleLogin({
+        const userDto = {
           id: userInfo.data!.user.id,
           notificationToken: expoPushToken ?? '',
           email: userInfo.data!.user.email,
           familyName: userInfo.data!.user.familyName,
           givenName: userInfo.data!.user.givenName,
           photo: userInfo.data!.user.photo,
-        });
+        };
+
+        const jwt = await googleLogin(userDto);
         console.log(`GOOGLE TOKEN ID: ${googleToken}`);
         
         await signIn(jwt);

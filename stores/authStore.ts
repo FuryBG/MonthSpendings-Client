@@ -1,4 +1,4 @@
-import { getUser } from '@/app/services/api';
+import { getUser, setMemoryToken } from '@/app/services/api';
 import { queryClient } from '@/lib/queryClient';
 import { AppUser } from '@/types/Types';
 import * as SecureStore from 'expo-secure-store';
@@ -18,12 +18,14 @@ export const useAuthStore = create<AuthState>((set) => ({
   userLoading: true,
 
   signIn: async (token: string) => {
+    setMemoryToken(token);
     await SecureStore.setItemAsync('token', token);
     const user = await getUser();
     set({ user });
   },
 
   signOut: async () => {
+    setMemoryToken(null);
     await SecureStore.deleteItemAsync('token');
     set({ user: null });
     queryClient.clear();
@@ -33,6 +35,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       const token = await SecureStore.getItemAsync('token');
       if (token) {
+        setMemoryToken(token);
         const user = await getUser();
         set({ user, userLoading: false });
       } else {

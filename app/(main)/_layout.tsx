@@ -7,7 +7,7 @@ import { useTitleStore } from "@/stores/titleStore";
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import { Redirect, Stack, useRouter } from "expo-router";
 import { useEffect } from "react";
-import { StyleSheet } from "react-native";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { Appbar, useTheme } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -35,7 +35,14 @@ export default function MainLayout() {
   }, [budgets, selectedMainBudgetId]);
 
   if (userLoading || budgetsLoading) {
-    return <OverlayLoader isVisible={true} message="Loading…" />;
+    return (
+      <View style={styles.loadingOverlay}>
+        <View style={styles.loadingCard}>
+          <ActivityIndicator size={36} color={Tavira.teal} />
+          <Text style={styles.loadingMessage}>Loading…</Text>
+        </View>
+      </View>
+    );
   }
 
   if (user == null) {
@@ -106,5 +113,27 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: '700',
     letterSpacing: -0.2,
+  },
+  loadingOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(7,18,40,0.75)',
+  },
+  loadingCard: {
+    backgroundColor: 'rgba(15,34,68,0.97)',
+    borderRadius: 20,
+    padding: 32,
+    alignItems: 'center',
+    gap: 16,
+    borderWidth: 1,
+    borderColor: Tavira.glassBorder,
+    minWidth: 180,
+  },
+  loadingMessage: {
+    color: 'rgba(242,244,248,0.8)',
+    fontSize: 14,
+    fontWeight: '500',
+    textAlign: 'center',
   },
 });

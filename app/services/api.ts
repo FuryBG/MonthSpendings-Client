@@ -16,7 +16,7 @@ export interface GoogleUserDto {
   notificationToken: string
 }
 
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? "https://api.taviraofficial.com";
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? "https://785a-88-203-208-219.ngrok-free.app";
 console.log(`API ADDRESS: ${BASE_URL}`);
 
 
@@ -28,10 +28,13 @@ const api = axios.create({
   },
 });
 
-api.interceptors.request.use(async (config) => {
-  const token = await SecureStore.getItemAsync('token');
-  if (token && config.headers) {
-    config.headers.Authorization = `Bearer ${token}`;
+let _memoryToken: string | null = null;
+
+export const setMemoryToken = (token: string | null) => { _memoryToken = token; };
+
+api.interceptors.request.use((config) => {
+  if (_memoryToken && config.headers) {
+    config.headers.Authorization = `Bearer ${_memoryToken}`;
   }
   return config;
 });
@@ -58,6 +61,8 @@ api.interceptors.response.use(
 );
 
 export const googleLogin = async (userDto: GoogleUserDto): Promise<string> => {
+  console.log(`GG ${JSON.stringify(userDto)}`);
+  
   const response = await api.post('/api/user', userDto);
   return response.data;
 };
