@@ -33,6 +33,9 @@ let _memoryToken: string | null = null;
 export const setMemoryToken = (token: string | null) => { _memoryToken = token; };
 
 api.interceptors.request.use((config) => {
+  console.log(`TOKEN: ${_memoryToken}`);
+  console.log(`WHOLE REQUEST: ${JSON.stringify(config)}`);
+  
   if (_memoryToken && config.headers) {
     config.headers.Authorization = `Bearer ${_memoryToken}`;
   }
