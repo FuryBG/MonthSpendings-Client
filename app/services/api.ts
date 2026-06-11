@@ -16,13 +16,13 @@ export interface GoogleUserDto {
   notificationToken: string
 }
 
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? "https://api.taviraofficial.com";
+const BASE_URL = "https://api.taviraofficial.com";
 console.log(`API ADDRESS: ${BASE_URL}`);
 
 
 const api = axios.create({
   baseURL: BASE_URL,
-  timeout: 15000,
+  timeout: 5000,
   headers: {
     'Content-Type': 'application/json',
   },
