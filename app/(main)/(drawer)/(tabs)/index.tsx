@@ -1,4 +1,5 @@
 import { BottomSheet, BottomSheetRef, sheetStyles } from '@/components/BottomSheet';
+import { MaskedAmount } from '@/components/MaskedAmount';
 import { ScreenContainer } from '@/components/ScreenContainer';
 import { Tavira } from '@/constants/theme';
 import { usePendingTransactionsQuery } from '@/hooks/useBankTransactionQueries';
@@ -67,9 +68,10 @@ function CategoryCard({ bc, currencySymbol, isDark, primaryColor, getSwipeableRe
           </View>
           <View style={styles.cardInfo}>
             <Text style={[styles.categoryName, { color: isDark ? '#F2F4F8' : '#000' }]}>{bc.name}</Text>
-            <Text style={[styles.categoryBalance, { color: isPositive ? Tavira.income : Tavira.expense }]}>
-              {remaining.toFixed(2)} {currencySymbol}
-            </Text>
+            <MaskedAmount
+              style={[styles.categoryBalance, { color: isPositive ? Tavira.income : Tavira.expense }]}
+              value={`${remaining.toFixed(2)} ${currencySymbol}`}
+            />
           </View>
           <View style={styles.cardActions}>
             <TouchableOpacity

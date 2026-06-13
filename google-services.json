@@ -12,7 +12,28 @@
           "package_name": "app.expo.tavira"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "39532728902-2tlcbfa92sv056bb5fn11igiomgnjjlu.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "app.expo.tavira",
+            "certificate_hash": "7e8a972387e7e346fd5fe8f30900ee879fba5701"
+          }
+        },
+        {
+          "client_id": "39532728902-8sht3vuk19s8n9u6fmk505g0e5k785hb.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "app.expo.tavira",
+            "certificate_hash": "b9252547e155a73102cd58b5402957dacff8305a"
+          }
+        },
+        {
+          "client_id": "39532728902-fqpfrpmt101jr4v956vr1ufmsnea76bg.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyAht9lDHT5w_wpoFsTJGFMoLNRr9YE83ck"
@@ -20,7 +41,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "39532728902-fqpfrpmt101jr4v956vr1ufmsnea76bg.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

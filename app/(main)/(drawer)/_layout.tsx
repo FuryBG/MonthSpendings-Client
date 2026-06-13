@@ -2,6 +2,7 @@ import { DrawerContent } from '@/components/DrawerContent';
 import { HeaderMenu } from '@/components/HeaderMenu';
 import { Tavira } from '@/constants/theme';
 import { useBudgetsQuery } from '@/hooks/useBudgetQueries';
+import { useAmountVisibilityStore } from '@/stores/amountVisibilityStore';
 import { useAuthStore } from '@/stores/authStore';
 import { useBudgetUIStore } from '@/stores/budgetUIStore';
 import { useOrderStore } from '@/stores/orderStore';
@@ -9,7 +10,7 @@ import { Budget } from '@/types/Types';
 import { useRouter } from 'expo-router';
 import { Drawer } from 'expo-router/drawer';
 import React, { useCallback, useEffect } from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Appbar, useTheme } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -21,8 +22,11 @@ export default function DrawerLayout() {
   const { selectedMainBudgetId, setMainBudget } = useBudgetUIStore();
   const user = useAuthStore((s) => s.user);
   const { loadOrders } = useOrderStore();
+  const amountsHidden = useAmountVisibilityStore((s) => s.hidden);
+  const toggleAmountsHidden = useAmountVisibilityStore((s) => s.toggleHidden);
 
   const budgetIdsKey = budgets.map((b) => b.id).join(',');
+  const pendingInvites = user?.receivedBudgetInvites.filter((i) => i.accepted === null).length ?? 0;
 
   useEffect(() => {
     if (user && budgets.length > 0) {
@@ -71,10 +75,22 @@ export default function DrawerLayout() {
                 onCreate={onCreate}
               />
               <Appbar.Action
-                icon="menu"
-                onPress={() => props.navigation.toggleDrawer()}
+                icon={amountsHidden ? 'eye-off-outline' : 'eye-outline'}
+                onPress={toggleAmountsHidden}
                 iconColor={theme.dark ? Tavira.teal : theme.colors.primary}
               />
+              <View style={styles.menuButtonWrap}>
+                <Appbar.Action
+                  icon="menu"
+                  onPress={() => props.navigation.toggleDrawer()}
+                  iconColor={theme.dark ? Tavira.teal : theme.colors.primary}
+                />
+                {pendingInvites > 0 && (
+                  <View style={[styles.menuBadge, { backgroundColor: Tavira.expense }]}>
+                    <Text style={styles.menuBadgeText}>{pendingInvites}</Text>
+                  </View>
+                )}
+              </View>
             </Appbar.Header>
           ),
         }}
@@ -87,5 +103,24 @@ const styles = StyleSheet.create({
   header: {
     elevation: 0,
     borderBottomWidth: 1,
+  },
+  menuButtonWrap: {
+    position: 'relative',
+  },
+  menuBadge: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    minWidth: 22,
+    height: 22,
+    borderRadius: 11,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 6,
+  },
+  menuBadgeText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#FFFFFF',
   },
 });

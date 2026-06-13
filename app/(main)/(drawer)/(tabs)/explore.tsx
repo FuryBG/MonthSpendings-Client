@@ -1,10 +1,11 @@
+import { MaskedAmount } from '@/components/MaskedAmount';
 import { ScreenContainer } from '@/components/ScreenContainer';
 import { Tavira } from '@/constants/theme';
 import { useBudgetsQuery } from '@/hooks/useBudgetQueries';
 import { usePeriodComparisonQuery } from '@/hooks/useStatisticsQueries';
 import { useBudgetUIStore } from '@/stores/budgetUIStore';
 import { CategoryComparisonDto } from '@/types/Types';
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { Animated, StyleSheet, View } from 'react-native';
 import { ActivityIndicator, Icon, Text, useTheme } from 'react-native-paper';
 
@@ -56,7 +57,7 @@ function BarRow({ label, labelColor, pct, fillColor, amount, amountOpacity = 1, 
           ]}
         />
       </View>
-      <Text style={[rowStyles.barAmt, { color: onSurface, opacity: amountOpacity }]}>{amount}</Text>
+      <MaskedAmount style={[rowStyles.barAmt, { color: onSurface, opacity: amountOpacity }]} value={amount} />
     </View>
   );
 }
@@ -101,9 +102,7 @@ function CategoryRow({ cat, prevAmt, maxVal, sym, onSurface, isDark, index }: Ca
         </View>
         {hasPrev && (
           <View style={[catStyles.deltaBadge, { backgroundColor: `${deltaColor}18` }]}>
-            <Text style={[catStyles.delta, { color: deltaColor }]}>
-              {delta > 0 ? '+' : ''}{fmt(delta, sym)}
-            </Text>
+            <MaskedAmount style={[catStyles.delta, { color: deltaColor }]} value={`${delta > 0 ? '+' : ''}${fmt(delta, sym)}`} />
           </View>
         )}
       </View>
@@ -229,9 +228,10 @@ export default function StatsScreen() {
 
         <View style={styles.totalsRow}>
           <View style={{ flex: 1 }}>
-            <Text style={[styles.bigAmount, { color: theme.colors.onSurface }]}>
-              {sym}{comparison.currentPeriod.totalSpent.toFixed(0)}
-            </Text>
+            <MaskedAmount
+              style={[styles.bigAmount, { color: theme.colors.onSurface }]}
+              value={`${sym}${comparison.currentPeriod.totalSpent.toFixed(0)}`}
+            />
             <Text style={[styles.periodTag, { color: C_CURRENT }]}>CURRENT</Text>
             <Text style={[styles.dateRange, { color: theme.colors.onSurfaceVariant }]}>
               {fmtDate(comparison.currentPeriod.startDate)}
@@ -243,9 +243,10 @@ export default function StatsScreen() {
             <>
               <View style={[styles.vDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.10)' : 'rgba(11,27,58,0.10)' }]} />
               <View style={{ flex: 1 }}>
-                <Text style={[styles.bigAmount, { color: theme.colors.onSurface, opacity: 0.35 }]}>
-                  {sym}{comparison.previousPeriod!.totalSpent.toFixed(0)}
-                </Text>
+                <MaskedAmount
+                  style={[styles.bigAmount, { color: theme.colors.onSurface, opacity: 0.35 }]}
+                  value={`${sym}${comparison.previousPeriod!.totalSpent.toFixed(0)}`}
+                />
                 <Text style={[styles.periodTag, { color: C_NEUTRAL }]}>PREVIOUS</Text>
                 <Text style={[styles.dateRange, { color: theme.colors.onSurfaceVariant }]}>
                   {fmtDate(comparison.previousPeriod!.startDate)}
@@ -259,9 +260,10 @@ export default function StatsScreen() {
         {hasPrev && (
           <View style={[styles.deltaBadge, { backgroundColor: `${deltaColor}15` }]}>
             <Icon source={deltaIcon} size={14} color={deltaColor} />
-            <Text style={[styles.deltaNum, { color: deltaColor }]}>
-              {delta > 0 ? '+' : ''}{sym}{Math.abs(delta).toFixed(0)}
-            </Text>
+            <MaskedAmount
+              style={[styles.deltaNum, { color: deltaColor }]}
+              value={`${delta > 0 ? '+' : ''}${sym}${Math.abs(delta).toFixed(0)}`}
+            />
             {comparison.totalDeltaPercent != null && (
               <Text style={[styles.deltaPct, { color: deltaColor }]}>
                 ({delta > 0 ? '+' : ''}{comparison.totalDeltaPercent.toFixed(1)}%)

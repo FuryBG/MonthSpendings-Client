@@ -1,4 +1,4 @@
-import { AppUser, BankOption, BankTransaction, Budget, BudgetCategory, BudgetInvite, CategorizeBankTransactionDto, CategorizeTransactionDto, Currency, PeriodComparisonDto, SaltEdgeConnectionStatusResponse, SaltEdgeProvider, SavingsContribution, SavingsHistoryDto, SavingsPot, SavingsPotInvite, Spending, StartSaltEdgeConnectionResponse, UpdateUserActivityDto } from '@/types/Types';
+import { AppUser, BankOption, BankTransaction, Budget, BudgetCategory, BudgetInvite, CategorizeBankTransactionDto, CategorizeTransactionDto, Currency, PeriodComparisonDto, SaltEdgeConnectionStatusResponse, SaltEdgeProvider, Spending, StartSaltEdgeConnectionResponse, UpdateUserActivityDto } from '@/types/Types';
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 
@@ -16,7 +16,7 @@ export interface GoogleUserDto {
   notificationToken: string
 }
 
-const BASE_URL = "https://api.taviraofficial.com";
+const BASE_URL = "https://785a-88-203-208-219.ngrok-free.app";
 console.log(`API ADDRESS: ${BASE_URL}`);
 
 
@@ -165,55 +165,14 @@ export const deleteBudget = async (budgetId: number): Promise<number> => {
   return response.data;
 };
 
-export const finishBudget = async (budget: Budget, savingsPotId?: number): Promise<Budget> => {
-  const response = await api.post("/api/budget/finish", { budget, savingsPotId: savingsPotId ?? null });
+export const finishBudget = async (budget: Budget): Promise<Budget> => {
+  const response = await api.post("/api/budget/finish", { budget });
   return response.data;
 };
 
 // Statistics
 export const getPeriodComparison = async (budgetId: number): Promise<PeriodComparisonDto> => {
   const response = await api.get(`/api/statistics/period-comparison?budgetId=${budgetId}`);
-  return response.data;
-};
-
-// Savings
-export const getSavingsPots = async (): Promise<SavingsPot[]> => {
-  const response = await api.get('/api/savings');
-  return response.data;
-};
-
-export const createSavingsPot = async (pot: Pick<SavingsPot, 'name' | 'currency'>): Promise<SavingsPot> => {
-  const response = await api.post('/api/savings', pot);
-  return response.data;
-};
-
-export const deleteSavingsPot = async (potId: number): Promise<number> => {
-  const response = await api.delete('/api/savings', { params: { potId } });
-  return response.data;
-};
-
-export const addSavingsContribution = async (potId: number, dto: Pick<SavingsContribution, 'amount' | 'note'>): Promise<SavingsContribution> => {
-  const response = await api.post(`/api/savings/${potId}/contribution`, dto);
-  return response.data;
-};
-
-export const removeSavingsContribution = async (potId: number, contributionId: number): Promise<number> => {
-  const response = await api.delete(`/api/savings/${potId}/contribution`, { params: { contributionId } });
-  return response.data;
-};
-
-export const getSavingsHistory = async (potId: number): Promise<SavingsHistoryDto> => {
-  const response = await api.get(`/api/savings/${potId}/history`);
-  return response.data;
-};
-
-export const sendSavingsPotInvite = async (invite: Pick<SavingsPotInvite, 'savingsPotId' | 'receiverEmail'>): Promise<SavingsPotInvite> => {
-  const response = await api.post('/api/savingspotinvite', invite);
-  return response.data;
-};
-
-export const respondToSavingsPotInvite = async (inviteId: number, accepted: boolean): Promise<boolean> => {
-  const response = await api.patch(`/api/savingspotinvite/${inviteId}`, accepted);
   return response.data;
 };
 

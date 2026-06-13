@@ -49,8 +49,8 @@ function NavItem({ icon, label, onPress, badge, destructive, accent, soon }: Nav
         </View>
       )}
       {!soon && badge != null && (
-        <View style={[styles.badge, { backgroundColor: Tavira.teal }]}>
-          <Text style={[styles.badgeText, { color: Tavira.navy }]}>{badge}</Text>
+        <View style={[styles.badge, { backgroundColor: Tavira.expense }]}>
+          <Text style={styles.badgeText}>{badge}</Text>
         </View>
       )}
       {!soon && badge == null && !destructive && (
@@ -138,19 +138,6 @@ export function DrawerContent(props: any) {
               label="Create Budget"
               accent={Tavira.teal}
               onPress={() => router.push('/(main)/CreateBudget')}
-            />
-          </View>
-
-          <Divider />
-
-          {/* Savings */}
-          <View style={styles.section}>
-            <SectionLabel label="SAVINGS" />
-            <NavItem
-              icon="piggy-bank-outline"
-              label="Savings Pots"
-              accent={Tavira.purple}
-              onPress={() => router.push('/(main)/SavingsPots')}
             />
           </View>
 
@@ -309,6 +296,7 @@ const styles = StyleSheet.create({
   badgeText: {
     fontSize: 11,
     fontWeight: '800',
+    color: '#FFFFFF',
   },
   navItemDisabled: {
     opacity: 0.7,

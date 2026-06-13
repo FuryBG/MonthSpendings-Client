@@ -2,6 +2,7 @@ import { OverlayLoader } from "@/components/OverlayLoader";
 import { Tavira } from "@/constants/theme";
 import { useBudgetsQuery } from "@/hooks/useBudgetQueries";
 import { useAuthStore } from "@/stores/authStore";
+import { useAmountVisibilityStore } from "@/stores/amountVisibilityStore";
 import { useBudgetUIStore } from "@/stores/budgetUIStore";
 import { useTitleStore } from "@/stores/titleStore";
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
@@ -24,6 +25,7 @@ export default function MainLayout() {
   useEffect(() => {
     GoogleSignin.configure({ webClientId: "39532728902-fqpfrpmt101jr4v956vr1ufmsnea76bg.apps.googleusercontent.com" });
     useBudgetUIStore.getState().loadMainBudgetId();
+    useAmountVisibilityStore.getState().loadHidden();
   }, []);
 
   useEffect(() => {
@@ -98,8 +100,6 @@ export default function MainLayout() {
       <Stack.Screen name="ConnectSaltEdgeError" options={{ title: 'Connection Failed' }} />
       <Stack.Screen name="Invites" options={{ title: 'Invitations' }} />
       <Stack.Screen name="spending-group/SpendingDetails" options={{ title: 'Spending Details' }} />
-      <Stack.Screen name="SavingsPots" options={{ title: 'Savings Pots' }} />
-      <Stack.Screen name="SavingsPotDetail" options={{ title: 'Savings Pot' }} />
     </Stack>
   );
 }

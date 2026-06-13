@@ -1,3 +1,4 @@
+import { MaskedAmount } from '@/components/MaskedAmount';
 import { ScreenContainer } from '@/components/ScreenContainer';
 import { Tavira } from '@/constants/theme';
 import { useBudgetsQuery, useDeleteSpendingMutation } from '@/hooks/useBudgetQueries';
@@ -106,23 +107,17 @@ function SummaryHeaderCard({ spendings, symbol }: SummaryProps) {
         <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
           NET BALANCE
         </Text>
-        <Text style={[s.summaryBalance, { color: balanceColor }]}>
-          {formatAmount(netBalance, symbol)}
-        </Text>
+        <MaskedAmount style={[s.summaryBalance, { color: balanceColor }]} value={formatAmount(netBalance, symbol)} />
       </View>
       <View style={[s.summaryDivider, { backgroundColor: theme.colors.outline }]} />
       <View style={s.summarySides}>
         <View style={s.summaryStat}>
           <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>INCOME</Text>
-          <Text style={[s.summaryStatAmount, { color: COLOR_INCOME }]}>
-            +{totalIncome.toLocaleString('en-GB')} {symbol}
-          </Text>
+          <MaskedAmount style={[s.summaryStatAmount, { color: COLOR_INCOME }]} value={`+${totalIncome.toLocaleString('en-GB')} ${symbol}`} />
         </View>
         <View style={s.summaryStat}>
           <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>SPENT</Text>
-          <Text style={[s.summaryStatAmount, { color: COLOR_EXPENSE }]}>
-            -{totalExpense.toLocaleString('en-GB')} {symbol}
-          </Text>
+          <MaskedAmount style={[s.summaryStatAmount, { color: COLOR_EXPENSE }]} value={`-${totalExpense.toLocaleString('en-GB')} ${symbol}`} />
         </View>
       </View>
     </Surface>
@@ -227,9 +222,7 @@ export default function SpendingDetailsScreen() {
                   <Card.Content style={s.cardContent}>
                     <View style={s.row}>
                       <View style={s.leftContent}>
-                        <Text style={[s.amount, { color: sp.amount < 0 ? COLOR_EXPENSE : COLOR_INCOME }]}>
-                          {formatAmount(sp.amount, symbol)}
-                        </Text>
+                        <MaskedAmount style={[s.amount, { color: sp.amount < 0 ? COLOR_EXPENSE : COLOR_INCOME }]} value={formatAmount(sp.amount, symbol)} />
                         {sp.description ? (
                           <Text
                             variant="bodySmall"

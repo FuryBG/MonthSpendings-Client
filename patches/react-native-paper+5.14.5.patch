@@ -1,0 +1,17 @@
+diff --git a/node_modules/react-native-paper/src/components/ActivityIndicator.tsx b/node_modules/react-native-paper/src/components/ActivityIndicator.tsx
+index 5a3b9f8..5bf0dde 100644
+--- a/node_modules/react-native-paper/src/components/ActivityIndicator.tsx
++++ b/node_modules/react-native-paper/src/components/ActivityIndicator.tsx
+@@ -150,7 +150,11 @@ const ActivityIndicator = ({
+ 
+   return (
+     <View
+-      style={[styles.container, style]}
++      style={[
++        styles.container,
++        { width: size, height: size, borderRadius: size / 2, overflow: 'hidden' },
++        style,
++      ]}
+       {...rest}
+       accessible
+       accessibilityRole="progressbar"

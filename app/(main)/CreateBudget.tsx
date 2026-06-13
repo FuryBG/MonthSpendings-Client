@@ -7,7 +7,7 @@ import { useBudgetUIStore } from '@/stores/budgetUIStore';
 import { Budget, Currency } from '@/types/Types';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useRouter } from 'expo-router';
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Controller, useFieldArray, useForm } from 'react-hook-form';
 import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
@@ -61,6 +61,9 @@ export default function CreateBudgetScreen() {
 
     async function onSubmit(data: Budget) {
         try {
+            data.budgetCategories?.forEach(category => {
+                category.spendings[0].amount = Number(category.spendings[0].amount);
+            });
             setIsCreatingBudget(true);
             const budget = await createBudgetMutation.mutateAsync(data);
             await setMainBudget(budget.id);
