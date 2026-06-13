@@ -1,7 +1,7 @@
 import { Tavira } from '@/constants/theme';
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
-import { ActivityIndicator, Modal, Portal, Text } from 'react-native-paper';
+import { Modal, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Text } from 'react-native-paper';
 
 type LoaderProps = {
   isVisible: boolean;
@@ -10,18 +10,14 @@ type LoaderProps = {
 
 export function OverlayLoader({ isVisible, message }: LoaderProps) {
   return (
-    <Portal>
-      <Modal
-        visible={isVisible}
-        dismissable={false}
-        contentContainerStyle={styles.modal}
-      >
+    <Modal visible={isVisible} transparent animationType="fade" statusBarTranslucent>
+      <View style={styles.modal}>
         <View style={styles.card}>
           <ActivityIndicator size={36} color={Tavira.teal} />
           <Text style={styles.message}>{message}</Text>
         </View>
-      </Modal>
-    </Portal>
+      </View>
+    </Modal>
   );
 }
 
