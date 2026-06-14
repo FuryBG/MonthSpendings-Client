@@ -7,6 +7,12 @@
     "icon": "./assets/images/icon.png",
     "scheme": "tavira",
     "userInterfaceStyle": "automatic",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/039507df-edf6-4e92-b0a8-8d1ebb06da17"
+    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "app.expo.tavira",
