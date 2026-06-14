@@ -1,9 +1,8 @@
 import { Tavira } from '@/constants/theme';
 import { useAuthStore } from '@/stores/authStore';
-import { DrawerContentScrollView } from 'expo-router/build/react-navigation/drawer';
-import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import React from 'react';
+import { useRouter } from 'expo-router';
+import { DrawerContentScrollView } from 'expo-router/build/react-navigation/drawer';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Icon, Text, useTheme } from 'react-native-paper';
 
