@@ -120,25 +120,21 @@ export type BankOption = {
     maximumConsentValidity: number
 }
 
-export type SaltEdgeProvider = {
-    code: string
-    name: string
-    countryCode: string
-    logoUrl: string | null
-    mode: string | null
-    regulated: boolean
+export type BankAccountDto = {
+    id: number
+    iban: string
+    currency: string
+    holderName: string
 }
 
-export type StartSaltEdgeConnectionResponse = {
-    connectUrl: string
-    localSessionId: string
-}
-
-export type SaltEdgeConnectionStatusResponse = {
-    localSessionId: string
-    state: 'Initiated' | 'Connected' | 'ConnectionFailed' | 'Removed' | string
-    providerName: string
-    errorMessage: string | null
+export type BankConsentDto = {
+    id: number
+    sessionId: string
+    bankName: string
+    imageUrl: string
+    validTo: string
+    state: 'Initiated' | 'Connected' | 'Expired' | 'ConnectionFailed' | string
+    bankAccounts: BankAccountDto[]
 }
 
 export enum AppNotificationType {

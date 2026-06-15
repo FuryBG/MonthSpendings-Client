@@ -51,7 +51,7 @@ function formatTime(isoDate: string): string {
 
 function formatAmount(amount: number, symbol: string): string {
   const prefix = amount >= 0 ? '+' : '';
-  return `${prefix}${amount.toLocaleString('en-GB')} ${symbol}`;
+  return `${prefix}${amount.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${symbol}`;
 }
 
 type SpendingGroup = {
@@ -113,11 +113,11 @@ function SummaryHeaderCard({ spendings, symbol }: SummaryProps) {
       <View style={s.summarySides}>
         <View style={s.summaryStat}>
           <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>INCOME</Text>
-          <MaskedAmount style={[s.summaryStatAmount, { color: COLOR_INCOME }]} value={`+${totalIncome.toLocaleString('en-GB')} ${symbol}`} />
+          <MaskedAmount style={[s.summaryStatAmount, { color: COLOR_INCOME }]} value={`+${totalIncome.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${symbol}`} />
         </View>
         <View style={s.summaryStat}>
           <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>SPENT</Text>
-          <MaskedAmount style={[s.summaryStatAmount, { color: COLOR_EXPENSE }]} value={`-${totalExpense.toLocaleString('en-GB')} ${symbol}`} />
+          <MaskedAmount style={[s.summaryStatAmount, { color: COLOR_EXPENSE }]} value={`-${totalExpense.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${symbol}`} />
         </View>
       </View>
     </Surface>

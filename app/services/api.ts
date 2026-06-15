@@ -1,4 +1,4 @@
-import { AppUser, BankOption, BankTransaction, Budget, BudgetCategory, BudgetInvite, CategorizeBankTransactionDto, CategorizeTransactionDto, Currency, PeriodComparisonDto, SaltEdgeConnectionStatusResponse, SaltEdgeProvider, Spending, StartSaltEdgeConnectionResponse, UpdateUserActivityDto } from '@/types/Types';
+import { AppUser, BankConsentDto, BankOption, BankTransaction, Budget, BudgetCategory, BudgetInvite, CategorizeBankTransactionDto, CategorizeTransactionDto, Currency, PeriodComparisonDto, Spending, UpdateUserActivityDto } from '@/types/Types';
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 
@@ -16,7 +16,7 @@ export interface GoogleUserDto {
   notificationToken: string
 }
 
-const BASE_URL = "https://api.taviraofficial.com";
+const BASE_URL = "https://785a-88-203-208-219.ngrok-free.app";
 console.log(`API ADDRESS: ${BASE_URL}`);
 
 
@@ -89,18 +89,13 @@ export const startBankConnection = async (bankName: string, countryCode: string,
   return response.data;
 };
 
-export const getSaltEdgeBanks = async (bankName: string): Promise<SaltEdgeProvider[]> => {
-  const response = await api.get(`/api/saltedgebank?bankName=${bankName}`);
+export const getConnectedBanks = async (): Promise<BankConsentDto[]> => {
+  const response = await api.get('/api/bank/connected');
   return response.data;
 };
 
-export const startSaltEdgeConnection = async (providerCode: string, providerName: string, countryCode: string, bankImageUrl: string): Promise<StartSaltEdgeConnectionResponse> => {
-  const response = await api.get(`/api/saltedgebank/connect?providerCode=${providerCode}&providerName=${providerName}&countryCode=${countryCode}&bankImageUrl=${bankImageUrl}`);
-  return response.data;
-};
-
-export const getSaltEdgeConnectionStatus = async (localSessionId: string): Promise<SaltEdgeConnectionStatusResponse> => {
-  const response = await api.get(`/api/saltedgebank/connect-status?localSessionId=${localSessionId}`);
+export const deleteBankConsent = async (sessionId: string): Promise<boolean> => {
+  const response = await api.delete('/api/bank/delete', { params: { sessionId } });
   return response.data;
 };
 

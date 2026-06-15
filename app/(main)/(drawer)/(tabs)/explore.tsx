@@ -16,8 +16,8 @@ const C_NEGATIVE = Tavira.expense;
 const C_NEUTRAL = 'rgba(242,244,248,0.4)';
 
 function fmt(amount: number, sym: string): string {
-  if (Math.abs(amount) >= 1000) return `${sym}${(amount / 1000).toFixed(1)}k`;
-  return `${sym}${Math.abs(amount).toFixed(0)}`;
+  if (Math.abs(amount) >= 1000) return `${sym}${(amount / 1000).toFixed(2)}k`;
+  return `${sym}${Math.abs(amount).toFixed(2)}`;
 }
 
 function fmtDate(d: string): string {
@@ -230,7 +230,7 @@ export default function StatsScreen() {
           <View style={{ flex: 1 }}>
             <MaskedAmount
               style={[styles.bigAmount, { color: theme.colors.onSurface }]}
-              value={`${sym}${comparison.currentPeriod.totalSpent.toFixed(0)}`}
+              value={`${sym}${comparison.currentPeriod.totalSpent.toFixed(2)}`}
             />
             <Text style={[styles.periodTag, { color: C_CURRENT }]}>CURRENT</Text>
             <Text style={[styles.dateRange, { color: theme.colors.onSurfaceVariant }]}>
@@ -245,7 +245,7 @@ export default function StatsScreen() {
               <View style={{ flex: 1 }}>
                 <MaskedAmount
                   style={[styles.bigAmount, { color: theme.colors.onSurface, opacity: 0.35 }]}
-                  value={`${sym}${comparison.previousPeriod!.totalSpent.toFixed(0)}`}
+                  value={`${sym}${comparison.previousPeriod!.totalSpent.toFixed(2)}`}
                 />
                 <Text style={[styles.periodTag, { color: C_NEUTRAL }]}>PREVIOUS</Text>
                 <Text style={[styles.dateRange, { color: theme.colors.onSurfaceVariant }]}>
@@ -262,7 +262,7 @@ export default function StatsScreen() {
             <Icon source={deltaIcon} size={14} color={deltaColor} />
             <MaskedAmount
               style={[styles.deltaNum, { color: deltaColor }]}
-              value={`${delta > 0 ? '+' : ''}${sym}${Math.abs(delta).toFixed(0)}`}
+              value={`${delta > 0 ? '+' : ''}${sym}${Math.abs(delta).toFixed(2)}`}
             />
             {comparison.totalDeltaPercent != null && (
               <Text style={[styles.deltaPct, { color: deltaColor }]}>

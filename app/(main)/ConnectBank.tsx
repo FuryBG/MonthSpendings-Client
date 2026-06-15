@@ -209,7 +209,7 @@ export default function ConnectBankScreen() {
         bank.maximumConsentValidity
       );
       setLoading(false);
-      await WebBrowser.openAuthSessionAsync(authUrl);
+      await WebBrowser.openAuthSessionAsync(authUrl, 'tavira://(main)/');
     } catch {
       showError("Bank connection failed.");
       setLoading(false);

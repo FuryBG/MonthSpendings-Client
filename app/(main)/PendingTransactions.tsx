@@ -15,6 +15,16 @@ function formatDate(iso: string): string {
   return `${d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} · ${d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false })}`;
 }
 
+function getAmountDisplay(amount: string) {
+  const value = Math.abs(Number(amount));
+  const isNegative = Number(amount) < 0;
+  return {
+    color: isNegative ? Tavira.expense : Tavira.income,
+    sign: isNegative ? '−' : '+',
+    value: value.toFixed(2),
+  };
+}
+
 function EmptyState() {
   const theme = useTheme();
   const isDark = theme.dark;
@@ -80,7 +90,10 @@ function TransactionCard({ item, onCategorize }: CardProps) {
             </Text>
           </View>
         </View>
-        <Text style={[s.amount, { color: Tavira.expense }]}>−{item.amount}</Text>
+        {(() => {
+          const { color, sign, value } = getAmountDisplay(item.amount);
+          return <Text style={[s.amount, { color }]}>{sign}{value}</Text>;
+        })()}
       </View>
       <View style={s.cardFooter}>
         <TouchableOpacity style={s.categorizeBtn} onPress={() => onCategorize(item)}>
@@ -127,9 +140,14 @@ function CategorizeBody({
       }]}>
         <View style={s.summaryRow}>
           <Text style={[s.summaryLabel, { color: theme.colors.onSurfaceVariant }]}>Amount</Text>
-          <Text style={[s.summaryAmount, { color: Tavira.expense }]}>
-            −{transaction.amount} {transaction.currency}
-          </Text>
+          {(() => {
+            const { color, sign, value } = getAmountDisplay(transaction.amount);
+            return (
+              <Text style={[s.summaryAmount, { color }]}>
+                {sign}{value} {transaction.currency}
+              </Text>
+            );
+          })()}
         </View>
         <View style={[s.summaryDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : theme.colors.outlineVariant }]} />
         <Text style={[s.summaryDate, { color: theme.colors.onSurfaceVariant }]}>

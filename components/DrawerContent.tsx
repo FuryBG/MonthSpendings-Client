@@ -151,6 +151,12 @@ export function DrawerContent(props: any) {
               accent="#2DE6D0"
               onPress={() => router.push('/(main)/ConnectBank')}
             />
+            <NavItem
+              icon="bank-outline"
+              label="Connected Banks"
+              accent={Tavira.purple}
+              onPress={() => router.push('/(main)/ConnectedBanks')}
+            />
           </View>
 
           <Divider />
