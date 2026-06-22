@@ -8,7 +8,7 @@ import { BankTransaction, Budget, BudgetCategory } from '@/types/Types';
 import { useFocusEffect } from 'expo-router';
 import React, { useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, ScrollView, StyleSheet, Switch, TouchableOpacity, View } from 'react-native';
-import { Chip, Icon, Text, useTheme } from 'react-native-paper';
+import { Chip, Icon, SegmentedButtons, Text, useTheme } from 'react-native-paper';
 
 function formatDate(iso: string): string {
   const d = new Date(iso);
@@ -92,7 +92,8 @@ function TransactionCard({ item, onCategorize }: CardProps) {
         </View>
         {(() => {
           const { color, sign, value } = getAmountDisplay(item.amount);
-          return <Text style={[s.amount, { color }]}>{sign}{value}</Text>;
+          const displayColor = item.determined ? color : Tavira.purple;
+          return <Text style={[s.amount, { color: displayColor }]}>{sign}{value}</Text>;
         })()}
       </View>
       <View style={s.cardFooter}>
@@ -111,9 +112,11 @@ type ModalBodyProps = {
   selectedBudget: Budget | null;
   selectedCategoryId: number;
   createRule: boolean;
+  isExpense: boolean;
   onSelectBudget: (b: Budget) => void;
   onSelectCategory: (c: BudgetCategory) => void;
   onToggleRule: (v: boolean) => void;
+  onToggleIsExpense: (v: boolean) => void;
 };
 
 function CategorizeBody({
@@ -122,32 +125,66 @@ function CategorizeBody({
   selectedBudget,
   selectedCategoryId,
   createRule,
+  isExpense,
   onSelectBudget,
   onSelectCategory,
   onToggleRule,
+  onToggleIsExpense,
 }: ModalBodyProps) {
   const theme = useTheme();
   const isDark = theme.dark;
 
   const canAutoRule = !!(transaction.creditorName || transaction.description);
+  const absValue = Math.abs(Number(transaction.amount)).toFixed(2);
+  const amountColor = isExpense ? Tavira.expense : Tavira.income;
+  const amountSign = isExpense ? '−' : '+';
 
   return (
     <View>
+      {!transaction.determined && (
+        <SegmentedButtons
+          value={isExpense ? 'expense' : 'income'}
+          onValueChange={(v) => onToggleIsExpense(v === 'expense')}
+          style={s.directionToggle}
+          buttons={[
+            {
+              value: 'expense',
+              label: 'Expense',
+              icon: 'arrow-down',
+              checkedColor: Tavira.expense,
+              uncheckedColor: isDark ? 'rgba(242,244,248,0.45)' : theme.colors.onSurfaceVariant,
+              style: isExpense
+                ? { backgroundColor: 'rgba(255,107,107,0.12)', borderColor: 'rgba(255,107,107,0.35)' }
+                : { borderColor: isDark ? 'rgba(255,255,255,0.12)' : theme.colors.outlineVariant },
+            },
+            {
+              value: 'income',
+              label: 'Income',
+              icon: 'arrow-up',
+              checkedColor: Tavira.income,
+              uncheckedColor: isDark ? 'rgba(242,244,248,0.45)' : theme.colors.onSurfaceVariant,
+              style: !isExpense
+                ? { backgroundColor: 'rgba(62,198,198,0.12)', borderColor: 'rgba(62,198,198,0.35)' }
+                : { borderColor: isDark ? 'rgba(255,255,255,0.12)' : theme.colors.outlineVariant },
+            },
+          ]}
+        />
+      )}
+
       <View style={[s.summary, {
-        backgroundColor: isDark ? 'rgba(255,107,107,0.08)' : theme.colors.surfaceVariant,
-        borderColor: isDark ? 'rgba(255,107,107,0.2)' : 'transparent',
+        backgroundColor: isExpense
+          ? (isDark ? 'rgba(255,107,107,0.08)' : 'rgba(255,107,107,0.06)')
+          : (isDark ? 'rgba(62,198,198,0.08)' : 'rgba(62,198,198,0.06)'),
+        borderColor: isExpense
+          ? (isDark ? 'rgba(255,107,107,0.2)' : 'rgba(255,107,107,0.15)')
+          : (isDark ? 'rgba(62,198,198,0.2)' : 'rgba(62,198,198,0.15)'),
         borderWidth: 1,
       }]}>
         <View style={s.summaryRow}>
           <Text style={[s.summaryLabel, { color: theme.colors.onSurfaceVariant }]}>Amount</Text>
-          {(() => {
-            const { color, sign, value } = getAmountDisplay(transaction.amount);
-            return (
-              <Text style={[s.summaryAmount, { color }]}>
-                {sign}{value} {transaction.currency}
-              </Text>
-            );
-          })()}
+          <Text style={[s.summaryAmount, { color: amountColor }]}>
+            {amountSign}{absValue} {transaction.currency}
+          </Text>
         </View>
         <View style={[s.summaryDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : theme.colors.outlineVariant }]} />
         <Text style={[s.summaryDate, { color: theme.colors.onSurfaceVariant }]}>
@@ -249,6 +286,7 @@ export default function PendingTransactions() {
   const [selectedCategoryId, setSelectedCategoryId] = useState<number>(0);
   const [selectedTransaction, setSelectedTransaction] = useState<BankTransaction | null>(null);
   const [createRule, setCreateRule] = useState<boolean>(false);
+  const [isExpense, setIsExpense] = useState<boolean>(true);
 
   useFocusEffect(() => { setTitle('Transactions'); });
 
@@ -257,18 +295,22 @@ export default function PendingTransactions() {
     setSelectedBudget(null);
     setSelectedCategoryId(0);
     setCreateRule(false);
+    setIsExpense(transaction.determined ? Number(transaction.amount) < 0 : true);
     modalRef.current?.open();
   }
 
   async function onSave() {
     try {
       const t = selectedTransaction!;
+      const signedAmount = isExpense
+        ? -Math.abs(Number(t.amount))
+        : Math.abs(Number(t.amount));
       await categorizeMutation.mutateAsync({
         id: t.id,
         transactionId: t.transactionId,
         bankAccountId: Number(t.bankAccountId),
         currency: t.currency,
-        amount: Number(t.amount),
+        amount: signedAmount,
         merchantCode: null,
         creditorName: t.creditorName ?? null,
         description: t.description ?? null,
@@ -327,9 +369,11 @@ export default function PendingTransactions() {
             selectedBudget={selectedBudget}
             selectedCategoryId={selectedCategoryId}
             createRule={createRule}
+            isExpense={isExpense}
             onSelectBudget={setSelectedBudget}
             onSelectCategory={(c) => setSelectedCategoryId(c.id)}
             onToggleRule={setCreateRule}
+            onToggleIsExpense={setIsExpense}
           />
         )}
       </Modal>
@@ -371,6 +415,7 @@ const s = StyleSheet.create({
   emptyIconWrap: { width: 84, height: 84, borderRadius: 24, justifyContent: 'center', alignItems: 'center', marginBottom: 4 },
   emptyTitle: { fontSize: 19, fontWeight: '700' },
   emptySubtitle: { textAlign: 'center', lineHeight: 20, fontSize: 13 },
+  directionToggle: { marginBottom: 16 },
   summary: { borderRadius: 14, padding: 16, marginBottom: 20, gap: 10 },
   summaryRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   summaryLabel: { fontSize: 13, fontWeight: '500' },

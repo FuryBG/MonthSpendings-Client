@@ -1,8 +1,11 @@
 import { BottomSheet, BottomSheetRef, sheetStyles } from '@/components/BottomSheet';
 import { OverlayLoader } from '@/components/OverlayLoader';
+import { ProGate } from '@/components/ProGate';
 import { Tavira } from '@/constants/theme';
 import { useCreateBudgetMutation } from '@/hooks/useBudgetQueries';
+import { useBudgetsQuery } from '@/hooks/useBudgetQueries';
 import { useCurrenciesQuery } from '@/hooks/useCurrencyQueries';
+import { useAuthStore } from '@/stores/authStore';
 import { useBudgetUIStore } from '@/stores/budgetUIStore';
 import { Budget, Currency } from '@/types/Types';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -19,6 +22,8 @@ export default function CreateBudgetScreen() {
     const navigation = useNavigation();
     const theme = useTheme();
     const insets = useSafeAreaInsets();
+    const user = useAuthStore((s) => s.user);
+    const { data: budgets = [] } = useBudgetsQuery();
     const createBudgetMutation = useCreateBudgetMutation();
     const { data: currencies = [] } = useCurrenciesQuery();
     const { setMainBudget } = useBudgetUIStore();
@@ -100,6 +105,10 @@ export default function CreateBudgetScreen() {
         c.code.toLowerCase().includes(currencySearch.toLowerCase()) ||
         c.name.toLowerCase().includes(currencySearch.toLowerCase())
     );
+
+    if ((!user?.isPro && budgets.length >= 1) || (user?.isPro && budgets.length >= 3)) {
+        return <ProGate featureName="Multiple Budgets" />;
+    }
 
     return (
         <LinearGradient colors={theme.dark ? Tavira.gradNavy : [theme.colors.background, theme.colors.background]} style={styles.root}>

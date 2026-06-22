@@ -1,6 +1,8 @@
 import { OverlayLoader } from "@/components/OverlayLoader";
+import { ProGate } from "@/components/ProGate";
 import { ScreenContainer } from "@/components/ScreenContainer";
 import { Tavira } from "@/constants/theme";
+import { useAuthStore } from "@/stores/authStore";
 import { useSnackbarStore } from "@/stores/snackbarStore";
 import { useTitleStore } from "@/stores/titleStore";
 import { BankOption } from "@/types/Types";
@@ -169,6 +171,7 @@ export default function ConnectBankScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [focused, setFocused] = useState(false);
 
+  const user = useAuthStore((s) => s.user);
   const showError = useSnackbarStore((s) => s.showError);
   const setTitle = useTitleStore((s) => s.setTitle);
 
@@ -219,6 +222,10 @@ export default function ConnectBankScreen() {
   useFocusEffect(() => {
     setTitle("Select Bank");
   });
+
+  if (!user?.isPro) {
+    return <ProGate featureName="Bank Connection" />;
+  }
 
   // ── border color for search ──
   const searchBorderColor = focused

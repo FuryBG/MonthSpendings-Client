@@ -12,6 +12,7 @@ export type AppUser = {
     notificationToken: string
     googleId: string
     googlePhotoAddress: string
+    isPro: boolean
     receivedBudgetInvites: BudgetInvite[]
     sentBudgetInvites: BudgetInvite[]
 }
@@ -23,6 +24,7 @@ export interface UpdateUserActivityDto {
 export type Budget = {
     id: number
     name: string
+    ownerId: number
     currency: Currency
     budgetPeriods: BudgetPeriod[]
     budgetCategories: BudgetCategory[] | null
@@ -75,6 +77,7 @@ export type BankTransaction = {
     bookingDate: string
     creditorName: string | null
     description: string | null
+    determined: boolean
 }
 
 export type CategorizeBankTransactionDto = {

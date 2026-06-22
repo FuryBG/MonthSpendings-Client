@@ -2,6 +2,7 @@ import { BottomSheet, BottomSheetRef, sheetStyles } from '@/components/BottomShe
 import { ScreenContainer } from '@/components/ScreenContainer';
 import { Tavira } from '@/constants/theme';
 import { useConnectedBanksQuery, useDeleteBankConsentMutation } from '@/hooks/useConnectedBankQueries';
+import { useSyncTransactionsMutation } from '@/hooks/useBankTransactionQueries';
 import { useSnackbarStore } from '@/stores/snackbarStore';
 import { useTitleStore } from '@/stores/titleStore';
 import { BankConsentDto } from '@/types/Types';
@@ -123,6 +124,7 @@ function BankCard({ item, isDark, onDelete }: CardProps) {
 export default function ConnectedBanks() {
   const { data: connectedBanks = [], isLoading } = useConnectedBanksQuery();
   const deleteMutation = useDeleteBankConsentMutation();
+  const syncMutation = useSyncTransactionsMutation();
   const showSuccess = useSnackbarStore((s) => s.showSuccess);
   const showError = useSnackbarStore((s) => s.showError);
   const setTitle = useTitleStore((s) => s.setTitle);
@@ -168,6 +170,19 @@ export default function ConnectedBanks() {
   return (
     <>
       <ScreenContainer scrollable={false} glowColor="purple">
+        <View style={s.syncRow}>
+          <TouchableOpacity
+            style={[s.syncBtn, syncMutation.isPending && s.syncBtnDisabled]}
+            onPress={() => syncMutation.mutate()}
+            disabled={syncMutation.isPending}
+            activeOpacity={0.75}
+          >
+            {syncMutation.isPending
+              ? <ActivityIndicator size="small" color={Tavira.navy} />
+              : <Icon source="sync" size={15} color={Tavira.navy} />}
+            <Text style={s.syncBtnText}>Sync transactions</Text>
+          </TouchableOpacity>
+        </View>
         <FlatList
           data={connectedBanks}
           keyExtractor={(item) => `${item.id}`}
@@ -209,6 +224,18 @@ export default function ConnectedBanks() {
 
 const s = StyleSheet.create({
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  syncRow: { alignItems: 'flex-end', paddingTop: 4, paddingBottom: 8 },
+  syncBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: Tavira.teal,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 10,
+  },
+  syncBtnDisabled: { opacity: 0.6 },
+  syncBtnText: { color: Tavira.navy, fontWeight: '700', fontSize: 13 },
   list: { paddingTop: 8, paddingBottom: 32 },
   listEmpty: { flex: 1 },
   separator: { height: 10 },

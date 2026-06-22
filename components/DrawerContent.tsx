@@ -1,4 +1,5 @@
 import { Tavira } from '@/constants/theme';
+import { useBudgetsQuery } from '@/hooks/useBudgetQueries';
 import { useAuthStore } from '@/stores/authStore';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -14,11 +15,13 @@ type NavItemProps = {
   destructive?: boolean;
   accent?: string;
   soon?: boolean;
+  pro?: boolean;
 };
 
-function NavItem({ icon, label, onPress, badge, destructive, accent, soon }: NavItemProps) {
+function NavItem({ icon, label, onPress, badge, destructive, accent, soon, pro }: NavItemProps) {
   const theme = useTheme();
   const isDark = theme.dark;
+  const isLocked = soon || pro;
   const iconColor = destructive
     ? Tavira.expense
     : accent ?? (isDark ? Tavira.teal : theme.colors.primary);
@@ -33,26 +36,36 @@ function NavItem({ icon, label, onPress, badge, destructive, accent, soon }: Nav
 
   return (
     <TouchableOpacity
-      style={[styles.navItem, soon && styles.navItemDisabled]}
-      onPress={soon ? undefined : onPress}
-      activeOpacity={soon ? 1 : 0.65}
-      disabled={soon}
+      style={[styles.navItem, isLocked && styles.navItemDisabled]}
+      onPress={isLocked ? undefined : onPress}
+      activeOpacity={isLocked ? 1 : 0.65}
+      disabled={isLocked}
     >
-      <View style={[styles.navIconWrap, { backgroundColor: iconBg, opacity: soon ? 0.45 : 1 }]}>
+      <View style={[styles.navIconWrap, { backgroundColor: iconBg, opacity: isLocked ? 0.45 : 1 }]}>
         <Icon source={icon} size={19} color={iconColor} />
       </View>
-      <Text style={[styles.navLabel, { color: labelColor, opacity: soon ? 0.45 : 1 }]}>{label}</Text>
+      <Text style={[styles.navLabel, { color: labelColor, opacity: isLocked ? 0.45 : 1 }]}>{label}</Text>
       {soon && (
         <View style={styles.soonBadge}>
           <Text style={styles.soonText}>SOON</Text>
         </View>
       )}
-      {!soon && badge != null && (
+      {pro && (
+        <LinearGradient
+          colors={[Tavira.teal, Tavira.purple]}
+          style={styles.proBadge}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+        >
+          <Text style={styles.proText}>PRO</Text>
+        </LinearGradient>
+      )}
+      {!isLocked && badge != null && (
         <View style={[styles.badge, { backgroundColor: Tavira.expense }]}>
           <Text style={styles.badgeText}>{badge}</Text>
         </View>
       )}
-      {!soon && badge == null && !destructive && (
+      {!isLocked && badge == null && !destructive && (
         <Icon source="chevron-right" size={15} color={isDark ? 'rgba(242,244,248,0.2)' : 'rgba(11,27,58,0.2)'} />
       )}
     </TouchableOpacity>
@@ -75,6 +88,7 @@ export function DrawerContent(props: any) {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
   const signOut = useAuthStore((s) => s.signOut);
+  const { data: budgets = [] } = useBudgetsQuery();
 
   if (!user) return null;
 
@@ -136,6 +150,7 @@ export function DrawerContent(props: any) {
               icon="wallet-plus-outline"
               label="Create Budget"
               accent={Tavira.teal}
+              pro={(!user?.isPro && budgets.length >= 1) || (user?.isPro && budgets.length >= 3)}
               onPress={() => router.push('/(main)/CreateBudget')}
             />
           </View>
@@ -149,6 +164,7 @@ export function DrawerContent(props: any) {
               icon="bank-plus"
               label="Connect Bank"
               accent="#2DE6D0"
+              pro={!user?.isPro}
               onPress={() => router.push('/(main)/ConnectBank')}
             />
             <NavItem
@@ -317,6 +333,17 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 1,
     color: '#F59E0B',
+  },
+  proBadge: {
+    borderRadius: 6,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+  },
+  proText: {
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 1,
+    color: '#0B1B3A',
   },
   footer: {
     paddingBottom: 12,

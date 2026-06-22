@@ -1,7 +1,14 @@
 import { Tavira } from '@/constants/theme';
 import * as React from 'react';
 import { forwardRef, useImperativeHandle, useState } from 'react';
-import { Button, Dialog, Portal, Text, useTheme } from 'react-native-paper';
+import {
+  Modal as RNModal,
+  ScrollView,
+  StyleSheet,
+  TouchableWithoutFeedback,
+  View,
+} from 'react-native';
+import { Button, Text, useTheme } from 'react-native-paper';
 
 type ModalProps = {
   title?: string;
@@ -33,25 +40,86 @@ export const Modal = forwardRef<ModalRef, ModalProps>(
     const dialogBg = theme.dark ? '#0F2244' : theme.colors.surface;
 
     return (
-      <Portal>
-        <Dialog
-          visible={visible}
-          onDismiss={() => onHide(true)}
-          dismissable
-          style={{ borderRadius: 16, backgroundColor: dialogBg }}
-        >
-          <Dialog.Title>
-            <Text style={{ fontSize: 18, fontWeight: '700' }}>{title}</Text>
-          </Dialog.Title>
-          <Dialog.Content>{children}</Dialog.Content>
-          <Dialog.Actions>
-            <Button onPress={() => onHide(false)} loading={loading} mode="contained" buttonColor={Tavira.teal} textColor={Tavira.navy}>
-              Done
-            </Button>
-            <Button onPress={() => onHide(true)}>Cancel</Button>
-          </Dialog.Actions>
-        </Dialog>
-      </Portal>
+      <RNModal
+        visible={visible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => onHide(true)}
+        statusBarTranslucent
+      >
+        <TouchableWithoutFeedback onPress={() => onHide(true)}>
+          <View style={s.overlay}>
+            <TouchableWithoutFeedback onPress={() => {}}>
+              <View style={[s.dialog, { backgroundColor: dialogBg }]}>
+                {title && (
+                  <Text style={[s.title, { color: theme.colors.onSurface }]}>
+                    {title}
+                  </Text>
+                )}
+                <ScrollView
+                  style={s.scrollArea}
+                  contentContainerStyle={s.scrollContent}
+                  showsVerticalScrollIndicator={false}
+                  keyboardShouldPersistTaps="handled"
+                >
+                  {children}
+                </ScrollView>
+                <View style={[s.actions, { borderTopColor: theme.colors.outlineVariant }]}>
+                  <Button onPress={() => onHide(true)}>Cancel</Button>
+                  <Button
+                    onPress={() => onHide(false)}
+                    loading={loading}
+                    mode="contained"
+                    buttonColor={Tavira.teal}
+                    textColor={Tavira.navy}
+                  >
+                    Done
+                  </Button>
+                </View>
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </RNModal>
     );
   }
 );
+
+const s = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    width: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  dialog: {
+    width: '90%',
+    borderRadius: 16,
+    maxHeight: '80%',
+    overflow: 'hidden',
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: '700',
+    paddingHorizontal: 24,
+    paddingTop: 24,
+    paddingBottom: 12,
+  },
+  scrollArea: {
+    flexShrink: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 24,
+    paddingBottom: 12,
+  },
+  actions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    gap: 4,
+  },
+});

@@ -16,13 +16,13 @@ export interface GoogleUserDto {
   notificationToken: string
 }
 
-const BASE_URL = "https://785a-88-203-208-219.ngrok-free.app";
+const BASE_URL = "https://api.taviraofficial.com";
 console.log(`API ADDRESS: ${BASE_URL}`);
 
 
 const api = axios.create({
   baseURL: BASE_URL,
-  timeout: 5000,
+  timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -102,6 +102,10 @@ export const deleteBankConsent = async (sessionId: string): Promise<boolean> => 
 export const getNotCategorizedTransactions = async (): Promise<BankTransaction[]> => {
   const response = await api.get('/api/Transactions');
   return response.data;
+};
+
+export const syncTransactions = async (): Promise<void> => {
+  await api.post('/api/Transactions/sync');
 };
 
 export const categorizeTransaction = async (transaction: CategorizeTransactionDto): Promise<Spending> => {
