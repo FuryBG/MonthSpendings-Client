@@ -520,29 +520,12 @@ export default function ManageBudgetScreen() {
                             </View>
                         ))}
                         {(() => {
-                            const memberCount = selectedMainBudget?.users?.length ?? 0;
-                            const ownerIsPro = selectedMainBudget?.users?.find(u => u.id === selectedMainBudget.ownerId)?.isPro ?? false;
-                            const participantLimit = ownerIsPro ? 10 : 2;
-                            const atLimit = memberCount >= participantLimit;
-
-                            function onInvitePress() {
-                                if (atLimit) {
-                                    showError(
-                                        ownerIsPro
-                                            ? "This budget has reached the 10-participant limit."
-                                            : "Free budgets are limited to 2 participants. Upgrade to Pro for up to 10."
-                                    );
-                                    return;
-                                }
-                                openSheet('invite');
-                            }
-
                             return (
                                 <>
                                     <Divider style={styles.divider} />
-                                    <TouchableOpacity style={styles.actionRow} onPress={onInvitePress}>
-                                        <Icon source="account-plus" size={20} color={atLimit ? theme.colors.onSurfaceVariant : theme.colors.primary} />
-                                        <Text style={[styles.actionRowText, { color: atLimit ? theme.colors.onSurfaceVariant : theme.colors.primary }]}>
+                                    <TouchableOpacity style={styles.actionRow} onPress={() => openSheet('invite')}>
+                                        <Icon source="account-plus" size={20} color={theme.colors.primary} />
+                                        <Text style={[styles.actionRowText, { color: theme.colors.primary }]}>
                                             Invite Member
                                         </Text>
                                     </TouchableOpacity>

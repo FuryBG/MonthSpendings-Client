@@ -12,7 +12,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Controller, useFieldArray, useForm } from 'react-hook-form';
-import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Modal, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { HelperText, Icon, IconButton, Text, TextInput, useTheme } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -24,13 +24,14 @@ export default function CreateBudgetScreen() {
     const insets = useSafeAreaInsets();
     const user = useAuthStore((s) => s.user);
     const { data: budgets = [] } = useBudgetsQuery();
-    const createBudgetMutation = useCreateBudgetMutation();
+    const createBudgetMutation = useCreateBudgetMutation({ skipGlobalError: true });
     const { data: currencies = [] } = useCurrenciesQuery();
     const { setMainBudget } = useBudgetUIStore();
     const currencySheetRef = useRef<BottomSheetRef>(null);
     const [currencySheetVisible, setCurrencySheetVisible] = useState(false);
     const [currencySearch, setCurrencySearch] = useState('');
     const [isCreatingBudget, setIsCreatingBudget] = useState(false);
+    const [showProGate, setShowProGate] = useState(false);
 
     const { control, handleSubmit, watch, setValue } = useForm<Budget>({
         defaultValues: {
@@ -73,8 +74,11 @@ export default function CreateBudgetScreen() {
             const budget = await createBudgetMutation.mutateAsync(data);
             await setMainBudget(budget.id);
             router.replace('/(main)/(drawer)/(tabs)');
-        } catch {
-            // global snackbar handles errors
+        } catch (error: any) {
+            const message = error?.response?.data;
+            if (typeof message === 'string' && message.includes('Pro')) {
+                setShowProGate(true);
+            }
         } finally {
             setIsCreatingBudget(false);
         }
@@ -105,10 +109,6 @@ export default function CreateBudgetScreen() {
         c.code.toLowerCase().includes(currencySearch.toLowerCase()) ||
         c.name.toLowerCase().includes(currencySearch.toLowerCase())
     );
-
-    if ((!user?.isPro && budgets.length >= 1) || (user?.isPro && budgets.length >= 3)) {
-        return <ProGate featureName="Multiple Budgets" />;
-    }
 
     return (
         <LinearGradient colors={theme.dark ? Tavira.gradNavy : [theme.colors.background, theme.colors.background]} style={styles.root}>
@@ -282,6 +282,18 @@ export default function CreateBudgetScreen() {
                     <Text style={[styles.addCategoryText, { color: theme.colors.primary }]}>Add Category</Text>
                 </TouchableOpacity>
             </KeyboardAwareScrollView>
+
+            <Modal visible={showProGate} animationType="slide" onRequestClose={() => setShowProGate(false)}>
+                <View style={{ flex: 1 }}>
+                    <TouchableOpacity
+                        style={{ position: 'absolute', top: insets.top + 8, right: 16, zIndex: 10, padding: 8 }}
+                        onPress={() => setShowProGate(false)}
+                    >
+                        <Icon source="close" size={24} color={theme.colors.onBackground} />
+                    </TouchableOpacity>
+                    <ProGate featureName="Multiple Budgets" />
+                </View>
+            </Modal>
 
             <BottomSheet
                 ref={currencySheetRef}

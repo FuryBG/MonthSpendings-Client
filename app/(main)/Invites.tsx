@@ -1,4 +1,5 @@
 import { OverlayLoader } from "@/components/OverlayLoader";
+import { ProGate } from "@/components/ProGate";
 import { ScreenContainer } from "@/components/ScreenContainer";
 import { Tavira } from "@/constants/theme";
 import { queryClient } from "@/lib/queryClient";
@@ -8,8 +9,9 @@ import { useTitleStore } from "@/stores/titleStore";
 import { BudgetInvite } from "@/types/Types";
 import { useFocusEffect } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
+import { Animated, Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Icon, useTheme } from "react-native-paper";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { respondToInvite } from "../services/api";
 
 // ─── Empty State ──────────────────────────────────────────────────────────────
@@ -149,6 +151,10 @@ export default function InvitesScreen() {
     const showSuccess = useSnackbarStore((s) => s.showSuccess);
     const setTitle = useTitleStore((s) => s.setTitle);
     const [loading, setLoading] = useState(false);
+    const [showProGate, setShowProGate] = useState(false);
+    const [proGateFeature, setProGateFeature] = useState('');
+    const { colors } = useTheme();
+    const insets = useSafeAreaInsets();
 
     useFocusEffect(() => {
         setTitle("Invitations");
@@ -163,8 +169,16 @@ export default function InvitesScreen() {
                 await queryClient.invalidateQueries({ queryKey: ['budgets'] });
             }
             showSuccess(accepted ? "Invite accepted." : "Invite declined.");
-        } catch {
-            showError("Failed to respond to invite.");
+        } catch (error: any) {
+            const message = error?.response?.data;
+            if (accepted && typeof message === 'string' && message.includes('Pro')) {
+                setProGateFeature(
+                    message.includes('participants') ? 'Joining Large Budgets' : 'Multiple Budgets'
+                );
+                setShowProGate(true);
+            } else {
+                showError("Failed to respond to invite.");
+            }
         } finally {
             setLoading(false);
         }
@@ -175,6 +189,17 @@ export default function InvitesScreen() {
     return (
         <ScreenContainer scrollable={true}>
             <OverlayLoader isVisible={loading} message='Processing...' />
+            <Modal visible={showProGate} animationType="slide" onRequestClose={() => setShowProGate(false)}>
+                <View style={{ flex: 1 }}>
+                    <TouchableOpacity
+                        style={{ position: 'absolute', top: insets.top + 8, right: 16, zIndex: 10, padding: 8 }}
+                        onPress={() => setShowProGate(false)}
+                    >
+                        <Icon source="close" size={24} color={colors.onBackground} />
+                    </TouchableOpacity>
+                    <ProGate featureName={proGateFeature} />
+                </View>
+            </Modal>
             {user.receivedBudgetInvites.length === 0 ? (
                 <EmptyState />
             ) : (

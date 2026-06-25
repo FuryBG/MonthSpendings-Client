@@ -150,7 +150,6 @@ export function DrawerContent(props: any) {
               icon="wallet-plus-outline"
               label="Create Budget"
               accent={Tavira.teal}
-              pro={(!user?.isPro && budgets.length >= 1) || (user?.isPro && budgets.length >= 3)}
               onPress={() => router.push('/(main)/CreateBudget')}
             />
           </View>
