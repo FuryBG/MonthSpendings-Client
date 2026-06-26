@@ -16,7 +16,7 @@ export interface GoogleUserDto {
   notificationToken: string
 }
 
-const BASE_URL = "https://api.taviraofficial.com";
+const BASE_URL = "https://238e-88-203-208-219.ngrok-free.app";
 console.log(`API ADDRESS: ${BASE_URL}`);
 
 

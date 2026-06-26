@@ -62,6 +62,12 @@
           "faceIDPermission": "Allow $(PRODUCT_NAME) to access your Face ID biometric data."
         }
       ],
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Allow Tavira to use Face ID to unlock the app."
+        }
+      ],
       "expo-font",
       "expo-image",
       "expo-status-bar",

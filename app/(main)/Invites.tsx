@@ -197,7 +197,7 @@ export default function InvitesScreen() {
                     >
                         <Icon source="close" size={24} color={colors.onBackground} />
                     </TouchableOpacity>
-                    <ProGate featureName={proGateFeature} />
+                    <ProGate featureName={proGateFeature} onUnlocked={() => setShowProGate(false)} />
                 </View>
             </Modal>
             {user.receivedBudgetInvites.length === 0 ? (

@@ -291,7 +291,7 @@ export default function CreateBudgetScreen() {
                     >
                         <Icon source="close" size={24} color={theme.colors.onBackground} />
                     </TouchableOpacity>
-                    <ProGate featureName="Multiple Budgets" />
+                    <ProGate featureName="Multiple Budgets" onUnlocked={() => setShowProGate(false)} />
                 </View>
             </Modal>
 

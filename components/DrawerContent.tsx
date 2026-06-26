@@ -6,6 +6,7 @@ import { useRouter } from 'expo-router';
 import { DrawerContentScrollView } from 'expo-router/build/react-navigation/drawer';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Icon, Text, useTheme } from 'react-native-paper';
+import RevenueCatUI from 'react-native-purchases-ui';
 
 type NavItemProps = {
   icon: string;
@@ -21,7 +22,7 @@ type NavItemProps = {
 function NavItem({ icon, label, onPress, badge, destructive, accent, soon, pro }: NavItemProps) {
   const theme = useTheme();
   const isDark = theme.dark;
-  const isLocked = soon || pro;
+  const isLocked = soon;
   const iconColor = destructive
     ? Tavira.expense
     : accent ?? (isDark ? Tavira.teal : theme.colors.primary);
@@ -185,6 +186,12 @@ export function DrawerContent(props: any) {
               badge={pendingInvites > 0 ? pendingInvites : undefined}
               accent={Tavira.purple}
               onPress={() => router.push('/(main)/Invites')}
+            />
+            <NavItem
+              icon="credit-card-outline"
+              label="Manage Subscription"
+              accent={Tavira.teal}
+              onPress={() => RevenueCatUI.presentCustomerCenter()}
             />
           </View>
         </View>

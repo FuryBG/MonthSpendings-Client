@@ -10,6 +10,8 @@ interface AuthState {
   signIn: (token: string) => Promise<void>;
   signOut: () => Promise<void>;
   restoreSession: () => Promise<void>;
+  refreshUser: () => Promise<void>;
+  setProStatus: (isPro: boolean) => void;
   clearUser: () => void;
 }
 
@@ -44,6 +46,21 @@ export const useAuthStore = create<AuthState>((set) => ({
     } catch {
       set({ user: null, userLoading: false });
     }
+  },
+
+  refreshUser: async () => {
+    try {
+      const user = await getUser();
+      set({ user });
+    } catch {
+      // silent — user state unchanged
+    }
+  },
+
+  setProStatus: (isPro: boolean) => {
+    set((state) => ({
+      user: state.user ? { ...state.user, isPro } : null,
+    }));
   },
 
   clearUser: () => {

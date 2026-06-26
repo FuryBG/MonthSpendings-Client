@@ -13,6 +13,12 @@ export type AppUser = {
     googleId: string
     googlePhotoAddress: string
     isPro: boolean
+    subscription: {
+        productId: string
+        store: string
+        expiresAt: string
+        updatedAt: string
+    } | null
     receivedBudgetInvites: BudgetInvite[]
     sentBudgetInvites: BudgetInvite[]
 }

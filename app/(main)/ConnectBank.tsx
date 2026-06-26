@@ -2,7 +2,6 @@ import { OverlayLoader } from "@/components/OverlayLoader";
 import { ProGate } from "@/components/ProGate";
 import { ScreenContainer } from "@/components/ScreenContainer";
 import { Tavira } from "@/constants/theme";
-import { useAuthStore } from "@/stores/authStore";
 import { useSnackbarStore } from "@/stores/snackbarStore";
 import { useTitleStore } from "@/stores/titleStore";
 import { BankOption } from "@/types/Types";
@@ -171,7 +170,7 @@ export default function ConnectBankScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [focused, setFocused] = useState(false);
 
-  const user = useAuthStore((s) => s.user);
+  const [showProGate, setShowProGate] = useState(false);
   const showError = useSnackbarStore((s) => s.showError);
   const setTitle = useTitleStore((s) => s.setTitle);
 
@@ -213,9 +212,14 @@ export default function ConnectBankScreen() {
       );
       setLoading(false);
       await WebBrowser.openAuthSessionAsync(authUrl, 'tavira://(main)/');
-    } catch {
-      showError("Bank connection failed.");
+    } catch (error: any) {
       setLoading(false);
+      const message = error?.response?.data;
+      if (typeof message === 'string' && message.includes('Pro')) {
+        setShowProGate(true);
+      } else {
+        showError("Bank connection failed.");
+      }
     }
   }
 
@@ -223,8 +227,8 @@ export default function ConnectBankScreen() {
     setTitle("Select Bank");
   });
 
-  if (!user?.isPro) {
-    return <ProGate featureName="Bank Connection" />;
+  if (showProGate) {
+    return <ProGate featureName="Bank Connection" onUnlocked={() => setShowProGate(false)} />;
   }
 
   // ── border color for search ──
