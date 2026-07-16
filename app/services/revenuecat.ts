@@ -10,6 +10,7 @@ const API_KEYS = {
 export const ENTITLEMENT_ID = 'Tavira Pro';
 
 export function configureRevenueCat(): void {
+  return; // TODO: restore when production RC keys are ready
   if (__DEV__) Purchases.setLogLevel(LOG_LEVEL.DEBUG);
   Purchases.configure({
     apiKey: Platform.OS === 'ios' ? API_KEYS.ios : API_KEYS.android,
@@ -17,6 +18,7 @@ export function configureRevenueCat(): void {
 }
 
 export async function identifyUser(userId: string): Promise<void> {
+  return; // TODO: restore when production RC keys are ready
   try {
     await Purchases.logIn(userId);
   } catch (e) {
@@ -25,6 +27,7 @@ export async function identifyUser(userId: string): Promise<void> {
 }
 
 export async function logOutRevenueCat(): Promise<void> {
+  return; // TODO: restore when production RC keys are ready
   try {
     const info = await Purchases.getCustomerInfo();
     if (!info.originalAppUserId.startsWith('$RCAnonymousID:')) {

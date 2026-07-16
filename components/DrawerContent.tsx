@@ -196,7 +196,7 @@ export function DrawerContent(props: any) {
               icon="credit-card-outline"
               label="Manage Subscription"
               accent={Tavira.teal}
-              onPress={() => RevenueCatUI.presentCustomerCenter()}
+              onPress={() => { /* TODO: restore when production RC keys are ready */ }}
             />
             <NavItem
               icon="shield-lock-outline"

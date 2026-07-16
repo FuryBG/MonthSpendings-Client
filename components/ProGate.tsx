@@ -57,6 +57,7 @@ export function ProGate({ featureName, onUnlocked }: ProGateProps) {
   }
 
   async function handleUnlock() {
+    onUnlocked?.(); return; // TODO: restore when production RC keys are ready
     setLoading(true);
     try {
       const result = await RevenueCatUI.presentPaywallIfNeeded({
