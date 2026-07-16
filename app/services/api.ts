@@ -16,7 +16,7 @@ export interface GoogleUserDto {
   notificationToken: string
 }
 
-const BASE_URL = "https://238e-88-203-208-219.ngrok-free.app";
+export const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? "https://api.taviraofficial.com";
 console.log(`API ADDRESS: ${BASE_URL}`);
 
 
@@ -188,6 +188,10 @@ export const respondToInvite = async (inviteId: number, accepted: boolean): Prom
 export const updateBudgetCategoryName = async (id: number, newName: string): Promise<BudgetCategory> => {
   const response = await api.patch(`/api/budgetcategory/${id}/name`, newName);
   return response.data;
+};
+
+export const requestAccountDeletion = async (): Promise<void> => {
+  await api.post('/api/user/delete-request');
 };
 
 export default api;

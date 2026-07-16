@@ -1,10 +1,13 @@
 import { Tavira } from '@/constants/theme';
 import { useBudgetsQuery } from '@/hooks/useBudgetQueries';
 import { useAuthStore } from '@/stores/authStore';
+import { useSnackbarStore } from '@/stores/snackbarStore';
+import { BASE_URL, requestAccountDeletion } from '@/app/services/api';
+import * as WebBrowser from 'expo-web-browser';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { DrawerContentScrollView } from 'expo-router/build/react-navigation/drawer';
-import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Alert, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Icon, Text, useTheme } from 'react-native-paper';
 import RevenueCatUI from 'react-native-purchases-ui';
 
@@ -90,6 +93,8 @@ export function DrawerContent(props: any) {
   const user = useAuthStore((s) => s.user);
   const signOut = useAuthStore((s) => s.signOut);
   const { data: budgets = [] } = useBudgetsQuery();
+  const showSuccess = useSnackbarStore((s) => s.showSuccess);
+  const showError = useSnackbarStore((s) => s.showError);
 
   if (!user) return null;
 
@@ -192,6 +197,38 @@ export function DrawerContent(props: any) {
               label="Manage Subscription"
               accent={Tavira.teal}
               onPress={() => RevenueCatUI.presentCustomerCenter()}
+            />
+            <NavItem
+              icon="shield-lock-outline"
+              label="Privacy Policy"
+              accent={Tavira.purple}
+              onPress={() => WebBrowser.openBrowserAsync(`${BASE_URL}/privacy-policy`)}
+            />
+            <NavItem
+              icon="account-remove-outline"
+              label="Delete Account"
+              destructive
+              onPress={() =>
+                Alert.alert(
+                  'Delete Account',
+                  'Your request will be reviewed. Your account and all associated data will be permanently deleted within 30 days. This cannot be undone.',
+                  [
+                    { text: 'Cancel', style: 'cancel' },
+                    {
+                      text: 'Request Deletion',
+                      style: 'destructive',
+                      onPress: async () => {
+                        try {
+                          await requestAccountDeletion();
+                          showSuccess('Deletion request submitted. We will process it within 30 days.');
+                        } catch {
+                          showError('Failed to submit request. Please try again.');
+                        }
+                      },
+                    },
+                  ]
+                )
+              }
             />
           </View>
         </View>

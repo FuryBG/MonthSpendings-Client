@@ -34,7 +34,7 @@ interface CategoryCardProps {
 
 function CategoryCard({ bc, currencySymbol, isDark, primaryColor, getSwipeableRef, onPress, onRenamePress, onMinus, onPlus }: CategoryCardProps) {
   const drag = useReorderableDrag();
-  const remaining = bc.spendings!.reduce((sum, s) => (s.amount > 0 ? sum + s.amount : sum - Math.abs(s.amount)), 0);
+  const remaining = Math.round(bc.spendings!.reduce((sum, s) => (s.amount > 0 ? sum + s.amount : sum - Math.abs(s.amount)), 0) * 100) / 100 || 0;
   const accentColor = ACCENT_COLORS[bc.id % ACCENT_COLORS.length];
   const isPositive = remaining > 0;
   const minusDisabled = remaining <= 0;

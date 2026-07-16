@@ -8,7 +8,8 @@ import { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Image, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Icon, Portal, Snackbar, Text } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { googleLogin } from '../services/api';
+import * as WebBrowser from 'expo-web-browser';
+import { BASE_URL, googleLogin } from '../services/api';
 
 function TaviraLogoMark() {
   const scale = useRef(new Animated.Value(1)).current;
@@ -165,7 +166,7 @@ export default function LoginScreen() {
               Terms of Service
             </Text>
             {' '}and{' '}
-            <Text style={styles.legalLink} onPress={() => router.push('/(auth)/PrivacyPolicy')}>
+            <Text style={styles.legalLink} onPress={() => WebBrowser.openBrowserAsync(`${BASE_URL}/privacy-policy`)}>
               Privacy Policy
             </Text>
             .
