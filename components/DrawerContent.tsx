@@ -170,12 +170,14 @@ export function DrawerContent(props: any) {
               label="Connect Bank"
               accent="#2DE6D0"
               pro={!user?.isPro}
+              soon
               onPress={() => router.push('/(main)/ConnectBank')}
             />
             <NavItem
               icon="bank-outline"
               label="Connected Banks"
               accent={Tavira.purple}
+              soon
               onPress={() => router.push('/(main)/ConnectedBanks')}
             />
           </View>
@@ -196,7 +198,8 @@ export function DrawerContent(props: any) {
               icon="credit-card-outline"
               label="Manage Subscription"
               accent={Tavira.teal}
-              onPress={() => { /* TODO: restore when production RC keys are ready */ }}
+              soon
+              onPress={() => {}}
             />
             <NavItem
               icon="shield-lock-outline"
