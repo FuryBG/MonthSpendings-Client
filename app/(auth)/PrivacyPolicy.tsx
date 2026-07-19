@@ -8,19 +8,15 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 const SECTIONS = [
   {
     title: 'Information We Collect',
-    body: 'We collect information you provide directly, including your name, email address, and profile photo obtained via Google Sign-In. We also collect financial data you enter manually and transaction data synced from connected bank accounts. Usage data such as feature interactions and error logs may be collected to improve the service.',
+    body: 'We collect information you provide directly, including your name, email address, and profile photo obtained via Google Sign-In. Usage data such as feature interactions and error logs may be collected to improve the service.',
   },
   {
     title: 'How We Use Your Information',
-    body: 'Your information is used to provide, maintain, and improve the Tavira budgeting service. We use your data to personalize your experience, send you relevant notifications, and respond to support requests. We do not use your financial data to serve you advertisements.',
-  },
-  {
-    title: 'Bank Account Data',
-    body: 'When you connect a bank account, Tavira accesses read-only transaction data via secure open-banking APIs. This data is used exclusively to populate your transaction history and assist with budget tracking. We do not store your banking credentials and never initiate transactions on your behalf.',
+    body: 'Your information is used to provide, maintain, and improve the Tavira budgeting service. We use your data to personalize your experience, send you relevant notifications, and respond to support requests.',
   },
   {
     title: 'Data Sharing',
-    body: 'We do not sell, rent, or trade your personal or financial information to third parties. We may share data with trusted service providers who assist in operating Tavira, subject to strict confidentiality agreements. We may disclose information if required to do so by law or to protect the rights of our users.',
+    body: 'We do not sell, rent, or trade your personal information to third parties. We may share data with trusted service providers who assist in operating Tavira, subject to strict confidentiality agreements. We may disclose information if required to do so by law or to protect the rights of our users.',
   },
   {
     title: 'Data Security',
@@ -28,11 +24,11 @@ const SECTIONS = [
   },
   {
     title: 'Data Retention',
-    body: 'We retain your personal and financial data for as long as your account remains active or as needed to provide the service. If you delete your account, your data will be permanently removed within 30 days, except where retention is required by law. Bank transaction history linked to revoked consents is deleted promptly.',
+    body: 'We retain your personal data for as long as your account remains active or as needed to provide the service. If you delete your account, your data will be permanently removed within 30 days, except where retention is required by law.',
   },
   {
     title: 'Your Rights',
-    body: 'You have the right to access, correct, or delete the personal information we hold about you. You may export your budget data or disconnect bank accounts at any time through the app settings. To exercise any of these rights, contact us at support@tavira.app.',
+    body: 'You have the right to access, correct, or delete the personal information we hold about you. To exercise any of these rights, contact us at support@tavira.app.',
   },
   {
     title: "Children's Privacy",

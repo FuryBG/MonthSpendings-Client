@@ -162,28 +162,6 @@ export function DrawerContent(props: any) {
 
           <Divider />
 
-          {/* Banking */}
-          <View style={styles.section}>
-            <SectionLabel label="BANKING" />
-            <NavItem
-              icon="bank-plus"
-              label="Connect Bank"
-              accent="#2DE6D0"
-              pro={!user?.isPro}
-              soon
-              onPress={() => router.push('/(main)/ConnectBank')}
-            />
-            <NavItem
-              icon="bank-outline"
-              label="Connected Banks"
-              accent={Tavira.purple}
-              soon
-              onPress={() => router.push('/(main)/ConnectedBanks')}
-            />
-          </View>
-
-          <Divider />
-
           {/* Account */}
           <View style={styles.section}>
             <SectionLabel label="ACCOUNT" />
