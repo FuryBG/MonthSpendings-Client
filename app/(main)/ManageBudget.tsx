@@ -187,16 +187,20 @@ export default function ManageBudgetScreen() {
                 ...selectedMainBudget,
                 budgetCategories: selectedMainBudget.budgetCategories!.map(category => ({
                     ...category,
-                    spendings: [{
-                        id: 0,
-                        budgetPeriodId: 0,
-                        budgetCategoryId: category.id,
-                        date: new Date().toISOString(),
-                        amount: calculateRemaining(category.spendings),
-                        bankTransaction: null,
-                        bankTransactionId: null,
-                        description: "MOVED TO NEXT PERIOD",
-                    } as Spending],
+                    spendings: (() => {
+                        const remaining = calculateRemaining(category.spendings);
+                        if (remaining === 0) return [];
+                        return [{
+                            id: 0,
+                            budgetPeriodId: 0,
+                            budgetCategoryId: category.id,
+                            date: new Date().toISOString(),
+                            amount: remaining,
+                            bankTransaction: null,
+                            bankTransactionId: null,
+                            description: "MOVED TO NEXT PERIOD",
+                        } as Spending];
+                    })(),
                 })),
             };
             await finishBudgetMutation.mutateAsync(budgetToFinish);
@@ -222,7 +226,7 @@ export default function ManageBudgetScreen() {
     }
 
     const calculateRemaining = (spendings: Spending[]) =>
-        spendings.reduce((sum, s) => s.amount > 0 ? sum + s.amount : sum - Math.abs(s.amount), 0);
+        Math.round(spendings.reduce((sum, s) => sum + s.amount, 0) * 100) / 100;
 
     useFocusEffect(() => {
         setTitle("Budget Management");

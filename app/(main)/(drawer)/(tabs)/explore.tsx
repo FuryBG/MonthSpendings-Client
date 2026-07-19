@@ -186,7 +186,23 @@ export default function StatsScreen() {
     );
   }
 
-  if (isError || !comparison) {
+  if (isError) {
+    return (
+      <ScreenContainer>
+        <View style={styles.centerState}>
+          <View style={[styles.iconWrap, { backgroundColor: 'rgba(255,107,107,0.10)', borderColor: 'rgba(255,107,107,0.2)', borderWidth: 1 }]}>
+            <Icon source="alert-circle-outline" size={34} color={Tavira.expense} />
+          </View>
+          <Text style={[styles.stateTitle, { color: theme.colors.onSurface }]}>Something went wrong</Text>
+          <Text style={[styles.stateSub, { color: theme.colors.onSurfaceVariant }]}>
+            Could not load analytics. Try switching budgets or restarting the app.
+          </Text>
+        </View>
+      </ScreenContainer>
+    );
+  }
+
+  if (!comparison) {
     return (
       <ScreenContainer>
         <View style={styles.centerState}>
