@@ -79,6 +79,10 @@ export const updateUserActivity = async (dto: UpdateUserActivityDto): Promise<vo
   await api.put('/api/user/activity', dto);
 };
 
+export const updateNotificationToken = async (token: string): Promise<void> => {
+  await api.put('/api/user/notification-token', { notificationToken: token });
+};
+
 export const getBanks = async (bankName: string): Promise<BankOption[]> => {
   const response = await api.get(`/api/bank?bankName=${bankName}`);
   return response.data;

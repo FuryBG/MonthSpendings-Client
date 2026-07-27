@@ -1,7 +1,7 @@
-import { setOnUnauthorized, updateUserActivity } from '@/app/services/api';
+import { setOnUnauthorized, updateNotificationToken, updateUserActivity } from '@/app/services/api';
 import { configureRevenueCat, identifyUser, logOutRevenueCat } from '@/app/services/revenuecat';
 import { GlobalSnackbar } from '@/components/GlobalSnackbar';
-import { NotificationProvider } from '@/context/NotificationContext';
+import { NotificationProvider, useNotification } from '@/context/NotificationContext';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { queryClient } from '@/lib/queryClient';
 import { useAuthStore } from '@/stores/authStore';
@@ -74,6 +74,33 @@ const taviraLight = {
   },
 };
 
+function NotificationTokenSync() {
+  const { expoPushToken } = useNotification();
+  const user = useAuthStore((s) => s.user);
+  const appState = useRef(AppState.currentState);
+
+  useEffect(() => {
+    if (user && expoPushToken) {
+      updateNotificationToken(expoPushToken).catch(() => {});
+    }
+  }, [user?.id, expoPushToken]);
+
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (next) => {
+      if (appState.current.match(/inactive|background/) && next === 'active') {
+        const currentUser = useAuthStore.getState().user;
+        if (currentUser && expoPushToken) {
+          updateNotificationToken(expoPushToken).catch(() => {});
+        }
+      }
+      appState.current = next;
+    });
+    return () => sub.remove();
+  }, [expoPushToken]);
+
+  return null;
+}
+
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const theme = colorScheme === 'dark' ? taviraDark : taviraLight;
@@ -111,6 +138,7 @@ export default function RootLayout() {
       <KeyboardProvider>
         <QueryClientProvider client={queryClient}>
           <NotificationProvider>
+            <NotificationTokenSync />
             <PaperProvider theme={theme}>
               <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
                 <Stack screenOptions={{ headerShown: false }} />
