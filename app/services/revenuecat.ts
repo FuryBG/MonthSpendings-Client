@@ -3,23 +3,21 @@ import Purchases, { CustomerInfo, LOG_LEVEL } from 'react-native-purchases';
 
 // TODO: replace with separate platform-specific production keys before store submission
 const API_KEYS = {
-  ios: 'test_ImwgKzPeVHYrwBCcgQBxHvwSiwa',
-  android: 'test_ImwgKzPeVHYrwBCcgQBxHvwSiwa',
+  ios: 'goog_XWZbKaMvUIfvGTqzqQvKhptzsEV',
+  android: 'goog_XWZbKaMvUIfvGTqzqQvKhptzsEV',
 };
 
 export const ENTITLEMENT_ID = 'Tavira Pro';
 
 export function configureRevenueCat(): void {
-  return; // TODO: restore when production RC keys are ready
-  if (__DEV__) Purchases.setLogLevel(LOG_LEVEL.DEBUG);
+    if (__DEV__) Purchases.setLogLevel(LOG_LEVEL.DEBUG);
   Purchases.configure({
     apiKey: Platform.OS === 'ios' ? API_KEYS.ios : API_KEYS.android,
   });
 }
 
 export async function identifyUser(userId: string): Promise<void> {
-  return; // TODO: restore when production RC keys are ready
-  try {
+    try {
     await Purchases.logIn(userId);
   } catch (e) {
     console.warn('[RC] logIn error:', e);
@@ -27,8 +25,7 @@ export async function identifyUser(userId: string): Promise<void> {
 }
 
 export async function logOutRevenueCat(): Promise<void> {
-  return; // TODO: restore when production RC keys are ready
-  try {
+    try {
     const info = await Purchases.getCustomerInfo();
     if (!info.originalAppUserId.startsWith('$RCAnonymousID:')) {
       await Purchases.logOut();
