@@ -173,6 +173,11 @@ export const finishBudget = async (budget: Budget): Promise<Budget> => {
   return response.data;
 };
 
+export const getSpendingsByCategoryAndPeriod = async (budgetCategoryId: number, budgetPeriodId: number): Promise<Spending[]> => {
+  const response = await api.get('/api/spending/by-period', { params: { budgetCategoryId, budgetPeriodId } });
+  return response.data;
+};
+
 // Statistics
 export const getPeriodComparison = async (budgetId: number): Promise<PeriodComparisonDto> => {
   const response = await api.get(`/api/statistics/period-comparison?budgetId=${budgetId}`);

@@ -1,13 +1,13 @@
 import { MaskedAmount } from '@/components/MaskedAmount';
 import { ScreenContainer } from '@/components/ScreenContainer';
 import { Tavira } from '@/constants/theme';
-import { useBudgetsQuery, useDeleteSpendingMutation } from '@/hooks/useBudgetQueries';
+import { useBudgetsQuery, useDeleteSpendingMutation, useHistoricalSpendingsQuery } from '@/hooks/useBudgetQueries';
 import { useBudgetUIStore } from '@/stores/budgetUIStore';
 import { useTitleStore } from '@/stores/titleStore';
-import { Spending } from '@/types/Types';
+import { BudgetPeriod, Spending } from '@/types/Types';
 import { useFocusEffect, useLocalSearchParams } from 'expo-router';
-import React, { useMemo, useRef, useState } from 'react';
-import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import { Button, Card, Chip, Dialog, Divider, Icon, Portal, Surface, Text, useTheme } from 'react-native-paper';
 
@@ -59,6 +59,12 @@ type SpendingGroup = {
   label:   string;
   items:   Spending[];
 };
+
+function formatPeriodLabel(period: BudgetPeriod): string {
+  const d = new Date(period.startDate);
+  const label = d.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
+  return period.endDate === null ? `${label} · Current` : label;
+}
 
 function groupSpendings(spendings: Spending[]): SpendingGroup[] {
   const sorted = [...spendings].sort((a, b) => {
@@ -161,6 +167,7 @@ export default function SpendingDetailsScreen() {
 
   const [confirmSpendingId, setConfirmSpendingId] = useState<number | null>(null);
   const swipeableRefs = useRef<Map<number, Swipeable | null>>(new Map());
+  const [selectedPeriodId, setSelectedPeriodId] = useState<number | null>(null);
 
   const selectedCategory = useMemo(
     () =>
@@ -176,12 +183,35 @@ export default function SpendingDetailsScreen() {
     [budgets, selectedMainBudgetId]
   );
 
-  const groupedSpendings = useMemo(
-    () => groupSpendings(selectedCategory?.spendings ?? []),
-    [selectedCategory?.spendings]
+  const currentPeriod = useMemo(
+    () => selectedMainBudget?.budgetPeriods.find(p => p.endDate === null),
+    [selectedMainBudget]
   );
 
-  const hasItems = (selectedCategory?.spendings?.length ?? 0) > 0;
+  useEffect(() => {
+    if (currentPeriod && selectedPeriodId === null) {
+      setSelectedPeriodId(currentPeriod.id);
+    }
+  }, [currentPeriod]);
+
+  const isCurrentPeriod = selectedPeriodId === currentPeriod?.id;
+
+  const { data: historicalSpendings = [] } = useHistoricalSpendingsQuery(
+    Number(selectedCategoryId),
+    selectedPeriodId,
+    !isCurrentPeriod
+  );
+
+  const displayedSpendings = isCurrentPeriod
+    ? (selectedCategory?.spendings ?? [])
+    : historicalSpendings;
+
+  const groupedSpendings = useMemo(
+    () => groupSpendings(displayedSpendings),
+    [displayedSpendings]
+  );
+
+  const hasItems = displayedSpendings.length > 0;
   const symbol   = selectedMainBudget?.currency.symbol ?? '';
 
   useFocusEffect(() => {
@@ -203,8 +233,26 @@ export default function SpendingDetailsScreen() {
   return (
     <>
       <ScreenContainer scrollable={true}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={s.periodPicker}
+        >
+          {(selectedMainBudget?.budgetPeriods ?? []).map(period => (
+            <Chip
+              key={period.id}
+              selected={period.id === selectedPeriodId}
+              onPress={() => setSelectedPeriodId(period.id)}
+              mode="outlined"
+              style={s.periodChip}
+            >
+              {formatPeriodLabel(period)}
+            </Chip>
+          ))}
+        </ScrollView>
+
         {hasItems && (
-          <SummaryHeaderCard spendings={selectedCategory!.spendings} symbol={symbol} />
+          <SummaryHeaderCard spendings={displayedSpendings} symbol={symbol} />
         )}
 
         {!hasItems && <EmptyState />}
@@ -216,7 +264,7 @@ export default function SpendingDetailsScreen() {
               <Swipeable
                 key={sp.id}
                 ref={(r) => { swipeableRefs.current.set(sp.id, r); }}
-                renderRightActions={() => renderDeleteAction(sp.id)}
+                renderRightActions={isCurrentPeriod ? () => renderDeleteAction(sp.id) : undefined}
               >
                 <Card mode="outlined" style={[s.card, theme.dark ? { backgroundColor: Tavira.glassBg, borderColor: Tavira.glassBorder } : {}]}>
                   <Card.Content style={s.cardContent}>
@@ -307,6 +355,15 @@ export default function SpendingDetailsScreen() {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const s = StyleSheet.create({
+  periodPicker: {
+    flexDirection:  'row',
+    gap:            8,
+    paddingVertical: 8,
+    paddingHorizontal: 2,
+  },
+  periodChip: {
+    marginBottom:   4,
+  },
   summaryCard: {
     borderRadius:   16,
     padding:        16,

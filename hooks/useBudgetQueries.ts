@@ -7,12 +7,20 @@ import {
   deleteSpending,
   finishBudget,
   getBudgets,
+  getSpendingsByCategoryAndPeriod,
   updateBudgetCategoryName,
 } from '@/app/services/api';
 import { queryClient } from '@/lib/queryClient';
 import { useAuthStore } from '@/stores/authStore';
 import { Budget, BudgetCategory, Spending } from '@/types/Types';
 import { MutationMeta, useMutation, useQuery } from '@tanstack/react-query';
+
+export const useHistoricalSpendingsQuery = (budgetCategoryId: number, budgetPeriodId: number | null, enabled: boolean) =>
+  useQuery({
+    queryKey: ['spendings-by-period', budgetCategoryId, budgetPeriodId],
+    queryFn: () => getSpendingsByCategoryAndPeriod(budgetCategoryId, budgetPeriodId!),
+    enabled: enabled && budgetPeriodId != null,
+  });
 
 export const useBudgetsQuery = () => {
   const user = useAuthStore((s) => s.user);
