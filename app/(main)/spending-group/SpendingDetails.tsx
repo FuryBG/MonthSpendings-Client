@@ -9,7 +9,7 @@ import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
-import { Button, Card, Chip, Dialog, Divider, Icon, Portal, Surface, Text, useTheme } from 'react-native-paper';
+import { ActivityIndicator, Button, Card, Chip, Dialog, Divider, Icon, Portal, Surface, Text, useTheme } from 'react-native-paper';
 
 const COLOR_EXPENSE = Tavira.expense;
 const COLOR_INCOME  = Tavira.income;
@@ -196,11 +196,13 @@ export default function SpendingDetailsScreen() {
 
   const isCurrentPeriod = selectedPeriodId === currentPeriod?.id;
 
-  const { data: historicalSpendings = [] } = useHistoricalSpendingsQuery(
+  const { data: historicalSpendings = [], isLoading: isHistoricalLoading } = useHistoricalSpendingsQuery(
     Number(selectedCategoryId),
     selectedPeriodId,
     !isCurrentPeriod
   );
+
+  const isPeriodLoading = !isCurrentPeriod && isHistoricalLoading;
 
   const displayedSpendings = isCurrentPeriod
     ? (selectedCategory?.spendings ?? [])
@@ -251,13 +253,18 @@ export default function SpendingDetailsScreen() {
           ))}
         </ScrollView>
 
-        {hasItems && (
-          <SummaryHeaderCard spendings={displayedSpendings} symbol={symbol} />
+        {isPeriodLoading ? (
+          <View style={s.loaderContainer}>
+            <ActivityIndicator size="large" color={Tavira.teal} />
+          </View>
+        ) : (
+          <>
+            {hasItems && <SummaryHeaderCard spendings={displayedSpendings} symbol={symbol} />}
+            {!hasItems && <EmptyState />}
+          </>
         )}
 
-        {!hasItems && <EmptyState />}
-
-        {groupedSpendings.map(group => (
+        {!isPeriodLoading && groupedSpendings.map(group => (
           <View key={group.dateKey}>
             <DateSectionHeader label={group.label} />
             {group.items.map(sp => (
@@ -470,5 +477,11 @@ const s = StyleSheet.create({
   },
   bottomSpacer: {
     height:         24,
+  },
+  loaderContainer: {
+    flex:           1,
+    justifyContent: 'center',
+    alignItems:     'center',
+    paddingTop:     80,
   },
 });

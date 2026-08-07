@@ -57,7 +57,6 @@ export function ProGate({ featureName, onUnlocked }: ProGateProps) {
   }
 
   async function handleUnlock() {
-    onUnlocked?.();
     setLoading(true);
     try {
       const result = await RevenueCatUI.presentPaywallIfNeeded({
@@ -78,8 +77,10 @@ export function ProGate({ featureName, onUnlocked }: ProGateProps) {
         case PAYWALL_RESULT.ERROR:
           setStatus('error');
           break;
-        case PAYWALL_RESULT.CANCELLED:
         case PAYWALL_RESULT.NOT_PRESENTED:
+          onUnlocked?.();
+          return;
+        case PAYWALL_RESULT.CANCELLED:
           break;
       }
     } catch (e) {

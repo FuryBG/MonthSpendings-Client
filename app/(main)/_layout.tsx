@@ -1,4 +1,3 @@
-import { OverlayLoader } from "@/components/OverlayLoader";
 import { Tavira } from "@/constants/theme";
 import { useBudgetsQuery } from "@/hooks/useBudgetQueries";
 import { useAuthStore } from "@/stores/authStore";
@@ -8,8 +7,8 @@ import { useTitleStore } from "@/stores/titleStore";
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import { Redirect, Stack, useRouter } from "expo-router";
 import { useEffect } from "react";
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
-import { Appbar, useTheme } from "react-native-paper";
+import { ActivityIndicator, StyleSheet, View } from "react-native";
+import { Appbar, Text, useTheme } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function MainLayout() {

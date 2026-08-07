@@ -176,8 +176,7 @@ export function DrawerContent(props: any) {
               icon="credit-card-outline"
               label="Manage Subscription"
               accent={Tavira.teal}
-              soon
-              onPress={() => {}}
+              onPress={() => RevenueCatUI.presentPaywall()}
             />
             <NavItem
               icon="shield-lock-outline"
