@@ -105,6 +105,7 @@ export default function RootLayout() {
   const colorScheme = useColorScheme();
   const theme = colorScheme === 'dark' ? taviraDark : taviraLight;
   const user = useAuthStore((s) => s.user);
+  const userLoading = useAuthStore((s) => s.userLoading);
   const appState = useRef(AppState.currentState);
 
   useEffect(() => {
@@ -128,10 +129,12 @@ export default function RootLayout() {
       identifyUser(user.id.toString());
       updateUserActivity({ timezone: Intl.DateTimeFormat().resolvedOptions().timeZone })
         .catch(() => {});
-    } else {
+    } else if (!userLoading) {
+      // Only log out RC once the session is fully resolved — avoids a race where
+      // logOut() fires concurrently with identifyUser() during session restore.
       logOutRevenueCat();
     }
-  }, [user?.id]);
+  }, [user?.id, userLoading]);
 
   return (
     <GestureHandlerRootView>

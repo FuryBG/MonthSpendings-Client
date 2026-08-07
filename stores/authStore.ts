@@ -29,7 +29,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   signOut: async () => {
     setMemoryToken(null);
     await SecureStore.deleteItemAsync('token');
-    set({ user: null });
+    set({ user: null, userLoading: false });
     queryClient.clear();
   },
 
