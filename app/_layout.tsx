@@ -1,5 +1,6 @@
 import { setOnUnauthorized, updateNotificationToken, updateUserActivity } from '@/app/services/api';
 import { configureRevenueCat, identifyUser, logOutRevenueCat } from '@/app/services/revenuecat';
+import Purchases from 'react-native-purchases';
 import { GlobalSnackbar } from '@/components/GlobalSnackbar';
 import { NotificationProvider, useNotification } from '@/context/NotificationContext';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -110,6 +111,8 @@ export default function RootLayout() {
 
   useEffect(() => {
     configureRevenueCat();
+    const onCustomerInfoUpdate = () => { useAuthStore.getState().refreshUser(); };
+    Purchases.addCustomerInfoUpdateListener(onCustomerInfoUpdate);
     useAuthStore.getState().restoreSession();
     setOnUnauthorized(() => {
       useAuthStore.getState().clearUser();
@@ -121,7 +124,10 @@ export default function RootLayout() {
       }
       appState.current = next;
     });
-    return () => sub.remove();
+    return () => {
+      Purchases.removeCustomerInfoUpdateListener(onCustomerInfoUpdate);
+      sub.remove();
+    };
   }, []);
 
   useEffect(() => {

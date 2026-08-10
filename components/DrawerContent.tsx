@@ -134,9 +134,21 @@ export function DrawerContent(props: any) {
             </View>
             <View style={styles.profileInfo}>
               {fullName ? (
-                <Text style={[styles.profileName, { color: isDark ? '#F2F4F8' : theme.colors.onBackground }]} numberOfLines={1}>
-                  {fullName}
-                </Text>
+                <View style={styles.nameRow}>
+                  <Text style={[styles.profileName, { color: isDark ? '#F2F4F8' : theme.colors.onBackground, flexShrink: 1 }]} numberOfLines={1}>
+                    {fullName}
+                  </Text>
+                  {user.isPro && (
+                    <LinearGradient
+                      colors={[Tavira.teal, Tavira.purple]}
+                      style={styles.proBadge}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                    >
+                      <Text style={styles.proText}>PRO</Text>
+                    </LinearGradient>
+                  )}
+                </View>
               ) : null}
               <Text
                 style={[styles.profileEmail, { color: isDark ? 'rgba(242,244,248,0.45)' : theme.colors.onSurfaceVariant }]}
@@ -176,7 +188,16 @@ export function DrawerContent(props: any) {
               icon="credit-card-outline"
               label="Manage Subscription"
               accent={Tavira.teal}
-              onPress={() => RevenueCatUI.presentPaywall()}
+              onPress={() => {
+                if (user.isPro && user.subscription) {
+                  const { productId, store, expiresAt } = user.subscription;
+                  const storeLabel = store === 'APP_STORE' ? 'App Store' : store === 'PLAY_STORE' ? 'Google Play' : store;
+                  const expiry = new Date(expiresAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+                  Alert.alert('Tavira Pro', `Plan: ${productId}\nRenews: ${expiry}\nStore: ${storeLabel}`, [{ text: 'OK' }]);
+                } else {
+                  RevenueCatUI.presentPaywall();
+                }
+              }}
             />
             <NavItem
               icon="shield-lock-outline"
@@ -280,6 +301,11 @@ const styles = StyleSheet.create({
   profileInfo: {
     flex: 1,
     gap: 4,
+  },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   profileName: {
     fontSize: 15,

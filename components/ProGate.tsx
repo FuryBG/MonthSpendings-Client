@@ -1,4 +1,5 @@
 import { Tavira } from '@/constants/theme';
+import { ENTITLEMENT_ID } from '@/app/services/revenuecat';
 import { useAuthStore } from '@/stores/authStore';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useRef, useState } from 'react';
@@ -60,7 +61,7 @@ export function ProGate({ featureName, onUnlocked }: ProGateProps) {
     setLoading(true);
     try {
       const result = await RevenueCatUI.presentPaywallIfNeeded({
-        requiredEntitlementIdentifier: 'Tavira Pro',
+        requiredEntitlementIdentifier: ENTITLEMENT_ID,
       });
       switch (result) {
         case PAYWALL_RESULT.PURCHASED:
