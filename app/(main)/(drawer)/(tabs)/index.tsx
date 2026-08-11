@@ -1,8 +1,9 @@
 import { BottomSheet, BottomSheetRef, sheetStyles } from '@/components/BottomSheet';
 import { MaskedAmount } from '@/components/MaskedAmount';
+import { NotificationPermissionBanner } from '@/components/NotificationPermissionBanner';
 import { ScreenContainer } from '@/components/ScreenContainer';
 import { Tavira } from '@/constants/theme';
-import { usePendingTransactionsQuery } from '@/hooks/useBankTransactionQueries';
+import { usePendingNotificationTransactionsQuery } from '@/hooks/useNotificationTransactionQueries';
 import { useAddSpendingMutation, useBudgetsQuery, useUpdateBudgetCategoryNameMutation } from '@/hooks/useBudgetQueries';
 import { useAuthStore } from '@/stores/authStore';
 import { useBudgetUIStore } from '@/stores/budgetUIStore';
@@ -13,7 +14,8 @@ import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import { AppState, Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
+import RNAndroidNotificationListener, { RNAndroidNotificationListenerPermissionStatus } from 'react-native-android-notification-listener';
 import { Swipeable } from 'react-native-gesture-handler';
 import { Button, HelperText, Icon, Text, TextInput, useTheme } from 'react-native-paper';
 import ReorderableList, { reorderItems, useReorderableDrag } from 'react-native-reorderable-list';
@@ -96,7 +98,7 @@ function CategoryCard({ bc, currencySymbol, isDark, primaryColor, getSwipeableRe
 
 export default function HomeScreen() {
   const { data: budgets = [] } = useBudgetsQuery();
-  const { data: transactions = [] } = usePendingTransactionsQuery();
+  const { data: transactions = [] } = usePendingNotificationTransactionsQuery();
   const { selectedMainBudgetId } = useBudgetUIStore();
   const user = useAuthStore((s) => s.user);
   const { categoryOrders, setCategoryOrder } = useOrderStore();
@@ -117,6 +119,22 @@ export default function HomeScreen() {
   const renameSheetRef = useRef<BottomSheetRef>(null);
   const amountInputRef = useRef<any>(null);
   const swipeableRefs = useRef<Map<number, Swipeable | null>>(new Map());
+  const [notifListenerStatus, setNotifListenerStatus] =
+    useState<RNAndroidNotificationListenerPermissionStatus>('authorized');
+
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    const checkStatus = () => {
+      RNAndroidNotificationListener.getPermissionStatus()
+        .then(setNotifListenerStatus)
+        .catch(() => {});
+    };
+    checkStatus();
+    const sub = AppState.addEventListener('change', (next) => {
+      if (next === 'active') checkStatus();
+    });
+    return () => sub.remove();
+  }, []);
 
   const selectedMainBudget = budgets.find(b => b.id === selectedMainBudgetId);
   const selectedCategory = budgets
@@ -153,9 +171,8 @@ export default function HomeScreen() {
 
   const emptySpending: Spending = {
     id: 0, amount: undefined as any, budgetCategoryId: 0, description: '',
-    budgetPeriodId: 0, date: null, bankTransactionId: null,
-    bankTransaction: null, createdByUserId: 0, createdByEmail: null, createdByName: null,
-    transactionDate: null,
+    budgetPeriodId: 0, date: null, notificationTransactionId: null,
+    notificationTransaction: null, createdByUserId: 0, createdByEmail: null, createdByName: null,
   };
 
   function openSheet(bc: BudgetCategory, isNegative: boolean) {
@@ -225,6 +242,7 @@ export default function HomeScreen() {
 
   return (
     <>
+      {notifListenerStatus !== 'authorized' && <NotificationPermissionBanner />}
       <ScreenContainer glowColor="teal" removeSafeBottom={true}>
         {(selectedMainBudgetId == null || budgets.length === 0) ? (
           <View style={styles.emptyContainer}>

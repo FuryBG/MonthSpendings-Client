@@ -292,25 +292,16 @@ export default function SpendingDetailsScreen() {
                         <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
                           {sp.date ? formatTime(sp.date) : ''}
                         </Text>
-                        {sp.bankTransactionId !== null && (
+                        {sp.notificationTransactionId !== null && (
                           <Chip
-                            icon="bank-outline"
+                            icon="wallet-outline"
                             compact
                             mode="outlined"
                             style={[s.bankChip, { borderColor: theme.colors.outline }]}
                             textStyle={[s.bankChipText, { color: theme.colors.onSurfaceVariant }]}
                           >
-                            Bank
+                            Wallet
                           </Chip>
-                        )}
-                        {sp.transactionDate != null && (
-                          <Text
-                            variant="labelSmall"
-                            style={[s.transactionDate, { color: theme.colors.onSurfaceVariant }]}
-                            numberOfLines={1}
-                          >
-                            {getDateLabel(sp.transactionDate)} · {formatTime(sp.transactionDate)}
-                          </Text>
                         )}
                         {sp.createdByEmail != null && (
                           <Text

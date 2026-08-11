@@ -269,12 +269,11 @@ export default function CreateBudgetScreen() {
                             budgetCategoryId: 0,
                             budgetPeriodId: 0,
                             description: 'ADD MONEY',
-                            bankTransaction: null,
-                            bankTransactionId: null,
+                            notificationTransaction: null,
+                            notificationTransactionId: null,
                             createdByEmail: '',
                             createdByName: '',
                             createdByUserId: 0,
-                            transactionDate: null
                         }],
                     })}
                 >

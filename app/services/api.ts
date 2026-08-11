@@ -1,4 +1,4 @@
-import { AppUser, BankConsentDto, BankOption, BankTransaction, Budget, BudgetCategory, BudgetInvite, CategorizeBankTransactionDto, CategorizeTransactionDto, Currency, PeriodComparisonDto, Spending, UpdateUserActivityDto } from '@/types/Types';
+import { AppUser, Budget, BudgetCategory, BudgetInvite, CategorizeNotificationTransactionDto, CreateNotificationTransactionDto, Currency, NotificationTransaction, PeriodComparisonDto, Spending, UpdateUserActivityDto } from '@/types/Types';
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 
@@ -83,42 +83,18 @@ export const updateNotificationToken = async (token: string): Promise<void> => {
   await api.put('/api/user/notification-token', { notificationToken: token });
 };
 
-export const getBanks = async (bankName: string): Promise<BankOption[]> => {
-  const response = await api.get(`/api/bank?bankName=${bankName}`);
+export const createNotificationTransaction = async (dto: CreateNotificationTransactionDto): Promise<NotificationTransaction> => {
+  const response = await api.post('/api/notification-transactions', dto);
   return response.data;
 };
 
-export const startBankConnection = async (bankName: string, countryCode: string, bankImgUrl: string, maximumConsentValidity: number): Promise<string> => {
-  const response = await api.get(`/api/Bank/connect?bankName=${bankName}&countryCode=${countryCode}&bankImageUrl=${bankImgUrl}&maximumConsentValidity=${maximumConsentValidity}`);
+export const getUncategorizedNotificationTransactions = async (): Promise<NotificationTransaction[]> => {
+  const response = await api.get('/api/notification-transactions');
   return response.data;
 };
 
-export const getConnectedBanks = async (): Promise<BankConsentDto[]> => {
-  const response = await api.get('/api/bank/connected');
-  return response.data;
-};
-
-export const deleteBankConsent = async (sessionId: string): Promise<boolean> => {
-  const response = await api.delete('/api/bank/delete', { params: { sessionId } });
-  return response.data;
-};
-
-export const getNotCategorizedTransactions = async (): Promise<BankTransaction[]> => {
-  const response = await api.get('/api/Transactions');
-  return response.data;
-};
-
-export const syncTransactions = async (): Promise<void> => {
-  await api.post('/api/Transactions/sync');
-};
-
-export const categorizeTransaction = async (transaction: CategorizeTransactionDto): Promise<Spending> => {
-  const response = await api.post('/api/Transactions', transaction);
-  return response.data;
-};
-
-export const categorizeBankTransaction = async (dto: CategorizeBankTransactionDto): Promise<Spending> => {
-  const response = await api.post('/api/Transactions', dto);
+export const categorizeNotificationTransaction = async (dto: CategorizeNotificationTransactionDto): Promise<Spending> => {
+  const response = await api.post('/api/notification-transactions/categorize', dto);
   return response.data;
 };
 

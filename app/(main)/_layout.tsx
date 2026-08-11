@@ -90,10 +90,6 @@ export default function MainLayout() {
       <Stack.Screen name="ManageBudget" options={{ title: 'Manage Budget' }} />
       <Stack.Screen name="CreateBudget" options={{ title: 'Create Budget' }} />
       <Stack.Screen name="PendingTransactions" options={{ title: 'Pending Transactions' }} />
-      <Stack.Screen name="ConnectBank" options={{ title: 'Connect Bank' }} />
-      <Stack.Screen name="ConnectBankSuccess" options={{ title: 'Success' }} />
-      <Stack.Screen name="ConnectBankError" options={{ title: 'Error' }} />
-      <Stack.Screen name="ConnectedBanks" options={{ title: 'Connected Banks' }} />
       <Stack.Screen name="Invites" options={{ title: 'Invitations' }} />
       <Stack.Screen name="spending-group/SpendingDetails" options={{ title: 'Spending Details' }} />
     </Stack>

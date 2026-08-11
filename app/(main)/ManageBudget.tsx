@@ -196,8 +196,8 @@ export default function ManageBudgetScreen() {
                             budgetCategoryId: category.id,
                             date: new Date().toISOString(),
                             amount: remaining,
-                            bankTransaction: null,
-                            bankTransactionId: null,
+                            notificationTransaction: null,
+                            notificationTransactionId: null,
                             description: "MOVED TO NEXT PERIOD",
                         } as Spending];
                     })(),

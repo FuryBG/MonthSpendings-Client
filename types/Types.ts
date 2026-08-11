@@ -66,48 +66,34 @@ export type Spending = {
     description: string
     budgetCategoryId: number
     budgetPeriodId: number
-    bankTransactionId: number | null
-    bankTransaction: BankTransaction | null
-    transactionDate: string | null
+    notificationTransactionId: number | null
+    notificationTransaction: NotificationTransaction | null
     createdByUserId: number
     createdByEmail: string | null
     createdByName: string | null
 }
 
-export type BankTransaction = {
+export type NotificationTransaction = {
     id: number
-    transactionId: string
-    bankAccountId: string
+    amount: number
     currency: string
-    amount: string
-    bookingDate: string
-    creditorName: string | null
-    description: string | null
-    determined: boolean
+    merchantName: string
+    receivedAt: string
+    categorized: boolean
 }
 
-export type CategorizeBankTransactionDto = {
-    id: number
-    transactionId: string
-    bankAccountId: number
-    currency: string
+export type CreateNotificationTransactionDto = {
+    merchantName: string
     amount: number
-    merchantCode: string | null
-    creditorName: string | null
-    description: string | null
-    status: string
-    bookingDate: string
-    categorized: boolean
+    currency: string
+    rawTitle?: string
+    rawBody?: string
+}
+
+export type CategorizeNotificationTransactionDto = {
+    id: number
     categoryId: number
     createRule: boolean
-}
-
-export type CategorizeTransactionDto = {
-    transactionId: number
-    budgetId: string
-    categoryId: string
-    amount: string
-    dateCreated: string
 }
 
 export type BudgetInvite = {
@@ -119,31 +105,6 @@ export type BudgetInvite = {
     senderName: string
     validTo: string | null
     accepted: boolean | null
-}
-
-export type BankOption = {
-    name: string
-    country: string
-    logo: string
-    bic: string
-    maximumConsentValidity: number
-}
-
-export type BankAccountDto = {
-    id: number
-    iban: string
-    currency: string
-    holderName: string
-}
-
-export type BankConsentDto = {
-    id: number
-    sessionId: string
-    bankName: string
-    imageUrl: string
-    validTo: string
-    state: 'Initiated' | 'Connected' | 'Expired' | 'ConnectionFailed' | string
-    bankAccounts: BankAccountDto[]
 }
 
 export enum AppNotificationType {

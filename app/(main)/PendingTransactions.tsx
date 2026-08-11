@@ -1,28 +1,18 @@
 import { Modal, ModalRef } from '@/components/Modal';
 import { ScreenContainer } from '@/components/ScreenContainer';
 import { Tavira } from '@/constants/theme';
-import { useCategorizeTransactionMutation, usePendingTransactionsQuery } from '@/hooks/useBankTransactionQueries';
+import { useCategorizeNotificationTransactionMutation, usePendingNotificationTransactionsQuery } from '@/hooks/useNotificationTransactionQueries';
 import { useBudgetsQuery } from '@/hooks/useBudgetQueries';
 import { useTitleStore } from '@/stores/titleStore';
-import { BankTransaction, Budget, BudgetCategory } from '@/types/Types';
+import { Budget, BudgetCategory, NotificationTransaction } from '@/types/Types';
 import { useFocusEffect } from 'expo-router';
 import React, { useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, ScrollView, StyleSheet, Switch, TouchableOpacity, View } from 'react-native';
-import { Chip, Icon, SegmentedButtons, Text, useTheme } from 'react-native-paper';
+import { Chip, Icon, Text, useTheme } from 'react-native-paper';
 
 function formatDate(iso: string): string {
   const d = new Date(iso);
   return `${d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} · ${d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false })}`;
-}
-
-function getAmountDisplay(amount: string) {
-  const value = Math.abs(Number(amount));
-  const isNegative = Number(amount) < 0;
-  return {
-    color: isNegative ? Tavira.expense : Tavira.income,
-    sign: isNegative ? '−' : '+',
-    value: value.toFixed(2),
-  };
 }
 
 function EmptyState() {
@@ -35,23 +25,21 @@ function EmptyState() {
         borderColor: isDark ? 'rgba(62,198,198,0.2)' : 'transparent',
         borderWidth: 1,
       }]}>
-        <Icon source="bank-check-outline" size={36} color={isDark ? Tavira.teal : theme.colors.primary} />
+        <Icon source="wallet-check-outline" size={36} color={isDark ? Tavira.teal : theme.colors.primary} />
       </View>
       <Text style={[s.emptyTitle, { color: theme.colors.onSurface }]}>All caught up</Text>
       <Text style={[s.emptySubtitle, { color: theme.colors.onSurfaceVariant }]}>
-        No transactions waiting to be categorized.{'\n'}New bank imports will appear here automatically.
+        No transactions waiting to be categorized.{'\n'}New wallet notifications will appear here automatically.
       </Text>
     </View>
   );
 }
 
-type CardProps = { item: BankTransaction; onCategorize: (t: BankTransaction) => void };
+type CardProps = { item: NotificationTransaction; onCategorize: (t: NotificationTransaction) => void };
 
 function TransactionCard({ item, onCategorize }: CardProps) {
   const theme = useTheme();
   const isDark = theme.dark;
-  const hasCreditor = !!item.creditorName;
-  const hasDescription = !!item.description;
 
   return (
     <View style={[s.card, {
@@ -60,26 +48,16 @@ function TransactionCard({ item, onCategorize }: CardProps) {
     }]}>
       <View style={s.cardRow}>
         <View style={[s.iconWrap, { backgroundColor: isDark ? 'rgba(62,198,198,0.10)' : theme.colors.surfaceVariant }]}>
-          <Icon source="bank-outline" size={20} color={isDark ? Tavira.teal : theme.colors.onSurfaceVariant} />
+          <Icon source="wallet-outline" size={20} color={isDark ? Tavira.teal : theme.colors.onSurfaceVariant} />
         </View>
         <View style={s.cardMeta}>
-          {hasCreditor && (
-            <Text
-              style={[s.creditorName, { color: isDark ? '#F2F4F8' : Tavira.navy }]}
-              numberOfLines={1}
-            >
-              {item.creditorName}
-            </Text>
-          )}
-          {hasDescription && (
-            <Text
-              style={[s.descriptionText, { color: theme.colors.onSurfaceVariant }]}
-              numberOfLines={1}
-            >
-              {item.description}
-            </Text>
-          )}
-          <Text style={[s.dateText, { color: theme.colors.onSurfaceVariant }]}>{formatDate(item.bookingDate)}</Text>
+          <Text
+            style={[s.merchantName, { color: isDark ? '#F2F4F8' : Tavira.navy }]}
+            numberOfLines={1}
+          >
+            {item.merchantName}
+          </Text>
+          <Text style={[s.dateText, { color: theme.colors.onSurfaceVariant }]}>{formatDate(item.receivedAt)}</Text>
           <View style={[s.currencyBadge, {
             backgroundColor: isDark ? 'rgba(91,123,255,0.15)' : theme.colors.surfaceVariant,
             borderColor: isDark ? 'rgba(91,123,255,0.25)' : 'transparent',
@@ -90,11 +68,7 @@ function TransactionCard({ item, onCategorize }: CardProps) {
             </Text>
           </View>
         </View>
-        {(() => {
-          const { color, sign, value } = getAmountDisplay(item.amount);
-          const displayColor = item.determined ? color : Tavira.purple;
-          return <Text style={[s.amount, { color: displayColor }]}>{sign}{value}</Text>;
-        })()}
+        <Text style={[s.amount, { color: Tavira.expense }]}>−{item.amount.toFixed(2)}</Text>
       </View>
       <View style={s.cardFooter}>
         <TouchableOpacity style={s.categorizeBtn} onPress={() => onCategorize(item)}>
@@ -107,16 +81,14 @@ function TransactionCard({ item, onCategorize }: CardProps) {
 }
 
 type ModalBodyProps = {
-  transaction: BankTransaction;
+  transaction: NotificationTransaction;
   budgets: Budget[];
   selectedBudget: Budget | null;
   selectedCategoryId: number;
   createRule: boolean;
-  isExpense: boolean;
   onSelectBudget: (b: Budget) => void;
   onSelectCategory: (c: BudgetCategory) => void;
   onToggleRule: (v: boolean) => void;
-  onToggleIsExpense: (v: boolean) => void;
 };
 
 function CategorizeBody({
@@ -125,70 +97,35 @@ function CategorizeBody({
   selectedBudget,
   selectedCategoryId,
   createRule,
-  isExpense,
   onSelectBudget,
   onSelectCategory,
   onToggleRule,
-  onToggleIsExpense,
 }: ModalBodyProps) {
   const theme = useTheme();
   const isDark = theme.dark;
 
-  const canAutoRule = !!(transaction.creditorName || transaction.description);
-  const absValue = Math.abs(Number(transaction.amount)).toFixed(2);
-  const amountColor = isExpense ? Tavira.expense : Tavira.income;
-  const amountSign = isExpense ? '−' : '+';
-
   return (
     <View>
-      {!transaction.determined && (
-        <SegmentedButtons
-          value={isExpense ? 'expense' : 'income'}
-          onValueChange={(v) => onToggleIsExpense(v === 'expense')}
-          style={s.directionToggle}
-          buttons={[
-            {
-              value: 'expense',
-              label: 'Expense',
-              icon: 'arrow-down',
-              checkedColor: Tavira.expense,
-              uncheckedColor: isDark ? 'rgba(242,244,248,0.45)' : theme.colors.onSurfaceVariant,
-              style: isExpense
-                ? { backgroundColor: 'rgba(255,107,107,0.12)', borderColor: 'rgba(255,107,107,0.35)' }
-                : { borderColor: isDark ? 'rgba(255,255,255,0.12)' : theme.colors.outlineVariant },
-            },
-            {
-              value: 'income',
-              label: 'Income',
-              icon: 'arrow-up',
-              checkedColor: Tavira.income,
-              uncheckedColor: isDark ? 'rgba(242,244,248,0.45)' : theme.colors.onSurfaceVariant,
-              style: !isExpense
-                ? { backgroundColor: 'rgba(62,198,198,0.12)', borderColor: 'rgba(62,198,198,0.35)' }
-                : { borderColor: isDark ? 'rgba(255,255,255,0.12)' : theme.colors.outlineVariant },
-            },
-          ]}
-        />
-      )}
-
       <View style={[s.summary, {
-        backgroundColor: isExpense
-          ? (isDark ? 'rgba(255,107,107,0.08)' : 'rgba(255,107,107,0.06)')
-          : (isDark ? 'rgba(62,198,198,0.08)' : 'rgba(62,198,198,0.06)'),
-        borderColor: isExpense
-          ? (isDark ? 'rgba(255,107,107,0.2)' : 'rgba(255,107,107,0.15)')
-          : (isDark ? 'rgba(62,198,198,0.2)' : 'rgba(62,198,198,0.15)'),
+        backgroundColor: isDark ? 'rgba(255,107,107,0.08)' : 'rgba(255,107,107,0.06)',
+        borderColor: isDark ? 'rgba(255,107,107,0.2)' : 'rgba(255,107,107,0.15)',
         borderWidth: 1,
       }]}>
         <View style={s.summaryRow}>
           <Text style={[s.summaryLabel, { color: theme.colors.onSurfaceVariant }]}>Amount</Text>
-          <Text style={[s.summaryAmount, { color: amountColor }]}>
-            {amountSign}{absValue} {transaction.currency}
+          <Text style={[s.summaryAmount, { color: Tavira.expense }]}>
+            −{transaction.amount.toFixed(2)} {transaction.currency}
           </Text>
         </View>
         <View style={[s.summaryDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : theme.colors.outlineVariant }]} />
+        <View style={s.summaryRow}>
+          <Text style={[s.summaryLabel, { color: theme.colors.onSurfaceVariant }]}>Merchant</Text>
+          <Text style={[s.summaryMerchant, { color: isDark ? '#F2F4F8' : Tavira.navy }]}>
+            {transaction.merchantName}
+          </Text>
+        </View>
         <Text style={[s.summaryDate, { color: theme.colors.onSurfaceVariant }]}>
-          {formatDate(transaction.bookingDate)}
+          {formatDate(transaction.receivedAt)}
         </Text>
       </View>
 
@@ -228,55 +165,51 @@ function CategorizeBody({
         <Text style={[s.hint, { color: theme.colors.onSurfaceVariant }]}>Select a budget first</Text>
       )}
 
-      {canAutoRule && (
-        <>
-          <View style={[s.ruleDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : theme.colors.outlineVariant }]} />
-          <View style={[s.ruleRow, {
-            backgroundColor: isDark
-              ? createRule ? 'rgba(62,198,198,0.07)' : 'transparent'
-              : createRule ? 'rgba(62,198,198,0.06)' : 'transparent',
-            borderRadius: 12,
-            padding: 4,
-          }]}>
-            <View style={s.ruleLabelGroup}>
-              <View style={s.ruleTitleRow}>
-                <Icon
-                  source="lightning-bolt"
-                  size={14}
-                  color={createRule ? Tavira.teal : (isDark ? 'rgba(242,244,248,0.4)' : theme.colors.onSurfaceVariant)}
-                />
-                <Text style={[
-                  s.ruleLabel,
-                  { color: createRule ? (isDark ? Tavira.teal : '#0B9EA0') : (isDark ? 'rgba(242,244,248,0.8)' : theme.colors.onSurface) },
-                ]}>
-                  Auto-categorize similar
-                </Text>
-              </View>
-              <Text style={[s.ruleHint, { color: isDark ? 'rgba(242,244,248,0.38)' : theme.colors.onSurfaceVariant }]}>
-                Save this choice for future transactions from the same source
-              </Text>
-            </View>
-            <Switch
-              value={createRule}
-              onValueChange={onToggleRule}
-              trackColor={{
-                false: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)',
-                true: 'rgba(62,198,198,0.45)',
-              }}
-              thumbColor={createRule ? Tavira.teal : (isDark ? 'rgba(255,255,255,0.6)' : '#f4f3f4')}
-              ios_backgroundColor={isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'}
+      <View style={[s.ruleDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : theme.colors.outlineVariant }]} />
+      <View style={[s.ruleRow, {
+        backgroundColor: isDark
+          ? createRule ? 'rgba(62,198,198,0.07)' : 'transparent'
+          : createRule ? 'rgba(62,198,198,0.06)' : 'transparent',
+        borderRadius: 12,
+        padding: 4,
+      }]}>
+        <View style={s.ruleLabelGroup}>
+          <View style={s.ruleTitleRow}>
+            <Icon
+              source="lightning-bolt"
+              size={14}
+              color={createRule ? Tavira.teal : (isDark ? 'rgba(242,244,248,0.4)' : theme.colors.onSurfaceVariant)}
             />
+            <Text style={[
+              s.ruleLabel,
+              { color: createRule ? (isDark ? Tavira.teal : '#0B9EA0') : (isDark ? 'rgba(242,244,248,0.8)' : theme.colors.onSurface) },
+            ]}>
+              Auto-categorize similar
+            </Text>
           </View>
-        </>
-      )}
+          <Text style={[s.ruleHint, { color: isDark ? 'rgba(242,244,248,0.38)' : theme.colors.onSurfaceVariant }]}>
+            Save this choice for future transactions from {transaction.merchantName}
+          </Text>
+        </View>
+        <Switch
+          value={createRule}
+          onValueChange={onToggleRule}
+          trackColor={{
+            false: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)',
+            true: 'rgba(62,198,198,0.45)',
+          }}
+          thumbColor={createRule ? Tavira.teal : (isDark ? 'rgba(255,255,255,0.6)' : '#f4f3f4')}
+          ios_backgroundColor={isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'}
+        />
+      </View>
     </View>
   );
 }
 
 export default function PendingTransactions() {
   const { data: budgets = [] } = useBudgetsQuery();
-  const { data: transactions = [], isLoading } = usePendingTransactionsQuery();
-  const categorizeMutation = useCategorizeTransactionMutation();
+  const { data: transactions = [], isLoading } = usePendingNotificationTransactionsQuery();
+  const categorizeMutation = useCategorizeNotificationTransactionMutation();
   const setTitle = useTitleStore((s) => s.setTitle);
   const modalRef = useRef<ModalRef>(null);
   const theme = useTheme();
@@ -284,39 +217,24 @@ export default function PendingTransactions() {
 
   const [selectedBudget, setSelectedBudget] = useState<Budget | null>(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState<number>(0);
-  const [selectedTransaction, setSelectedTransaction] = useState<BankTransaction | null>(null);
+  const [selectedTransaction, setSelectedTransaction] = useState<NotificationTransaction | null>(null);
   const [createRule, setCreateRule] = useState<boolean>(false);
-  const [isExpense, setIsExpense] = useState<boolean>(true);
 
   useFocusEffect(() => { setTitle('Transactions'); });
 
-  function onCategorize(transaction: BankTransaction) {
+  function onCategorize(transaction: NotificationTransaction) {
     setSelectedTransaction(transaction);
     setSelectedBudget(null);
     setSelectedCategoryId(0);
     setCreateRule(false);
-    setIsExpense(transaction.determined ? Number(transaction.amount) < 0 : true);
     modalRef.current?.open();
   }
 
   async function onSave() {
     try {
       const t = selectedTransaction!;
-      const signedAmount = isExpense
-        ? -Math.abs(Number(t.amount))
-        : Math.abs(Number(t.amount));
       await categorizeMutation.mutateAsync({
         id: t.id,
-        transactionId: t.transactionId,
-        bankAccountId: Number(t.bankAccountId),
-        currency: t.currency,
-        amount: signedAmount,
-        merchantCode: null,
-        creditorName: t.creditorName ?? null,
-        description: t.description ?? null,
-        status: 'BOOK',
-        bookingDate: t.bookingDate,
-        categorized: false,
         categoryId: selectedCategoryId,
         createRule,
       });
@@ -369,11 +287,9 @@ export default function PendingTransactions() {
             selectedBudget={selectedBudget}
             selectedCategoryId={selectedCategoryId}
             createRule={createRule}
-            isExpense={isExpense}
             onSelectBudget={setSelectedBudget}
             onSelectCategory={(c) => setSelectedCategoryId(c.id)}
             onToggleRule={setCreateRule}
-            onToggleIsExpense={setIsExpense}
           />
         )}
       </Modal>
@@ -394,8 +310,7 @@ const s = StyleSheet.create({
   cardRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   iconWrap: { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
   cardMeta: { flex: 1, gap: 3 },
-  creditorName: { fontSize: 13, fontWeight: '700', letterSpacing: 0.1 },
-  descriptionText: { fontSize: 11, lineHeight: 15 },
+  merchantName: { fontSize: 13, fontWeight: '700', letterSpacing: 0.1 },
   dateText: { fontSize: 12 },
   currencyBadge: { alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 7 },
   currencyText: { fontSize: 11, fontWeight: '700', letterSpacing: 0.5 },
@@ -415,11 +330,11 @@ const s = StyleSheet.create({
   emptyIconWrap: { width: 84, height: 84, borderRadius: 24, justifyContent: 'center', alignItems: 'center', marginBottom: 4 },
   emptyTitle: { fontSize: 19, fontWeight: '700' },
   emptySubtitle: { textAlign: 'center', lineHeight: 20, fontSize: 13 },
-  directionToggle: { marginBottom: 16 },
   summary: { borderRadius: 14, padding: 16, marginBottom: 20, gap: 10 },
   summaryRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   summaryLabel: { fontSize: 13, fontWeight: '500' },
   summaryAmount: { fontSize: 20, fontWeight: '800', letterSpacing: -0.5 },
+  summaryMerchant: { fontSize: 13, fontWeight: '700' },
   summaryDivider: { height: 1, borderRadius: 1 },
   summaryDate: { fontSize: 12 },
   sectionLabel: { fontWeight: '600', letterSpacing: 0.3, marginBottom: 10, marginTop: 4, fontSize: 13 },
