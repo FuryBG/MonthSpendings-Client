@@ -1,10 +1,10 @@
 import 'expo-router/entry';
+import * as SecureStore from 'expo-secure-store';
 import { AppRegistry } from 'react-native';
 import { RNAndroidNotificationListenerHeadlessJsName } from 'react-native-android-notification-listener';
-import * as SecureStore from 'expo-secure-store';
-import { parseWalletNotification } from './utils/parseWalletNotification';
+import { GOOGLE_WALLET_PACKAGES, parseWalletNotification } from './utils/parseWalletNotification';
 
-const API_BASE = process.env.EXPO_PUBLIC_API_URL ?? 'https://api.taviraofficial.com';
+const API_BASE = process.env["EXPO_PUBLIC_API_URL"] ?? 'https://9186-190-2-151-137.ngrok-free.app';
 
 const headlessNotificationTask = async ({ notification: notificationJson }) => {
   if (!notificationJson) return;
@@ -15,6 +15,8 @@ const headlessNotificationTask = async ({ notification: notificationJson }) => {
   } catch {
     return;
   }
+
+  if (!GOOGLE_WALLET_PACKAGES.includes(notification.app)) return;
 
   const text = notification.text || notification.bigText || '';
   const parsed = parseWalletNotification(notification.title, text);

@@ -1,10 +1,15 @@
 import * as LocalAuthentication from 'expo-local-authentication';
 
+export async function isDeviceLockAvailable(): Promise<boolean> {
+  // SecurityLevel.NONE means no protection at all; anything above that (SECRET = PIN/pattern/password,
+  // BIOMETRIC_WEAK/STRONG = biometrics) is sufficient for the lock feature.
+  const level = await LocalAuthentication.getEnrolledLevelAsync();
+  return level > LocalAuthentication.SecurityLevel.NONE;
+}
+
+/** @deprecated use isDeviceLockAvailable */
 export async function isBiometricsAvailable(): Promise<boolean> {
-  const compatible = await LocalAuthentication.hasHardwareAsync();
-  if (!compatible) return false;
-  const enrolled = await LocalAuthentication.isEnrolledAsync();
-  return enrolled;
+  return isDeviceLockAvailable();
 }
 
 export async function authenticate(reason = 'Unlock Tavira'): Promise<boolean> {

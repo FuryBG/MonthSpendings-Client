@@ -1,6 +1,5 @@
 import { BottomSheet, BottomSheetRef, sheetStyles } from '@/components/BottomSheet';
 import { MaskedAmount } from '@/components/MaskedAmount';
-import { NotificationPermissionBanner } from '@/components/NotificationPermissionBanner';
 import { ScreenContainer } from '@/components/ScreenContainer';
 import { Tavira } from '@/constants/theme';
 import { usePendingNotificationTransactionsQuery } from '@/hooks/useNotificationTransactionQueries';
@@ -14,8 +13,7 @@ import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { AppState, Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
-import RNAndroidNotificationListener, { RNAndroidNotificationListenerPermissionStatus } from 'react-native-android-notification-listener';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import { Button, HelperText, Icon, Text, TextInput, useTheme } from 'react-native-paper';
 import ReorderableList, { reorderItems, useReorderableDrag } from 'react-native-reorderable-list';
@@ -119,23 +117,6 @@ export default function HomeScreen() {
   const renameSheetRef = useRef<BottomSheetRef>(null);
   const amountInputRef = useRef<any>(null);
   const swipeableRefs = useRef<Map<number, Swipeable | null>>(new Map());
-  const [notifListenerStatus, setNotifListenerStatus] =
-    useState<RNAndroidNotificationListenerPermissionStatus>('authorized');
-
-  useEffect(() => {
-    if (Platform.OS !== 'android') return;
-    const checkStatus = () => {
-      RNAndroidNotificationListener.getPermissionStatus()
-        .then(setNotifListenerStatus)
-        .catch(() => {});
-    };
-    checkStatus();
-    const sub = AppState.addEventListener('change', (next) => {
-      if (next === 'active') checkStatus();
-    });
-    return () => sub.remove();
-  }, []);
-
   const selectedMainBudget = budgets.find(b => b.id === selectedMainBudgetId);
   const selectedCategory = budgets
     .filter(b => b.id === selectedMainBudgetId)
@@ -242,7 +223,6 @@ export default function HomeScreen() {
 
   return (
     <>
-      {notifListenerStatus !== 'authorized' && <NotificationPermissionBanner />}
       <ScreenContainer glowColor="teal" removeSafeBottom={true}>
         {(selectedMainBudgetId == null || budgets.length === 0) ? (
           <View style={styles.emptyContainer}>

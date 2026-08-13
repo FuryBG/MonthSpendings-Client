@@ -16,7 +16,7 @@ export interface GoogleUserDto {
   notificationToken: string
 }
 
-export const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? "https://api.taviraofficial.com";
+export const BASE_URL = process.env["EXPO_PUBLIC_API_URL"] ?? "https://9186-190-2-151-137.ngrok-free.app";
 console.log(`API ADDRESS: ${BASE_URL}`);
 
 
@@ -81,6 +81,10 @@ export const updateUserActivity = async (dto: UpdateUserActivityDto): Promise<vo
 
 export const updateNotificationToken = async (token: string): Promise<void> => {
   await api.put('/api/user/notification-token', { notificationToken: token });
+};
+
+export const updateSyncWalletTransactions = async (sync: boolean): Promise<void> => {
+  await api.put('/api/user/sync-wallet-transactions', { syncWalletTransactions: sync });
 };
 
 export const createNotificationTransaction = async (dto: CreateNotificationTransactionDto): Promise<NotificationTransaction> => {
