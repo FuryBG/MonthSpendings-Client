@@ -4,7 +4,7 @@ import { AppRegistry } from 'react-native';
 import { RNAndroidNotificationListenerHeadlessJsName } from 'react-native-android-notification-listener';
 import { GOOGLE_WALLET_PACKAGES, parseWalletNotification } from './utils/parseWalletNotification';
 
-const API_BASE = process.env["EXPO_PUBLIC_API_URL"] ?? 'https://9186-190-2-151-137.ngrok-free.app';
+const API_BASE = process.env["EXPO_PUBLIC_API_URL"] ?? 'https://api.taviraofficial.com';
 
 const headlessNotificationTask = async ({ notification: notificationJson }) => {
   if (!notificationJson) return;
