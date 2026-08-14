@@ -37,6 +37,7 @@
     },
     "plugins": [
       "./plugins/withAllowBackupFix",
+      "./plugins/withNoSaveEnabled",
       "expo-router",
       [
         "expo-splash-screen",

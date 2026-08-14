@@ -1,6 +1,6 @@
 import { authenticate } from '@/app/services/biometrics';
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Icon } from 'react-native-paper';
 
 export function LockGate({ onUnlock }: { onUnlock: () => void }) {
@@ -35,25 +35,23 @@ export function LockGate({ onUnlock }: { onUnlock: () => void }) {
   }
 
   return (
-    <Modal visible transparent={false} animationType="none" statusBarTranslucent>
-      <View style={styles.overlay}>
-        <Text style={styles.wordmark}>T A V I R A</Text>
+    <View style={styles.overlay}>
+      <Text style={styles.wordmark}>T A V I R A</Text>
 
-        <Pressable onPress={tryAuth}>
-          <Animated.View style={[styles.halo, { transform: [{ scale }, { translateX: shake }] }]}>
-            <Icon source="fingerprint" size={32} color="#3EC6C6" />
-          </Animated.View>
+      <Pressable onPress={tryAuth}>
+        <Animated.View style={[styles.halo, { transform: [{ scale }, { translateX: shake }] }]}>
+          <Icon source="fingerprint" size={32} color="#3EC6C6" />
+        </Animated.View>
+      </Pressable>
+
+      <Text style={styles.hint}>Unlock to continue</Text>
+
+      {showRetry && (
+        <Pressable onPress={tryAuth} style={styles.retryBtn}>
+          <Text style={styles.retryText}>Try again</Text>
         </Pressable>
-
-        <Text style={styles.hint}>Unlock to continue</Text>
-
-        {showRetry && (
-          <Pressable onPress={tryAuth} style={styles.retryBtn}>
-            <Text style={styles.retryText}>Try again</Text>
-          </Pressable>
-        )}
-      </View>
-    </Modal>
+      )}
+    </View>
   );
 }
 
@@ -61,8 +59,9 @@ const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: '#0B1B3A',
-    justifyContent: 'center',
+    justifyContent: 'flex-end',
     alignItems: 'center',
+    paddingBottom: 72,
     gap: 24,
   },
   wordmark: {

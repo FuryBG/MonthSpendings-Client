@@ -1,6 +1,5 @@
 import { setOnUnauthorized, updateNotificationToken, updateUserActivity } from '@/app/services/api';
 import { configureRevenueCat, identifyUser, logOutRevenueCat } from '@/app/services/revenuecat';
-import Purchases from 'react-native-purchases';
 import { GlobalSnackbar } from '@/components/GlobalSnackbar';
 import { LockGate } from '@/components/LockGate';
 import { NotificationProvider, useNotification } from '@/context/NotificationContext';
@@ -9,15 +8,16 @@ import { queryClient } from '@/lib/queryClient';
 import { useAppLockStore } from '@/stores/appLockStore';
 import { useAuthStore } from '@/stores/authStore';
 import { QueryClientProvider } from '@tanstack/react-query';
-import * as SecureStore from 'expo-secure-store';
 import { Stack } from 'expo-router';
 import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router/react-navigation';
+import * as SecureStore from 'expo-secure-store';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, useState } from 'react';
 import { AppState, Modal, StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { MD3DarkTheme, MD3LightTheme, PaperProvider } from 'react-native-paper';
+import Purchases from 'react-native-purchases';
 import 'react-native-reanimated';
 
 const taviraDark = {
@@ -129,9 +129,13 @@ export default function RootLayout() {
       if (useAppLockStore.getState().lockEnabled && token) {
         setIsLocked(true);
       }
-      setBootDone(true);
-
       await useAuthStore.getState().restoreSession();
+
+      // android:saveEnabled="false" (via withNoSaveEnabled plugin) prevents Android from
+      // restoring the navigation back-stack after the activity is recreated, so no runtime
+      // router.replace() is needed here.
+
+      setBootDone(true);
     };
     init();
 
@@ -142,6 +146,7 @@ export default function RootLayout() {
     const sub = AppState.addEventListener('change', (next) => {
       if (appState.current.match(/inactive|background/) && next === 'active') {
         useAuthStore.getState().refreshUser();
+        queryClient.invalidateQueries();
         const { lockEnabled } = useAppLockStore.getState();
         if (lockEnabled && useAuthStore.getState().user) {
           setIsLocked(true);
@@ -179,13 +184,14 @@ export default function RootLayout() {
                 <GlobalSnackbar />
                 <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
               </ThemeProvider>
-              {isLocked && <LockGate onUnlock={() => setIsLocked(false)} />}
             </PaperProvider>
           </NotificationProvider>
         </QueryClientProvider>
       </KeyboardProvider>
-      <Modal visible={!bootDone} transparent={false} animationType="none" statusBarTranslucent>
-        <View style={styles.bootCover} />
+      <Modal visible={!bootDone || isLocked} transparent={false} animationType="none" statusBarTranslucent>
+        {isLocked
+          ? <LockGate onUnlock={() => setIsLocked(false)} />
+          : <View style={styles.bootCover} />}
       </Modal>
     </GestureHandlerRootView>
   );
