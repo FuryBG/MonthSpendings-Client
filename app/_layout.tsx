@@ -7,6 +7,7 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { queryClient } from '@/lib/queryClient';
 import { useAppLockStore } from '@/stores/appLockStore';
 import { useAuthStore } from '@/stores/authStore';
+import { useSnackbarStore } from '@/stores/snackbarStore';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
 import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router/react-navigation';
@@ -120,6 +121,10 @@ export default function RootLayout() {
     Purchases.addCustomerInfoUpdateListener(onCustomerInfoUpdate);
 
     const init = async () => {
+      // Reset ephemeral UI state that may have survived in the JS process
+      // kept alive by the Android notification listener background service.
+      useSnackbarStore.getState().hide();
+
       // Read lock pref and stored token in parallel — both are fast local reads.
       // Do this BEFORE restoreSession so the gate appears before any app content shows.
       const [, token] = await Promise.all([
@@ -131,10 +136,8 @@ export default function RootLayout() {
       }
       await useAuthStore.getState().restoreSession();
 
-      // android:saveEnabled="false" (via withNoSaveEnabled plugin) prevents Android from
-      // restoring the navigation back-stack after the activity is recreated, so no runtime
-      // router.replace() is needed here.
-
+      // Auth guards in (auth)/_layout and (main)/_layout handle routing.
+      // Boot cover keeps the screen blank until this point so no flash occurs.
       setBootDone(true);
     };
     init();
@@ -145,6 +148,7 @@ export default function RootLayout() {
 
     const sub = AppState.addEventListener('change', (next) => {
       if (appState.current.match(/inactive|background/) && next === 'active') {
+        useSnackbarStore.getState().hide();
         useAuthStore.getState().refreshUser();
         queryClient.invalidateQueries();
         const { lockEnabled } = useAppLockStore.getState();
@@ -173,14 +177,14 @@ export default function RootLayout() {
   }, [user?.id, userLoading]);
 
   return (
-    <GestureHandlerRootView>
+    <GestureHandlerRootView style={{ flex: 1 }}>
       <KeyboardProvider>
         <QueryClientProvider client={queryClient}>
           <NotificationProvider>
             <NotificationTokenSync />
             <PaperProvider theme={theme}>
               <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-                <Stack screenOptions={{ headerShown: false }} />
+                <Stack screenOptions={{ headerShown: false, animation: 'none' }} />
                 <GlobalSnackbar />
                 <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
               </ThemeProvider>
@@ -188,10 +192,10 @@ export default function RootLayout() {
           </NotificationProvider>
         </QueryClientProvider>
       </KeyboardProvider>
-      <Modal visible={!bootDone || isLocked} transparent={false} animationType="none" statusBarTranslucent>
-        {isLocked
-          ? <LockGate onUnlock={() => setIsLocked(false)} />
-          : <View style={styles.bootCover} />}
+      {/* Inline View renders in the same frame as Stack — no Modal one-frame delay */}
+      {!bootDone && <View style={[StyleSheet.absoluteFill, styles.bootCover]} />}
+      <Modal visible={isLocked} transparent={false} animationType="none" statusBarTranslucent>
+        <LockGate onUnlock={() => setIsLocked(false)} />
       </Modal>
     </GestureHandlerRootView>
   );

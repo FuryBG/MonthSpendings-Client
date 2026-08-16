@@ -5,7 +5,9 @@ import { Tavira } from '@/constants/theme';
 import { useAppLockStore } from '@/stores/appLockStore';
 import { useAuthStore } from '@/stores/authStore';
 import { useSnackbarStore } from '@/stores/snackbarStore';
+import Constants from 'expo-constants';
 import { Stack } from 'expo-router';
+import * as Updates from 'expo-updates';
 import { useEffect, useRef, useState } from 'react';
 import { Alert, AppState, AppStateStatus, Platform, Pressable, StyleSheet, View } from 'react-native';
 import RNAndroidNotificationListener from 'react-native-android-notification-listener';
@@ -169,7 +171,7 @@ export default function SettingsScreen() {
   const sectionLabelColor = isDark ? 'rgba(62,198,198,0.65)' : theme.colors.primary;
 
   return (
-    <ScreenContainer>
+    <ScreenContainer scrollable>
       <Stack.Screen options={{ title: 'Settings' }} />
 
       {Platform.OS === 'android' && (
@@ -215,6 +217,21 @@ export default function SettingsScreen() {
             onPress={handleDeleteAccount}
           />
         </View>
+      </View>
+
+      <View style={styles.versionBlock}>
+        <View style={[styles.versionDivider, { backgroundColor: isDark ? 'rgba(242,244,248,0.08)' : 'rgba(11,27,58,0.08)' }]} />
+        <Text style={[styles.versionLabel, { color: isDark ? 'rgba(242,244,248,0.28)' : 'rgba(11,27,58,0.28)' }]}>
+          VERSION
+        </Text>
+        <Text style={[styles.versionNumber, { color: isDark ? 'rgba(242,244,248,0.55)' : 'rgba(11,27,58,0.55)' }]}>
+          {Constants.expoConfig?.version ?? '—'}
+        </Text>
+        <Text style={[styles.versionMeta, { color: isDark ? 'rgba(242,244,248,0.25)' : 'rgba(11,27,58,0.25)' }]}>
+          {Updates.updateId
+            ? 'OTA · ' + Updates.updateId.slice(0, 8) + (Updates.createdAt != null ? ' · ' + Updates.createdAt.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '')
+            : 'Embedded build'}
+        </Text>
       </View>
     </ScreenContainer>
   );
@@ -271,5 +288,31 @@ const styles = StyleSheet.create({
   proHint: {
     fontSize: 12,
     paddingHorizontal: 4,
+  },
+  versionBlock: {
+    alignItems: 'center',
+    paddingTop: 36,
+    paddingBottom: 32,
+    gap: 5,
+  },
+  versionDivider: {
+    width: 40,
+    height: 1,
+    marginBottom: 16,
+  },
+  versionLabel: {
+    fontSize: 9,
+    fontWeight: '700',
+    letterSpacing: 2.2,
+  },
+  versionNumber: {
+    fontSize: 13,
+    fontWeight: '600',
+    letterSpacing: 0.4,
+    marginTop: 2,
+  },
+  versionMeta: {
+    fontSize: 11,
+    letterSpacing: 0.3,
   },
 });

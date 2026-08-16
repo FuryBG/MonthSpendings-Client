@@ -73,9 +73,11 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
       (receivedNotification) => {
         setNotification(receivedNotification);
 
-        const appNotification = receivedNotification.request.content.data as AppNotification;
+        const data = receivedNotification.request.content.data;
+        if (!data || typeof data !== 'object') return;
 
-        switch (appNotification.type) {
+        const { type } = data as AppNotification;
+        switch (type) {
           case AppNotificationType.ReceivedInvite:
             useAuthStore.getState().restoreSession();
             break;
