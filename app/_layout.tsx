@@ -18,6 +18,10 @@ import { AppState, Modal, StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { MD3DarkTheme, MD3LightTheme, PaperProvider } from 'react-native-paper';
+import MobileAds from 'react-native-google-mobile-ads';
+
+let resolveAdsReady: () => void;
+export const mobileAdsReady = new Promise<void>(resolve => { resolveAdsReady = resolve; });
 import Purchases from 'react-native-purchases';
 import 'react-native-reanimated';
 
@@ -116,6 +120,7 @@ export default function RootLayout() {
   const [bootDone, setBootDone] = useState(false);
 
   useEffect(() => {
+    MobileAds().initialize().then(() => resolveAdsReady()).catch(() => resolveAdsReady());
     configureRevenueCat();
     const onCustomerInfoUpdate = () => { useAuthStore.getState().refreshUser(); };
     Purchases.addCustomerInfoUpdateListener(onCustomerInfoUpdate);
