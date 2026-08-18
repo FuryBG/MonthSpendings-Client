@@ -141,3 +141,10 @@ export type CategoryComparisonDto = {
     amount: number
     isDeleted: boolean
 }
+
+export type PeriodHistoryItemDto = {
+    periodId: number
+    startDate: string
+    endDate: string | null
+    totalSpent: number
+}

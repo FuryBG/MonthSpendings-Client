@@ -1,15 +1,18 @@
+import { BottomSheet, BottomSheetRef, sheetStyles } from '@/components/BottomSheet';
 import { MaskedAmount } from '@/components/MaskedAmount';
 import { ScreenContainer } from '@/components/ScreenContainer';
 import { Tavira } from '@/constants/theme';
-import { useBudgetsQuery, useDeleteSpendingMutation, useHistoricalSpendingsQuery } from '@/hooks/useBudgetQueries';
+import { useAddSpendingMutation, useBudgetsQuery, useDeleteSpendingMutation, useHistoricalSpendingsQuery } from '@/hooks/useBudgetQueries';
 import { useBudgetUIStore } from '@/stores/budgetUIStore';
+import { useSnackbarStore } from '@/stores/snackbarStore';
 import { useTitleStore } from '@/stores/titleStore';
 import { BudgetPeriod, Spending } from '@/types/Types';
 import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
 import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
-import { ActivityIndicator, Button, Card, Chip, Dialog, Divider, Icon, Portal, Surface, Text, useTheme } from 'react-native-paper';
+import { ActivityIndicator, Button, Card, Chip, Dialog, Divider, HelperText, Icon, Portal, Surface, Text, TextInput, useTheme } from 'react-native-paper';
 
 const COLOR_EXPENSE = Tavira.expense;
 const COLOR_INCOME  = Tavira.income;
@@ -130,6 +133,33 @@ function SummaryHeaderCard({ spendings, symbol }: SummaryProps) {
   );
 }
 
+type ActionRowProps = { remaining: number; onMinus: () => void; onPlus: () => void };
+
+function ActionRow({ remaining, onMinus, onPlus }: ActionRowProps) {
+  const minusDisabled = remaining <= 0;
+  return (
+    <View style={s.actionRow}>
+      <TouchableOpacity
+        style={[s.actionRowBtn, { backgroundColor: minusDisabled ? 'rgba(255,107,107,0.05)' : 'rgba(255,107,107,0.12)', borderColor: minusDisabled ? 'rgba(255,107,107,0.12)' : 'rgba(255,107,107,0.3)' }]}
+        disabled={minusDisabled}
+        onPress={onMinus}
+        activeOpacity={0.7}
+      >
+        <Icon source="minus" size={16} color={minusDisabled ? 'rgba(255,107,107,0.3)' : Tavira.expense} />
+        <Text style={[s.actionRowBtnText, { color: minusDisabled ? 'rgba(255,107,107,0.3)' : Tavira.expense }]}>Spend</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={[s.actionRowBtn, { backgroundColor: 'rgba(62,198,198,0.10)', borderColor: 'rgba(62,198,198,0.28)' }]}
+        onPress={onPlus}
+        activeOpacity={0.7}
+      >
+        <Icon source="plus" size={16} color={Tavira.teal} />
+        <Text style={[s.actionRowBtnText, { color: Tavira.teal }]}>Add Funds</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
 function DateSectionHeader({ label }: { label: string }) {
   const theme = useTheme();
   return (
@@ -168,6 +198,17 @@ export default function SpendingDetailsScreen() {
   const [confirmSpendingId, setConfirmSpendingId] = useState<number | null>(null);
   const swipeableRefs = useRef<Map<number, Swipeable | null>>(new Map());
   const [selectedPeriodId, setSelectedPeriodId] = useState<number | null>(null);
+
+  const addSpendingMutation = useAddSpendingMutation({ skipGlobalError: true });
+  const showSuccess = useSnackbarStore((s) => s.showSuccess);
+  const showError   = useSnackbarStore((s) => s.showError);
+  const sheetRef       = useRef<BottomSheetRef>(null);
+  const amountInputRef = useRef<any>(null);
+  const [sheetVisible,  setSheetVisible]  = useState(false);
+  const [negativeInput, setNegativeInput] = useState(false);
+  const { control, handleSubmit, reset } = useForm<Spending>({
+    defaultValues: { id: 0, amount: undefined as any, budgetCategoryId: 0, description: '' },
+  });
 
   const selectedCategory = useMemo(
     () =>
@@ -216,6 +257,43 @@ export default function SpendingDetailsScreen() {
   const hasItems = displayedSpendings.length > 0;
   const symbol   = selectedMainBudget?.currency.symbol ?? '';
 
+  const remaining = useMemo(() =>
+    (selectedCategory?.spendings ?? []).reduce(
+      (sum, sp) => sp.amount > 0 ? sum + sp.amount : sum - Math.abs(sp.amount), 0
+    ), [selectedCategory]);
+
+  const emptySpending: Spending = {
+    id: 0, amount: undefined as any, budgetCategoryId: 0, description: '',
+    budgetPeriodId: 0, date: null, notificationTransactionId: null,
+    notificationTransaction: null, createdByUserId: 0, createdByEmail: null, createdByName: null,
+  };
+
+  function openSheet(isNegative: boolean) {
+    setNegativeInput(isNegative);
+    reset(emptySpending);
+    setSheetVisible(true);
+  }
+
+  function handleSheetClose(onDone?: () => void) { setSheetVisible(false); reset(emptySpending); onDone?.(); }
+
+  async function onModalSubmit(spending: Spending) {
+    try {
+      spending.budgetCategoryId = Number(selectedCategoryId);
+      spending.budgetPeriodId   = currentPeriod?.id ?? 0;
+      spending.amount = negativeInput ? -Number(spending.amount) : Number(spending.amount);
+      await addSpendingMutation.mutateAsync(spending);
+      sheetRef.current?.close(() => { reset(); showSuccess('Spending added.'); });
+    } catch {
+      sheetRef.current?.close(() => showError('Adding spending failed.'));
+    }
+  }
+
+  useEffect(() => {
+    if (!sheetVisible) return;
+    const t = setTimeout(() => amountInputRef.current?.focus?.(), 350);
+    return () => clearTimeout(t);
+  }, [sheetVisible]);
+
   useFocusEffect(() => {
     setTitle(selectedCategory?.name ?? '');
   });
@@ -261,6 +339,7 @@ export default function SpendingDetailsScreen() {
           <>
             {hasItems && <SummaryHeaderCard spendings={displayedSpendings} symbol={symbol} />}
             {!hasItems && <EmptyState />}
+            {isCurrentPeriod && <ActionRow remaining={remaining} onMinus={() => openSheet(true)} onPlus={() => openSheet(false)} />}
           </>
         )}
 
@@ -346,6 +425,69 @@ export default function SpendingDetailsScreen() {
           </Dialog.Actions>
         </Dialog>
       </Portal>
+
+      <BottomSheet ref={sheetRef} visible={sheetVisible} onClose={handleSheetClose}>
+        <Text style={sheetStyles.sheetTitle}>
+          {negativeInput ? `${selectedCategory?.name} — Spent` : `${selectedCategory?.name} — Add`}
+        </Text>
+        <Controller
+          control={control}
+          rules={{ required: 'Amount is required', validate: v => v > 0 || 'Must be > 0' }}
+          name="amount"
+          render={({ field: { onChange, value }, fieldState }) => (
+            <>
+              <TextInput
+                ref={amountInputRef}
+                keyboardType="numeric"
+                returnKeyType="done"
+                left={<TextInput.Icon icon={negativeInput ? 'minus' : 'plus'} />}
+                error={fieldState.error != null}
+                value={value ? value.toString() : ''}
+                onChangeText={onChange}
+                onSubmitEditing={handleSubmit(onModalSubmit)}
+                blurOnSubmit
+                style={sheetStyles.sheetInput}
+                label="Amount"
+                mode="outlined"
+                activeOutlineColor={Tavira.teal}
+              />
+              <HelperText type="error" visible={!!fieldState.error}>{fieldState.error?.message}</HelperText>
+            </>
+          )}
+        />
+        <Controller
+          control={control}
+          name="description"
+          render={({ field: { onChange, value } }) => (
+            <TextInput
+              value={value}
+              onChangeText={onChange}
+              returnKeyType="done"
+              onSubmitEditing={handleSubmit(onModalSubmit)}
+              blurOnSubmit
+              style={sheetStyles.sheetInput}
+              label="Description (optional)"
+              mode="outlined"
+              outlineColor="rgba(255,255,255,0.15)"
+              activeOutlineColor={Tavira.teal}
+              textColor="#F2F4F8"
+            />
+          )}
+        />
+        <View style={sheetStyles.sheetActions}>
+          <Button mode="text" onPress={() => sheetRef.current?.close(reset)}>Cancel</Button>
+          <Button
+            mode="contained"
+            loading={addSpendingMutation.isPending}
+            onPress={handleSubmit(onModalSubmit)}
+            buttonColor={Tavira.teal}
+            textColor={Tavira.navy}
+            contentStyle={sheetStyles.sheetConfirmContent}
+          >
+            Confirm
+          </Button>
+        </View>
+      </BottomSheet>
     </>
   );
 }
@@ -366,7 +508,7 @@ const s = StyleSheet.create({
     borderRadius:   16,
     padding:        16,
     marginTop:      4,
-    marginBottom:   20,
+    marginBottom:   12,
     flexDirection:  'row',
     alignItems:     'center',
     gap:            16,
@@ -468,6 +610,25 @@ const s = StyleSheet.create({
   },
   bottomSpacer: {
     height:         24,
+  },
+  actionRow: {
+    flexDirection:  'row',
+    gap:            10,
+    marginBottom:   20,
+  },
+  actionRowBtn: {
+    flex:           1,
+    flexDirection:  'row',
+    alignItems:     'center',
+    justifyContent: 'center',
+    gap:            6,
+    paddingVertical: 11,
+    borderRadius:   12,
+    borderWidth:    1,
+  },
+  actionRowBtnText: {
+    fontSize:       14,
+    fontWeight:     '600',
   },
   loaderContainer: {
     flex:           1,

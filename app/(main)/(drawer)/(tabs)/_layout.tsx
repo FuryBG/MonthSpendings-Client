@@ -1,7 +1,9 @@
 import { HapticTab } from "@/components/HapticTab";
 import { IconSymbol } from "@/components/IconSymbol";
 import { Tavira } from "@/constants/theme";
+import { useTabInterstitial } from "@/hooks/useTabInterstitial";
 import { Tabs } from "expo-router";
+import { useRef } from "react";
 import { Platform, StyleSheet, View } from "react-native";
 import { useTheme } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -12,11 +14,21 @@ export default function TabsLayout() {
   const theme = useTheme();
   const isDark = theme.dark;
   const insets = useSafeAreaInsets();
+  const { showAd } = useTabInterstitial();
+  const prevTabRef = useRef<string | null>(null);
 
   const tabBarHeight = TAB_CONTENT_HEIGHT + insets.bottom;
 
   return (
     <Tabs
+      screenListeners={({ route }) => ({
+        focus: () => {
+          if (prevTabRef.current !== null && prevTabRef.current !== route.name) {
+            showAd();
+          }
+          prevTabRef.current = route.name;
+        },
+      })}
       screenOptions={{
         headerShown: false,
         tabBarButton: HapticTab,

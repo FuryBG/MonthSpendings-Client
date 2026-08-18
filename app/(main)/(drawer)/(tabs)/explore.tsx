@@ -2,18 +2,34 @@ import { MaskedAmount } from '@/components/MaskedAmount';
 import { ScreenContainer } from '@/components/ScreenContainer';
 import { Tavira } from '@/constants/theme';
 import { useBudgetsQuery } from '@/hooks/useBudgetQueries';
-import { usePeriodComparisonQuery } from '@/hooks/useStatisticsQueries';
+import { usePeriodComparisonQuery, usePeriodsHistoryQuery } from '@/hooks/useStatisticsQueries';
 import { useBudgetUIStore } from '@/stores/budgetUIStore';
 import { CategoryComparisonDto } from '@/types/Types';
 import { useEffect, useRef } from 'react';
-import { Animated, StyleSheet, View } from 'react-native';
+import { Animated, Dimensions, StyleSheet, View } from 'react-native';
+import { BarChart, PieChart } from 'react-native-chart-kit';
 import { ActivityIndicator, Icon, Text, useTheme } from 'react-native-paper';
 
-const C_CURRENT = Tavira.teal;
+const SCREEN_W = Dimensions.get('window').width;
+const CHART_W = SCREEN_W - 32;
+
+const C_CURRENT = Tavira.expense;
 const C_PREVIOUS = 'rgba(255,255,255,0.22)';
 const C_POSITIVE = Tavira.income;
 const C_NEGATIVE = Tavira.expense;
 const C_NEUTRAL = 'rgba(242,244,248,0.4)';
+const C_DELETED = '#E8934A';
+
+const PIE_COLORS = [
+  '#3EC6C6',
+  '#5B7BFF',
+  '#FF9F43',
+  '#A29BFE',
+  '#FFC078',
+  '#74C0FC',
+  '#69DB7C',
+  '#F8A5C2',
+];
 
 function fmt(amount: number, sym: string): string {
   if (Math.abs(amount) >= 1000) return `${sym}${(amount / 1000).toFixed(2)}k`;
@@ -79,8 +95,6 @@ type CategoryRowProps = {
   isDark: boolean;
   index: number;
 };
-
-const C_DELETED = '#E8934A';
 
 function CategoryRow({ cat, prevAmt, maxVal, sym, onSurface, isDark, index }: CategoryRowProps) {
   const curPct = maxVal > 0 ? cat.amount / maxVal : 0;
@@ -150,16 +164,37 @@ export default function StatsScreen() {
   const { selectedMainBudgetId } = useBudgetUIStore();
   const { data: budgets = [] } = useBudgetsQuery();
   const { data: comparison, isLoading, isError } = usePeriodComparisonQuery(selectedMainBudgetId);
+  const { data: periodsHistory = [], isLoading: isHistoryLoading } = usePeriodsHistoryQuery(selectedMainBudgetId);
 
   const budget = budgets.find(b => b.id === selectedMainBudgetId);
   const sym = budget?.currency?.symbol ?? '€';
 
   const cardBg = isDark ? Tavira.glassBg : '#FFFFFF';
   const cardBorder = isDark ? Tavira.glassBorder : 'rgba(11,27,58,0.08)';
+  const dimLabel = isDark ? 'rgba(242,244,248,0.35)' : 'rgba(11,27,58,0.35)';
+  const dimText = isDark ? 'rgba(242,244,248,0.50)' : 'rgba(11,27,58,0.50)';
+
+  const chartConfig = {
+    backgroundColor: 'transparent',
+    backgroundGradientFrom: cardBg,
+    backgroundGradientTo: cardBg,
+    backgroundGradientFromOpacity: 0,
+    backgroundGradientToOpacity: 0,
+    decimalPlaces: 0,
+    color: (opacity = 1) => `rgba(255, 107, 107, ${opacity})`,
+    labelColor: (opacity = 1) =>
+      isDark ? `rgba(242,244,248,${opacity * 0.55})` : `rgba(11,27,58,${opacity * 0.55})`,
+    style: { borderRadius: 16 },
+    barPercentage: 0.65,
+    propsForBackgroundLines: {
+      stroke: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(11,27,58,0.06)',
+      strokeDasharray: '',
+    },
+  };
 
   if (!selectedMainBudgetId) {
     return (
-      <ScreenContainer glowColor="purple">
+      <ScreenContainer removeSafeBottom={true} glowColor="purple">
         <View style={styles.centerState}>
           <View style={[styles.iconWrap, { backgroundColor: isDark ? 'rgba(62,198,198,0.10)' : 'rgba(11,27,58,0.06)', borderColor: isDark ? 'rgba(62,198,198,0.2)' : 'rgba(11,27,58,0.1)', borderWidth: 1 }]}>
             <Icon source="chart-bar" size={34} color={isDark ? Tavira.teal : theme.colors.primary} />
@@ -175,7 +210,7 @@ export default function StatsScreen() {
 
   if (isLoading) {
     return (
-      <ScreenContainer glowColor="teal">
+      <ScreenContainer glowColor="teal" removeSafeBottom={true}>
         <View style={styles.centerState}>
           <ActivityIndicator size="large" color={isDark ? Tavira.teal : theme.colors.primary} />
           <Text style={[styles.stateSub, { color: theme.colors.onSurfaceVariant, marginTop: 16 }]}>
@@ -188,7 +223,7 @@ export default function StatsScreen() {
 
   if (isError) {
     return (
-      <ScreenContainer>
+      <ScreenContainer removeSafeBottom={true}>
         <View style={styles.centerState}>
           <View style={[styles.iconWrap, { backgroundColor: 'rgba(255,107,107,0.10)', borderColor: 'rgba(255,107,107,0.2)', borderWidth: 1 }]}>
             <Icon source="alert-circle-outline" size={34} color={Tavira.expense} />
@@ -204,7 +239,7 @@ export default function StatsScreen() {
 
   if (!comparison) {
     return (
-      <ScreenContainer>
+      <ScreenContainer removeSafeBottom={true}>
         <View style={styles.centerState}>
           <View style={[styles.iconWrap, { backgroundColor: 'rgba(255,107,107,0.10)', borderColor: 'rgba(255,107,107,0.2)', borderWidth: 1 }]}>
             <Icon source="alert-circle-outline" size={34} color={Tavira.expense} />
@@ -233,19 +268,91 @@ export default function StatsScreen() {
   ]);
   const maxVal = Math.max(...allAmounts, 1);
 
-  return (
-    <ScreenContainer scrollable glowColor="purple">
+  // Pie — current period categories with actual spend
+  const pieData = comparison.currentPeriod.categories
+    .filter(c => c.amount > 0)
+    .map((cat, i) => ({
+      name: cat.categoryName.length > 13 ? cat.categoryName.slice(0, 12) + '…' : cat.categoryName,
+      population: Math.round(cat.amount * 100) / 100,
+      color: PIE_COLORS[i % PIE_COLORS.length],
+      legendFontColor: dimText,
+      legendFontSize: 11,
+    }));
 
-      {/* Overview card */}
+  // Bar — periods history oldest → newest
+  const maxHistory = 8;
+  const slicedHistory = periodsHistory.slice(-maxHistory);
+  const barLabels = slicedHistory.map((p, i) => {
+    if (slicedHistory.length > 5 && i % 2 !== 0) return '';
+    return fmtDate(p.startDate);
+  });
+  const barData = {
+    labels: barLabels.length > 0 ? barLabels : [''],
+    datasets: [{ data: slicedHistory.length > 0 ? slicedHistory.map(p => Number(p.totalSpent.toFixed(2))) : [0] }],
+  };
+
+  return (
+    <ScreenContainer scrollable glowColor="purple" removeSafeBottom={true}>
+
+      {/* Pie chart — current period by category */}
+      {pieData.length > 0 && (
+        <View style={[styles.chartCard, { backgroundColor: cardBg, borderColor: cardBorder }]}>
+          <Text style={[styles.sectionLabel, { color: dimLabel }]}>SPENDING BY CATEGORY</Text>
+          <Text style={[styles.chartSub, { color: dimLabel }]}>
+            {fmtDate(comparison.currentPeriod.startDate)}
+            {comparison.currentPeriod.endDate ? ` – ${fmtDate(comparison.currentPeriod.endDate)}` : ' – now'}
+          </Text>
+          <PieChart
+            data={pieData}
+            width={CHART_W}
+            height={180}
+            chartConfig={chartConfig}
+            accessor="population"
+            backgroundColor="transparent"
+            paddingLeft="8"
+            absolute={false}
+          />
+        </View>
+      )}
+
+      {/* Bar chart — spending per period */}
+      <View style={[styles.chartCard, { backgroundColor: cardBg, borderColor: cardBorder }]}>
+        <Text style={[styles.sectionLabel, { color: dimLabel }]}>SPENDING HISTORY</Text>
+        {isHistoryLoading ? (
+          <View style={styles.chartPlaceholder}>
+            <ActivityIndicator size="small" color={Tavira.expense} />
+          </View>
+        ) : slicedHistory.length > 0 ? (
+          <View style={{ marginHorizontal: -16, marginBottom: -8 }}>
+            <BarChart
+              data={barData}
+              width={CHART_W + 32}
+              height={180}
+              chartConfig={chartConfig}
+              fromZero
+              showValuesOnTopOfBars={false}
+              withInnerLines
+              withHorizontalLabels
+              yAxisLabel={sym}
+              yAxisSuffix=""
+              style={{ borderRadius: 0 }}
+            />
+          </View>
+        ) : (
+          <View style={styles.chartPlaceholder}>
+            <Text style={[styles.chartEmptyText, { color: dimLabel }]}>No period history yet</Text>
+          </View>
+        )}
+      </View>
+
+      {/* Overview comparison card */}
       <View style={[styles.summaryCard, { backgroundColor: cardBg, borderColor: `${deltaColor}35` }]}>
-        <Text style={[styles.sectionLabel, { color: isDark ? 'rgba(242,244,248,0.35)' : 'rgba(11,27,58,0.35)' }]}>
-          PERIOD OVERVIEW
-        </Text>
+        <Text style={[styles.sectionLabel, { color: dimLabel }]}>PERIOD OVERVIEW</Text>
 
         <View style={styles.totalsRow}>
           <View style={{ flex: 1 }}>
             <MaskedAmount
-              style={[styles.bigAmount, { color: theme.colors.onSurface }]}
+              style={[styles.bigAmount, { color: C_CURRENT }]}
               value={`${sym}${comparison.currentPeriod.totalSpent.toFixed(2)}`}
             />
             <Text style={[styles.periodTag, { color: C_CURRENT }]}>CURRENT</Text>
@@ -292,7 +399,7 @@ export default function StatsScreen() {
         )}
       </View>
 
-      {/* By Category */}
+      {/* By category comparison */}
       {!hasPrev ? (
         <View style={[styles.noPrevBox, { borderColor: isDark ? Tavira.glassBorder : 'rgba(11,27,58,0.12)', backgroundColor: isDark ? Tavira.glassBg : '#FFFFFF' }]}>
           <Icon source="calendar-arrow-right" size={28} color={isDark ? Tavira.teal : theme.colors.primary} />
@@ -304,9 +411,7 @@ export default function StatsScreen() {
       ) : (
         <View style={[styles.categoriesCard, { backgroundColor: cardBg, borderColor: cardBorder }]}>
           <View style={styles.categoriesHeader}>
-            <Text style={[styles.sectionLabel, { color: isDark ? 'rgba(242,244,248,0.35)' : 'rgba(11,27,58,0.35)' }]}>
-              BY CATEGORY
-            </Text>
+            <Text style={[styles.sectionLabel, { color: dimLabel }]}>BY CATEGORY</Text>
             <View style={styles.legend}>
               <View style={[styles.legendDot, { backgroundColor: C_CURRENT }]} />
               <Text style={[styles.legendText, { color: theme.colors.onSurfaceVariant }]}>Now</Text>
@@ -353,17 +458,37 @@ const styles = StyleSheet.create({
   },
   stateTitle: { fontSize: 19, fontWeight: '700', textAlign: 'center' },
   stateSub: { fontSize: 13, textAlign: 'center', lineHeight: 19, opacity: 0.65 },
-  summaryCard: {
+  chartCard: {
     borderRadius: 20,
     borderWidth: 1,
-    padding: 18,
+    padding: 16,
     marginBottom: 12,
+    overflow: 'hidden',
   },
   sectionLabel: {
     fontSize: 10,
     fontWeight: '800',
     letterSpacing: 1.8,
     marginBottom: 14,
+  },
+  chartSub: {
+    fontSize: 10,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+    marginTop: -10,
+    marginBottom: 12,
+  },
+  chartPlaceholder: {
+    height: 100,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  chartEmptyText: { fontSize: 12, fontWeight: '600' },
+  summaryCard: {
+    borderRadius: 20,
+    borderWidth: 1,
+    padding: 18,
+    marginBottom: 12,
   },
   totalsRow: { flexDirection: 'row', gap: 16, marginBottom: 14 },
   bigAmount: { fontSize: 30, fontWeight: '800', letterSpacing: -0.5, lineHeight: 36 },

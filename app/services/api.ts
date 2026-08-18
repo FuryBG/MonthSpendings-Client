@@ -1,4 +1,4 @@
-import { AppUser, Budget, BudgetCategory, BudgetInvite, CategorizeNotificationTransactionDto, CreateNotificationTransactionDto, Currency, NotificationTransaction, PeriodComparisonDto, Spending, UpdateUserActivityDto } from '@/types/Types';
+import { AppUser, Budget, BudgetCategory, BudgetInvite, CategorizeNotificationTransactionDto, CreateNotificationTransactionDto, Currency, NotificationTransaction, PeriodComparisonDto, PeriodHistoryItemDto, Spending, UpdateUserActivityDto } from '@/types/Types';
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 
@@ -161,6 +161,11 @@ export const getSpendingsByCategoryAndPeriod = async (budgetCategoryId: number, 
 // Statistics
 export const getPeriodComparison = async (budgetId: number): Promise<PeriodComparisonDto> => {
   const response = await api.get(`/api/statistics/period-comparison?budgetId=${budgetId}`);
+  return response.data;
+};
+
+export const getPeriodsHistory = async (budgetId: number): Promise<PeriodHistoryItemDto[]> => {
+  const response = await api.get(`/api/statistics/periods-history?budgetId=${budgetId}`);
   return response.data;
 };
 

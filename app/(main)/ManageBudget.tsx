@@ -16,7 +16,7 @@ import { BudgetCategory, BudgetInvite, Spending } from "@/types/Types";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { StyleSheet, TouchableOpacity, View } from "react-native";
+import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import {
     Button,
     Card,
@@ -62,6 +62,8 @@ export default function ManageBudgetScreen() {
     const [sheetVisible, setSheetVisible] = useState(false);
     const [confirmDeleteCategory, setConfirmDeleteCategory] = useState<BudgetCategory | null>(null);
     const [renameCategoryTarget, setRenameCategoryTarget] = useState<BudgetCategory | null>(null);
+    const [carryMode, setCarryMode] = useState<'none' | 'sumIntoOne' | 'keepSame'>('none');
+    const [carryCategoryId, setCarryCategoryId] = useState<number | null>(null);
 
     useEffect(() => {
         if (activeSheet !== 'renameCategory') return;
@@ -102,6 +104,10 @@ export default function ManageBudgetScreen() {
         if (type === 'renameCategory' && category) {
             setRenameCategoryTarget(category);
             renameSetValue('name', category.name);
+        }
+        if (type === 'finishPeriod') {
+            setCarryMode('none');
+            setCarryCategoryId(null);
         }
         setActiveSheet(type);
         setSheetVisible(true);
@@ -181,28 +187,66 @@ export default function ManageBudgetScreen() {
 
     async function onFinishPeriod() {
         if (!selectedMainBudget) return;
+        if (carryMode === 'sumIntoOne' && carryCategoryId === null) return;
         try {
             setLoading(true);
-            const budgetToFinish = {
-                ...selectedMainBudget,
-                budgetCategories: selectedMainBudget.budgetCategories!.map(category => ({
-                    ...category,
-                    spendings: (() => {
-                        const remaining = calculateRemaining(category.spendings);
-                        if (remaining === 0) return [];
-                        return [{
-                            id: 0,
-                            budgetPeriodId: 0,
-                            budgetCategoryId: category.id,
-                            date: new Date().toISOString(),
-                            amount: remaining,
-                            notificationTransaction: null,
-                            notificationTransactionId: null,
-                            description: "MOVED TO NEXT PERIOD",
-                        } as Spending];
-                    })(),
-                })),
-            };
+            const cats = selectedMainBudget.budgetCategories!;
+            let budgetToFinish;
+
+            if (carryMode === 'none') {
+                budgetToFinish = {
+                    ...selectedMainBudget,
+                    budgetCategories: cats.map(cat => ({ ...cat, spendings: [] })),
+                };
+            } else if (carryMode === 'sumIntoOne') {
+                const totalRemaining = Math.round(
+                    cats
+                        .filter(cat => !cat.isDeleted)
+                        .reduce((sum, cat) => sum + calculateRemaining(cat.spendings), 0)
+                    * 100
+                ) / 100;
+                budgetToFinish = {
+                    ...selectedMainBudget,
+                    budgetCategories: cats.map(cat => ({
+                        ...cat,
+                        spendings: cat.id === carryCategoryId && totalRemaining !== 0
+                            ? [{
+                                id: 0,
+                                budgetPeriodId: 0,
+                                budgetCategoryId: cat.id,
+                                date: new Date().toISOString(),
+                                amount: totalRemaining,
+                                notificationTransaction: null,
+                                notificationTransactionId: null,
+                                description: "MOVED TO NEXT PERIOD",
+                            } as Spending]
+                            : [],
+                    })),
+                };
+            } else {
+                budgetToFinish = {
+                    ...selectedMainBudget,
+                    budgetCategories: cats.map(cat => {
+                        const remaining = Math.round(calculateRemaining(cat.spendings) * 100) / 100;
+                        return {
+                            ...cat,
+                            spendings: !cat.isDeleted && remaining !== 0
+                                ? [{
+                                    id: 0,
+                                    budgetPeriodId: 0,
+                                    budgetCategoryId: cat.id,
+                                    date: new Date().toISOString(),
+                                    amount: remaining,
+                                    notificationTransaction: null,
+                                    notificationTransactionId: null,
+                                    description: "MOVED TO NEXT PERIOD",
+                                } as Spending]
+                                : [],
+                        };
+                    }),
+                };
+            }
+
             await finishBudgetMutation.mutateAsync(budgetToFinish);
             sheetRef.current?.close(() => showSuccess("Budget period finished successfully."));
         } catch {
@@ -384,15 +428,85 @@ export default function ManageBudgetScreen() {
         }
 
         if (activeSheet === 'finishPeriod') {
+            const activeCats = selectedMainBudget?.budgetCategories?.filter(c => !c.isDeleted) ?? [];
+            const confirmDisabled = carryMode === 'sumIntoOne' && carryCategoryId === null;
             return (
-                <View style={sheetStyles.sheetCenteredContent}>
-                    <View style={[sheetStyles.sheetConfirmIcon, { backgroundColor: 'rgba(245,158,11,0.12)' }]}>
-                        <Icon source="calendar-check" size={28} color={COLOR_AMBER} />
+                <View>
+                    <View style={fp.header}>
+                        <View style={fp.headerIcon}>
+                            <Icon source="calendar-check" size={24} color={COLOR_AMBER} />
+                        </View>
+                        <Text style={fp.headerTitle}>Finish Period</Text>
                     </View>
-                    <Text style={sheetStyles.sheetConfirmTitle}>Finish Budget Period</Text>
-                    <Text style={sheetStyles.sheetConfirmDesc}>
-                        The remaining balance in each category of "{selectedMainBudget?.name}" will be carried over to a new period.
-                    </Text>
+
+                    <TouchableOpacity
+                        style={[fp.optionCard, carryMode === 'none' && fp.optionCardActive]}
+                        onPress={() => setCarryMode('none')}
+                        activeOpacity={0.7}
+                    >
+                        <View style={fp.optionRow}>
+                            <View style={[fp.radio, carryMode === 'none' && fp.radioActive]}>
+                                {carryMode === 'none' && <View style={fp.radioDot} />}
+                            </View>
+                            <View style={fp.optionText}>
+                                <Text style={fp.optionLabel}>Start Fresh</Text>
+                                <Text style={fp.optionSub}>No balances carry to the next period</Text>
+                            </View>
+                        </View>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={[fp.optionCard, carryMode === 'sumIntoOne' && fp.optionCardActive]}
+                        onPress={() => setCarryMode('sumIntoOne')}
+                        activeOpacity={0.7}
+                    >
+                        <View style={fp.optionRow}>
+                            <View style={[fp.radio, carryMode === 'sumIntoOne' && fp.radioActive]}>
+                                {carryMode === 'sumIntoOne' && <View style={fp.radioDot} />}
+                            </View>
+                            <View style={fp.optionText}>
+                                <Text style={fp.optionLabel}>Carry into Category</Text>
+                                <Text style={fp.optionSub}>Sum all remaining balances into one spot</Text>
+                            </View>
+                        </View>
+                        {carryMode === 'sumIntoOne' && (
+                            <>
+                                <Divider style={fp.catDivider} />
+                                <ScrollView style={fp.catList} bounces={false}>
+                                    {activeCats.map(cat => (
+                                        <TouchableOpacity
+                                            key={cat.id}
+                                            style={fp.catRow}
+                                            onPress={() => setCarryCategoryId(cat.id)}
+                                            activeOpacity={0.6}
+                                        >
+                                            <View style={[fp.catDot, cat.id === carryCategoryId && fp.catDotActive]} />
+                                            <Text style={[fp.catName, cat.id === carryCategoryId && fp.catNameActive]}>
+                                                {cat.name}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    ))}
+                                </ScrollView>
+                            </>
+                        )}
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={[fp.optionCard, carryMode === 'keepSame' && fp.optionCardActive]}
+                        onPress={() => setCarryMode('keepSame')}
+                        activeOpacity={0.7}
+                    >
+                        <View style={fp.optionRow}>
+                            <View style={[fp.radio, carryMode === 'keepSame' && fp.radioActive]}>
+                                {carryMode === 'keepSame' && <View style={fp.radioDot} />}
+                            </View>
+                            <View style={fp.optionText}>
+                                <Text style={fp.optionLabel}>Carry Each Category</Text>
+                                <Text style={fp.optionSub}>Each category's remaining rolls into the next period</Text>
+                            </View>
+                        </View>
+                    </TouchableOpacity>
+
                     <View style={sheetStyles.sheetActions}>
                         <Button mode="text" onPress={() => sheetRef.current?.close()}>Cancel</Button>
                         <Button
@@ -400,7 +514,8 @@ export default function ManageBudgetScreen() {
                             buttonColor={COLOR_AMBER}
                             textColor={Tavira.navy}
                             loading={loading}
-                            onPress={() => onFinishPeriod()}
+                            disabled={confirmDisabled}
+                            onPress={onFinishPeriod}
                             contentStyle={sheetStyles.sheetConfirmContent}
                         >
                             Confirm
@@ -588,7 +703,7 @@ export default function ManageBudgetScreen() {
                             </Text>
                         </View>
                         <Text style={styles.sectionDescription}>
-                            Closes the current period. Remaining funds in each category are carried over to the next period.
+                            Closes the current period. Choose whether to start the next period fresh or carry remaining balances into a single category.
                         </Text>
                         <Button
                             mode="contained"
@@ -830,4 +945,47 @@ const styles = StyleSheet.create({
         opacity: 0.5,
         marginTop: 1,
     },
+});
+
+const fp = StyleSheet.create({
+    header: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 },
+    headerIcon: {
+        width: 42, height: 42, borderRadius: 21,
+        backgroundColor: 'rgba(245,158,11,0.12)',
+        justifyContent: 'center', alignItems: 'center',
+    },
+    headerTitle: { fontSize: 17, fontWeight: '700', letterSpacing: -0.3 },
+    optionCard: {
+        borderRadius: 12,
+        borderWidth: 1.5,
+        borderColor: 'rgba(128,128,128,0.18)',
+        padding: 14,
+        marginBottom: 10,
+    },
+    optionCardActive: {
+        borderColor: COLOR_AMBER,
+        backgroundColor: 'rgba(245,158,11,0.05)',
+    },
+    optionRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+    radio: {
+        width: 20, height: 20, borderRadius: 10,
+        borderWidth: 2, borderColor: 'rgba(128,128,128,0.3)',
+        justifyContent: 'center', alignItems: 'center',
+        marginTop: 1, flexShrink: 0,
+    },
+    radioActive: { borderColor: COLOR_AMBER },
+    radioDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: COLOR_AMBER },
+    optionText: { flex: 1 },
+    optionLabel: { fontSize: 15, fontWeight: '600', marginBottom: 2 },
+    optionSub: { fontSize: 12, opacity: 0.55, lineHeight: 16 },
+    catDivider: { marginVertical: 10 },
+    catList: { maxHeight: 160 },
+    catRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 7 },
+    catDot: {
+        width: 12, height: 12, borderRadius: 6,
+        borderWidth: 1.5, borderColor: 'rgba(128,128,128,0.3)',
+    },
+    catDotActive: { borderColor: COLOR_AMBER, backgroundColor: COLOR_AMBER },
+    catName: { fontSize: 14, opacity: 0.65 },
+    catNameActive: { fontWeight: '600', opacity: 1 },
 });
