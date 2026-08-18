@@ -10,7 +10,7 @@ const AD_UNIT_ID = __DEV__
   : (Platform.select({ android: PROD_ANDROID, ios: PROD_IOS }) ?? TestIds.INTERSTITIAL);
 
 export function useTabInterstitial() {
-  const isPro = useAuthStore((s) => s.user?.isPro ?? false);
+  const isPro = false; // useAuthStore((s) => s.user?.isPro ?? false);
   const adRef = useRef<InterstitialAd | null>(null);
   const isLoadedRef = useRef(false);
   const isProRef = useRef(isPro);
@@ -26,6 +26,7 @@ export function useTabInterstitial() {
       isLoadedRef.current = false;
 
       ad.addAdEventListener(AdEventType.LOADED, () => {
+        console.log('[Ad] Loaded');
         isLoadedRef.current = true;
       });
       ad.addAdEventListener(AdEventType.CLOSED, () => {
@@ -33,7 +34,8 @@ export function useTabInterstitial() {
         adRef.current = null;
         loadNext();
       });
-      ad.addAdEventListener(AdEventType.ERROR, () => {
+      ad.addAdEventListener(AdEventType.ERROR, (error) => {
+        console.log('[Ad] Error', error);
         isLoadedRef.current = false;
         setTimeout(loadNext, 5000);
       });
@@ -49,6 +51,7 @@ export function useTabInterstitial() {
   }, [isPro]);
 
   function showAd() {
+    console.log('[Ad] showAd called, isPro:', isProRef.current, 'isLoaded:', isLoadedRef.current);
     if (isProRef.current) return;
     if (isLoadedRef.current && adRef.current) {
       try {
