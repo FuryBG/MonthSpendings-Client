@@ -1,7 +1,8 @@
 import { mobileAdsReady } from '@/app/_layout';
+import { useAuthStore } from '@/stores/authStore';
 import { useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
-import { TestIds, useInterstitialAd } from 'react-native-google-mobile-ads';
+import { AdEventType, InterstitialAd, TestIds } from 'react-native-google-mobile-ads';
 
 const PROD_ANDROID = process.env.EXPO_PUBLIC_ADMOB_INTERSTITIAL_ANDROID_ID ?? TestIds.INTERSTITIAL;
 const PROD_IOS = process.env.EXPO_PUBLIC_ADMOB_INTERSTITIAL_IOS_ID ?? TestIds.INTERSTITIAL;
@@ -10,32 +11,55 @@ const AD_UNIT_ID = __DEV__
   : (Platform.select({ android: PROD_ANDROID, ios: PROD_IOS }) ?? TestIds.INTERSTITIAL);
 
 export function useTabInterstitial() {
-  const isPro = false; //useAuthStore((s) => s.user?.isPro ?? false);
-  const { isLoaded, isClosed, load, show, error } = useInterstitialAd(AD_UNIT_ID);
-  useEffect(() => { if (error) console.log('[Ad] load error:', error); }, [error]);
+  const isPro = false; // useAuthStore((s) => s.user?.isPro ?? false);
+  const adRef = useRef<InterstitialAd | null>(null);
+  const isLoadedRef = useRef(false);
   const isProRef = useRef(isPro);
   isProRef.current = isPro;
-  const isLoadedRef = useRef(isLoaded);
-  isLoadedRef.current = isLoaded;
-  const showRef = useRef(show);
-  showRef.current = show;
 
   useEffect(() => {
+    if (isPro) return;
+
+    function loadNext() {
+      if (isProRef.current) return;
+      const ad = InterstitialAd.createForAdRequest(AD_UNIT_ID);
+      adRef.current = ad;
+      isLoadedRef.current = false;
+
+      ad.addAdEventListener(AdEventType.LOADED, () => {
+        console.log('[Ad] Loaded');
+        isLoadedRef.current = true;
+      });
+      ad.addAdEventListener(AdEventType.CLOSED, () => {
+        isLoadedRef.current = false;
+        adRef.current = null;
+        loadNext();
+      });
+      ad.addAdEventListener(AdEventType.ERROR, (e) => {
+        console.log('[Ad] Error', e);
+        isLoadedRef.current = false;
+        setTimeout(loadNext, 5000);
+      });
+
+      ad.load();
+    }
+
     mobileAdsReady.then(() => {
-      console.log('[Ad] calling load()');
-      load();
+      console.log('[Ad] SDK ready, starting load');
+      loadNext();
     });
-  }, [isPro]);
 
-  useEffect(() => {
-    if (isClosed && !isProRef.current) load();
-  }, [isClosed]);
+    return () => {
+      adRef.current = null;
+      isLoadedRef.current = false;
+    };
+  }, [isPro]);
 
   function showAd() {
     console.log('[Ad] showAd — isLoaded:', isLoadedRef.current, 'isPro:', isProRef.current);
-    if (isProRef.current || !isLoadedRef.current) return;
+    if (isProRef.current || !isLoadedRef.current || !adRef.current) return;
     try {
-      showRef.current();
+      adRef.current.show();
     } catch {
       // ad may have expired between load and show
     }
