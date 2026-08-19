@@ -29,10 +29,7 @@
       },
       "predictiveBackGestureEnabled": false,
       "googleServicesFile": "./google-services.json",
-      "package": "app.expo.tavira",
-      "permissions": [
-        "com.google.android.gms.permission.AD_ID"
-      ]
+      "package": "app.expo.tavira"
     },
     "web": {
       "output": "static",
@@ -41,6 +38,7 @@
     "plugins": [
       "./plugins/withAllowBackupFix",
       "./plugins/withNoSaveEnabled",
+      "./plugins/withAdIdPermission",
       "expo-router",
       [
         "expo-splash-screen",
