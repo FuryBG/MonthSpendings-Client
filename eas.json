@@ -20,7 +20,9 @@
       "autoIncrement": true,
       "channel": "production",
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://api.taviraofficial.com"
+        "EXPO_PUBLIC_API_URL": "https://api.taviraofficial.com",
+        "EXPO_PUBLIC_ADMOB_INTERSTITIAL_ANDROID_ID": "ca-app-pub-1895725817798787/1479992768",
+        "EXPO_PUBLIC_ADMOB_INTERSTITIAL_IOS_ID": "ca-app-pub-XXXXXXXX/XXXXXXXXXX"
       }
     }
   },

@@ -4,8 +4,8 @@ import { useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
 import { AdEventType, InterstitialAd, TestIds } from 'react-native-google-mobile-ads';
 
-const PROD_ANDROID = process.env.EXPO_PUBLIC_ADMOB_INTERSTITIAL_ANDROID_ID ?? TestIds.INTERSTITIAL;
-const PROD_IOS = process.env.EXPO_PUBLIC_ADMOB_INTERSTITIAL_IOS_ID ?? TestIds.INTERSTITIAL;
+const PROD_ANDROID = process.env["EXPO_PUBLIC_ADMOB_INTERSTITIAL_ANDROID_ID"] ?? TestIds.INTERSTITIAL;
+const PROD_IOS = process.env["EXPO_PUBLIC_ADMOB_INTERSTITIAL_IOS_ID"] ?? TestIds.INTERSTITIAL;
 const AD_UNIT_ID = __DEV__
   ? TestIds.INTERSTITIAL
   : (Platform.select({ android: PROD_ANDROID, ios: PROD_IOS }) ?? TestIds.INTERSTITIAL);
