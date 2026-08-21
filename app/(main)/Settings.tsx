@@ -1,15 +1,17 @@
-import { requestAccountDeletion, updateSyncWalletTransactions } from '@/app/services/api';
+import { requestAccountDeletion, updateNotificationToken, updateSyncWalletTransactions } from '@/app/services/api';
 import { isDeviceLockAvailable } from '@/app/services/biometrics';
 import { ScreenContainer } from '@/components/ScreenContainer';
 import { Tavira } from '@/constants/theme';
 import { useAppLockStore } from '@/stores/appLockStore';
 import { useAuthStore } from '@/stores/authStore';
 import { useSnackbarStore } from '@/stores/snackbarStore';
+import { registerForPushNotificationsAsync } from '@/utils/registerForPushNotificationsAsync';
 import Constants from 'expo-constants';
+import * as Notifications from 'expo-notifications';
 import { Stack } from 'expo-router';
 import * as Updates from 'expo-updates';
 import { useEffect, useRef, useState } from 'react';
-import { Alert, AppState, AppStateStatus, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Alert, AppState, AppStateStatus, Linking, Platform, Pressable, StyleSheet, View } from 'react-native';
 import RNAndroidNotificationListener from 'react-native-android-notification-listener';
 import { Icon, Switch, Text, useTheme } from 'react-native-paper';
 
@@ -71,6 +73,43 @@ function DangerRow({ icon, label, onPress }: { icon: string; label: string; onPr
   );
 }
 
+function NotificationBanner({ canAskAgain, onPress }: { canAskAgain: boolean; onPress: () => void }) {
+  const theme = useTheme();
+  const isDark = theme.dark;
+  const subtitleColor = isDark ? 'rgba(245,158,11,0.65)' : 'rgba(160,95,0,0.85)';
+
+  return (
+    <Pressable
+      style={({ pressed }) => [
+        styles.notifBanner,
+        {
+          backgroundColor: isDark ? 'rgba(245,158,11,0.10)' : 'rgba(245,158,11,0.08)',
+          borderColor: isDark ? 'rgba(245,158,11,0.28)' : 'rgba(245,158,11,0.38)',
+          opacity: pressed ? 0.72 : 1,
+        },
+      ]}
+      onPress={onPress}
+    >
+      <View style={[styles.iconWrap, { backgroundColor: 'rgba(245,158,11,0.14)' }]}>
+        <Icon source="bell-off-outline" size={20} color={Tavira.warning} />
+      </View>
+      <View style={styles.labelWrap}>
+        <Text style={[styles.label, { color: Tavira.warning }]}>Notifications off</Text>
+        <Text style={[styles.description, { color: subtitleColor }]}>
+          {canAskAgain
+            ? 'Tap to receive notifications for spendings, invites and wallet sync'
+            : 'Enable Notifications to receive alerts for spendings, invites and wallet sync'}
+        </Text>
+      </View>
+      <Icon
+        source={canAskAgain ? 'bell-outline' : 'open-in-new'}
+        size={18}
+        color={isDark ? 'rgba(245,158,11,0.50)' : 'rgba(160,95,0,0.50)'}
+      />
+    </Pressable>
+  );
+}
+
 export default function SettingsScreen() {
   const theme = useTheme();
   const isDark = theme.dark;
@@ -84,6 +123,9 @@ export default function SettingsScreen() {
   const [syncValue, setSyncValue] = useState(user!.syncWalletTransactions);
   const pendingEnable = useRef(false);
 
+  const [notifStatus, setNotifStatus] = useState<{ status: string; canAskAgain: boolean } | null>(null);
+  const pendingNotifEnable = useRef(false);
+
   useEffect(() => {
     setSyncValue(user!.syncWalletTransactions);
   }, [user?.syncWalletTransactions]);
@@ -91,6 +133,22 @@ export default function SettingsScreen() {
   useEffect(() => {
     useAppLockStore.getState().load();
   }, []);
+
+  useEffect(() => {
+    Notifications.getPermissionsAsync().then(({ status, canAskAgain }) => {
+      setNotifStatus({ status, canAskAgain });
+    });
+  }, []);
+
+  const tryRegisterPushToken = async () => {
+    try {
+      const token = await registerForPushNotificationsAsync();
+      if (token) await updateNotificationToken(token);
+      showSuccess('Notifications enabled.');
+    } catch {
+      // token registration failed silently
+    }
+  };
 
   const handleLockToggle = async (newValue: boolean) => {
     if (newValue) {
@@ -127,25 +185,46 @@ export default function SettingsScreen() {
 
   useEffect(() => {
     const subscription = AppState.addEventListener('change', async (nextState: AppStateStatus) => {
-      if (nextState !== 'active' || !pendingEnable.current) return;
-      pendingEnable.current = false;
+      if (nextState !== 'active') return;
 
-      const status = await RNAndroidNotificationListener.getPermissionStatus();
-      if (status === 'authorized') {
-        try {
-          await updateSyncWalletTransactions(true);
-          await refreshUser();
-        } catch {
+      if (pendingEnable.current) {
+        pendingEnable.current = false;
+        const status = await RNAndroidNotificationListener.getPermissionStatus();
+        if (status === 'authorized') {
+          try {
+            await updateSyncWalletTransactions(true);
+            await refreshUser();
+          } catch {
+            setSyncValue(false);
+            showError('Failed to enable Wallet Sync. Please try again.');
+          }
+        } else {
           setSyncValue(false);
-          showError('Failed to enable Wallet Sync. Please try again.');
+          showError('Notification access is required for Wallet Sync.');
         }
-      } else {
-        setSyncValue(false);
-        showError('Notification access is required for Wallet Sync.');
+      }
+
+      if (pendingNotifEnable.current) {
+        pendingNotifEnable.current = false;
+        const { status, canAskAgain } = await Notifications.getPermissionsAsync();
+        setNotifStatus({ status, canAskAgain });
+        if (status === 'granted') await tryRegisterPushToken();
       }
     });
     return () => subscription.remove();
   }, []);
+
+  const handleEnableNotifications = async () => {
+    if (!notifStatus) return;
+    if (notifStatus.canAskAgain) {
+      const { status, canAskAgain } = await Notifications.requestPermissionsAsync();
+      setNotifStatus({ status, canAskAgain });
+      if (status === 'granted') await tryRegisterPushToken();
+    } else {
+      pendingNotifEnable.current = true;
+      Linking.openSettings();
+    }
+  };
 
   const handleSyncToggle = async (newValue: boolean) => {
     setSyncValue(newValue);
@@ -174,6 +253,10 @@ export default function SettingsScreen() {
     <ScreenContainer scrollable>
       <Stack.Screen options={{ title: 'Settings' }} />
 
+      {notifStatus && notifStatus.status !== 'granted' && (
+        <NotificationBanner canAskAgain={notifStatus.canAskAgain} onPress={handleEnableNotifications} />
+      )}
+
       {Platform.OS === 'android' && (
         <View style={styles.section}>
           <Text style={[styles.sectionLabel, { color: sectionLabelColor }]}>NOTIFICATIONS</Text>
@@ -184,12 +267,16 @@ export default function SettingsScreen() {
               description="Reads payment notifications to log transactions automatically."
               value={syncValue}
               onValueChange={handleSyncToggle}
-              disabled={!user!.isPro}
+              disabled={!user!.isPro || notifStatus?.status !== 'granted'}
             />
           </View>
-          {!user!.isPro && (
+          {!user!.isPro ? (
             <Text style={[styles.proHint, { color: isDark ? 'rgba(242,244,248,0.35)' : theme.colors.onSurfaceVariant }]}>
               Upgrade to Tavira Pro to enable Wallet Sync.
+            </Text>
+          ) : notifStatus?.status !== 'granted' && (
+            <Text style={[styles.proHint, { color: isDark ? 'rgba(242,244,248,0.35)' : theme.colors.onSurfaceVariant }]}>
+              Notifications must be enabled to use this feature.
             </Text>
           )}
         </View>
@@ -238,6 +325,16 @@ export default function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
+  notifBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    marginTop: 20,
+  },
   section: {
     marginTop: 24,
     gap: 8,
