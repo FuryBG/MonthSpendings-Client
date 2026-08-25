@@ -1,20 +1,18 @@
 import { mobileAdsReady } from '@/app/_layout';
 import { useAuthStore } from '@/stores/authStore';
 import { useEffect, useRef } from 'react';
-import { Platform } from 'react-native';
 import { AdEventType, InterstitialAd, TestIds } from 'react-native-google-mobile-ads';
 
-const PROD_ANDROID = process.env["EXPO_PUBLIC_ADMOB_INTERSTITIAL_ANDROID_ID"] ?? TestIds.INTERSTITIAL;
-const PROD_IOS = process.env["EXPO_PUBLIC_ADMOB_INTERSTITIAL_IOS_ID"] ?? TestIds.INTERSTITIAL;
-const AD_UNIT_ID = __DEV__
-  ? TestIds.INTERSTITIAL
-  : (Platform.select({ android: PROD_ANDROID, ios: PROD_IOS }) ?? TestIds.INTERSTITIAL);
+const AD_UNIT_ID = TestIds.INTERSTITIAL;
+
+const MIN_AD_INTERVAL_MS = 3 * 60 * 1000;
 
 export function useTabInterstitial() {
-  const isPro = false; // useAuthStore((s) => s.user?.isPro ?? false);
+  const isPro = useAuthStore((s) => s.user?.isPro ?? false);
   const adRef = useRef<InterstitialAd | null>(null);
   const isLoadedRef = useRef(false);
   const isProRef = useRef(isPro);
+  const lastAdTimeRef = useRef(0);
   isProRef.current = isPro;
 
   useEffect(() => {
@@ -56,8 +54,10 @@ export function useTabInterstitial() {
   }, [isPro]);
 
   function showAd() {
-    console.log('[Ad] showAd — isLoaded:', isLoadedRef.current, 'isPro:', isProRef.current);
+    const now = Date.now();
     if (isProRef.current || !isLoadedRef.current || !adRef.current) return;
+    if (now - lastAdTimeRef.current < MIN_AD_INTERVAL_MS) return;
+    lastAdTimeRef.current = now;
     try {
       adRef.current.show();
     } catch {

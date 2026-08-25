@@ -16,7 +16,11 @@ const SECTIONS = [
   },
   {
     title: 'Data Sharing',
-    body: 'We do not sell, rent, or trade your personal information to third parties. We may share data with trusted service providers who assist in operating Tavira, subject to strict confidentiality agreements. We may disclose information if required to do so by law or to protect the rights of our users.',
+    body: 'We do not sell or rent your personal information. We share data with trusted service providers who help operate Tavira, including Google AdMob (advertising), RevenueCat (subscription management), and Google Firebase (authentication). These providers may collect and process certain data in accordance with their own privacy policies. We may also disclose information if required by law or to protect user rights.',
+  },
+  {
+    title: 'Advertising Services',
+    body: 'Tavira displays ads provided by Google AdMob. AdMob may collect data such as your advertising identifier (IDFA on iOS or GAID on Android), device information, and app usage data to serve personalized advertisements. You can opt out of personalised ads in your device settings (iOS: Settings → Privacy & Security → Tracking; Android: Settings → Google → Ads). For more information, see Google\'s Privacy Policy at https://policies.google.com/privacy.',
   },
   {
     title: 'Data Security',
