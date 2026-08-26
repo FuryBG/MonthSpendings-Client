@@ -12,6 +12,7 @@ class WalletNotificationService : NotificationListenerService() {
     private val walletPackages = setOf(
         "com.google.android.apps.walletnfcrel",
         "com.google.android.gms",
+        "app.expo.tavira",
     )
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
