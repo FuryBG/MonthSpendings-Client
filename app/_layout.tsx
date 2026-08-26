@@ -18,10 +18,6 @@ import { AppState, Modal, StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { MD3DarkTheme, MD3LightTheme, PaperProvider } from 'react-native-paper';
-import MobileAds, { AdsConsent, AdsConsentStatus } from 'react-native-google-mobile-ads';
-
-let resolveAdsReady: () => void;
-export const mobileAdsReady = new Promise<void>(resolve => { resolveAdsReady = resolve; });
 import Purchases from 'react-native-purchases';
 import 'react-native-reanimated';
 
@@ -120,25 +116,6 @@ export default function RootLayout() {
   const [bootDone, setBootDone] = useState(false);
 
   useEffect(() => {
-    const initAds = async () => {
-      try {
-        const consentInfo = await AdsConsent.requestInfoUpdate();
-        if (
-          consentInfo.isConsentFormAvailable &&
-          consentInfo.status !== AdsConsentStatus.OBTAINED &&
-          consentInfo.status !== AdsConsentStatus.NOT_REQUIRED
-        ) {
-          await AdsConsent.loadAndShowConsentFormIfRequired();
-        }
-      } catch {
-        // non-EEA user or network error — proceed without consent form
-      }
-      await MobileAds().setRequestConfiguration({
-        testDeviceIdentifiers: ['EMULATOR'],
-      });
-      MobileAds().initialize().then(() => resolveAdsReady()).catch(() => resolveAdsReady());
-    };
-    initAds();
     configureRevenueCat();
     const onCustomerInfoUpdate = () => { useAuthStore.getState().refreshUser(); };
     Purchases.addCustomerInfoUpdateListener(onCustomerInfoUpdate);

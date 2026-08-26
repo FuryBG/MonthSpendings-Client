@@ -12,7 +12,11 @@ import { Stack } from 'expo-router';
 import * as Updates from 'expo-updates';
 import { useEffect, useRef, useState } from 'react';
 import { Alert, AppState, AppStateStatus, Linking, Platform, Pressable, StyleSheet, View } from 'react-native';
-import RNAndroidNotificationListener from 'react-native-android-notification-listener';
+import { NativeModules } from 'react-native';
+
+const WalletSync = NativeModules.WalletSync as
+  | { isNotificationListenerEnabled: () => Promise<boolean> }
+  | undefined;
 import { Icon, Switch, Text, useTheme } from 'react-native-paper';
 
 function SettingRow({
@@ -189,8 +193,8 @@ export default function SettingsScreen() {
 
       if (pendingEnable.current) {
         pendingEnable.current = false;
-        const status = await RNAndroidNotificationListener.getPermissionStatus();
-        if (status === 'authorized') {
+        const enabled = WalletSync ? await WalletSync.isNotificationListenerEnabled() : false;
+        if (enabled) {
           try {
             await updateSyncWalletTransactions(true);
             await refreshUser();
@@ -230,10 +234,10 @@ export default function SettingsScreen() {
     setSyncValue(newValue);
 
     if (newValue) {
-      const status = await RNAndroidNotificationListener.getPermissionStatus();
-      if (status !== 'authorized') {
+      const enabled = WalletSync ? await WalletSync.isNotificationListenerEnabled() : false;
+      if (!enabled) {
         pendingEnable.current = true;
-        RNAndroidNotificationListener.requestPermission();
+        Linking.sendIntent('android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS').catch(() => {});
         return;
       }
     }

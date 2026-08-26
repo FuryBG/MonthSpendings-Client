@@ -36,9 +36,7 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
-      "./plugins/withAllowBackupFix",
-      "./plugins/withNoSaveEnabled",
-      "./plugins/withAdIdPermission",
+      "./plugins/withWalletNotificationListener",
       "expo-router",
       [
         "expo-splash-screen",
@@ -74,15 +72,7 @@
       "expo-font",
       "expo-image",
       "expo-status-bar",
-      "expo-web-browser",
-      [
-        "react-native-google-mobile-ads",
-        {
-          "androidAppId": "ca-app-pub-1895725817798787~6899735206",
-          "iosAppId": "ca-app-pub-xxxxxxxxxxxxxxxx~xxxxxxxxxx",
-          "userTrackingUsageDescription": "This identifier is used to deliver personalized ads and measure their effectiveness."
-        }
-      ]
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,
