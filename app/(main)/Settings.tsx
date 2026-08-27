@@ -6,6 +6,7 @@ import { useAppLockStore } from '@/stores/appLockStore';
 import { useAuthStore } from '@/stores/authStore';
 import { useSnackbarStore } from '@/stores/snackbarStore';
 import { registerForPushNotificationsAsync } from '@/utils/registerForPushNotificationsAsync';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 import * as Notifications from 'expo-notifications';
 import { Stack } from 'expo-router';
@@ -127,6 +128,12 @@ export default function SettingsScreen() {
   const [syncValue, setSyncValue] = useState(user!.syncWalletTransactions);
   const pendingEnable = useRef(false);
 
+  useEffect(() => {
+    AsyncStorage.getItem('@wallet_sync_pending').then((val) => {
+      if (val === '1') pendingEnable.current = true;
+    });
+  }, []);
+
   const [notifStatus, setNotifStatus] = useState<{ status: string; canAskAgain: boolean } | null>(null);
   const pendingNotifEnable = useRef(false);
 
@@ -193,6 +200,7 @@ export default function SettingsScreen() {
 
       if (pendingEnable.current) {
         pendingEnable.current = false;
+        AsyncStorage.removeItem('@wallet_sync_pending');
         const enabled = WalletSync ? await WalletSync.isNotificationListenerEnabled() : false;
         if (enabled) {
           try {
@@ -237,6 +245,7 @@ export default function SettingsScreen() {
       const enabled = WalletSync ? await WalletSync.isNotificationListenerEnabled() : false;
       if (!enabled) {
         pendingEnable.current = true;
+        await AsyncStorage.setItem('@wallet_sync_pending', '1');
         Linking.sendIntent('android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS').catch(() => {});
         return;
       }

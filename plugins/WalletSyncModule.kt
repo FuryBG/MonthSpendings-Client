@@ -1,6 +1,6 @@
 package app.expo.tavira
 
-import android.provider.Settings
+import androidx.core.app.NotificationManagerCompat
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
@@ -14,12 +14,9 @@ class WalletSyncModule(private val reactContext: ReactApplicationContext) :
     @ReactMethod
     fun isNotificationListenerEnabled(promise: Promise) {
         try {
-            val pkgName = reactContext.packageName
-            val listeners = Settings.Secure.getString(
-                reactContext.contentResolver,
-                "enabled_notification_listeners",
-            ) ?: ""
-            promise.resolve(listeners.contains(pkgName))
+            val enabled = NotificationManagerCompat.getEnabledListenerPackages(reactContext)
+                .contains(reactContext.packageName)
+            promise.resolve(enabled)
         } catch (_: Exception) {
             promise.resolve(false)
         }
