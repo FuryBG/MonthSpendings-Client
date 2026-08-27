@@ -80,11 +80,19 @@ function withWalletMainApplication(config) {
           /((?:import com\.facebook\.react\.[^\n]+\n)+)/,
           (match) => `${match}import app.expo.tavira.WalletSyncPackage\n`,
         );
-        // Register package before "return packages"
-        src = src.replace(
-          '// packages.add(MyReactNativePackage())',
-          '// packages.add(MyReactNativePackage())\n        packages.add(WalletSyncPackage())',
-        );
+        // RN 0.74+ template uses `add(...)` inside an apply{} block;
+        // older templates used `packages.add(...)` with an explicit return.
+        if (src.includes('// add(MyReactNativePackage())')) {
+          src = src.replace(
+            '// add(MyReactNativePackage())',
+            '// add(MyReactNativePackage())\n        add(WalletSyncPackage())',
+          );
+        } else {
+          src = src.replace(
+            '// packages.add(MyReactNativePackage())',
+            '// packages.add(MyReactNativePackage())\n        packages.add(WalletSyncPackage())',
+          );
+        }
       }
 
       fs.writeFileSync(mainAppPath, src);
