@@ -1,21 +1,16 @@
 import { getUser, setMemoryToken } from '@/app/services/api';
 import { queryClient } from '@/lib/queryClient';
 import { AppUser } from '@/types/Types';
-import * as FileSystem from 'expo-file-system';
 import * as SecureStore from 'expo-secure-store';
-import { Platform } from 'react-native';
+import { NativeModules } from 'react-native';
 import { create } from 'zustand';
 
-const WALLET_TOKEN_FILE = FileSystem.documentDirectory + 'wallet_token';
-
 function writeWalletToken(token: string) {
-  if (Platform.OS !== 'android') return;
-  FileSystem.writeAsStringAsync(WALLET_TOKEN_FILE, token).catch(() => {});
+  NativeModules.WalletSync?.setToken(token).catch?.(() => {});
 }
 
 function deleteWalletToken() {
-  if (Platform.OS !== 'android') return;
-  FileSystem.deleteAsync(WALLET_TOKEN_FILE, { idempotent: true }).catch(() => {});
+  NativeModules.WalletSync?.deleteToken().catch?.(() => {});
 }
 
 interface AuthState {
