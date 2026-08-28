@@ -1,7 +1,8 @@
 import { Modal, ModalRef } from '@/components/Modal';
 import { ScreenContainer } from '@/components/ScreenContainer';
 import { Tavira } from '@/constants/theme';
-import { useCategorizeNotificationTransactionMutation, usePendingNotificationTransactionsQuery } from '@/hooks/useNotificationTransactionQueries';
+import { PENDING_NOTIFICATION_TRANSACTIONS_KEY, useCategorizeNotificationTransactionMutation, usePendingNotificationTransactionsQuery } from '@/hooks/useNotificationTransactionQueries';
+import { queryClient } from '@/lib/queryClient';
 import { useBudgetsQuery } from '@/hooks/useBudgetQueries';
 import { useTitleStore } from '@/stores/titleStore';
 import { Budget, BudgetCategory, NotificationTransaction } from '@/types/Types';
@@ -220,7 +221,10 @@ export default function PendingTransactions() {
   const [selectedTransaction, setSelectedTransaction] = useState<NotificationTransaction | null>(null);
   const [createRule, setCreateRule] = useState<boolean>(false);
 
-  useFocusEffect(() => { setTitle('Transactions'); });
+  useFocusEffect(() => {
+    setTitle('Transactions');
+    queryClient.invalidateQueries({ queryKey: PENDING_NOTIFICATION_TRANSACTIONS_KEY });
+  });
 
   function onCategorize(transaction: NotificationTransaction) {
     setSelectedTransaction(transaction);

@@ -9,15 +9,7 @@ import org.json.JSONObject
 
 class WalletNotificationService : NotificationListenerService() {
 
-    private val walletPackages = setOf(
-        "com.google.android.apps.walletnfcrel",
-        "com.google.android.gms",
-        "app.expo.tavira",
-    )
-
     override fun onNotificationPosted(sbn: StatusBarNotification) {
-        if (sbn.packageName !in walletPackages) return
-
         val extras = sbn.notification?.extras ?: return
         val title = extras.getCharSequence("android.title")?.toString() ?: return
         val text = extras.getCharSequence("android.bigText")?.toString()
