@@ -1,6 +1,6 @@
 import { getUser, setMemoryToken } from '@/app/services/api';
 import { queryClient } from '@/lib/queryClient';
-import { AppUser } from '@/types/Types';
+import { AppUser, AuthResponse } from '@/types/Types';
 import * as SecureStore from 'expo-secure-store';
 import { NativeModules } from 'react-native';
 import { create } from 'zustand';
@@ -13,10 +13,12 @@ function deleteWalletToken() {
   NativeModules.WalletSync?.deleteToken().catch?.(() => {});
 }
 
+export { writeWalletToken };
+
 interface AuthState {
   user: AppUser | null;
   userLoading: boolean;
-  signIn: (token: string) => Promise<void>;
+  signIn: (tokens: AuthResponse) => Promise<void>;
   signOut: () => Promise<void>;
   restoreSession: () => Promise<void>;
   refreshUser: () => Promise<void>;
@@ -28,17 +30,28 @@ export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   userLoading: true,
 
-  signIn: async (token: string) => {
-    setMemoryToken(token);
-    await SecureStore.setItemAsync('token', token);
-    writeWalletToken(token);
+  signIn: async (tokens: AuthResponse) => {
+    setMemoryToken(tokens.accessToken);
+    await SecureStore.setItemAsync('token', tokens.accessToken);
+    await SecureStore.setItemAsync('refreshToken', tokens.refreshToken);
+    writeWalletToken(tokens.accessToken);
     const user = await getUser();
     set({ user });
   },
 
   signOut: async () => {
+    try {
+      const refreshToken = await SecureStore.getItemAsync('refreshToken');
+      if (refreshToken) {
+        const { revokeToken } = await import('@/app/services/api');
+        await revokeToken(refreshToken);
+      }
+    } catch {
+      // best-effort revoke
+    }
     setMemoryToken(null);
     await SecureStore.deleteItemAsync('token');
+    await SecureStore.deleteItemAsync('refreshToken');
     deleteWalletToken();
     set({ user: null, userLoading: false });
     queryClient.clear();

@@ -1,3 +1,8 @@
+export type AuthResponse = {
+    accessToken: string;
+    refreshToken: string;
+}
+
 export type BudgetState = {
     budgets: Budget[],
     budgetLoading: 'loading' | 'ready' | 'failed',

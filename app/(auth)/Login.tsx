@@ -107,10 +107,8 @@ export default function LoginScreen() {
           photo: userInfo.data!.user.photo,
         };
 
-        const jwt = await googleLogin(userDto);
-        console.log(`GOOGLE TOKEN ID: ${googleToken}`);
-        
-        await signIn(jwt);
+        const tokens = await googleLogin(userDto);
+        await signIn(tokens);
         setSigning(false);
       }
     } catch (e) {
@@ -160,6 +158,16 @@ export default function LoginScreen() {
         <View style={styles.authSection}>
           <Text style={styles.authHint}>Sign in to your account</Text>
           <GoogleButton onPress={onSignIn} loading={signing} />
+          <TouchableOpacity style={styles.emailBtn} onPress={() => router.push('/(auth)/EmailLogin')} activeOpacity={0.75}>
+            <Icon source="email-outline" size={18} color="rgba(242,244,248,0.55)" />
+            <Text style={styles.emailBtnText}>Continue with email</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => router.push('/(auth)/Register')} activeOpacity={0.75}>
+            <Text style={styles.createAccountText}>
+              No account?{' '}
+              <Text style={styles.createAccountLink}>Create one</Text>
+            </Text>
+          </TouchableOpacity>
           <Text style={styles.legalText}>
             By continuing you agree to our{' '}
             <Text style={styles.legalLink} onPress={() => router.push('/(auth)/TermsOfService')}>
@@ -330,5 +338,32 @@ const styles = StyleSheet.create({
   legalLink: {
     color: 'rgba(62,198,198,0.65)',
     textDecorationLine: 'underline',
+  },
+  emailBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    width: '100%',
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.10)',
+    backgroundColor: 'rgba(255,255,255,0.04)',
+  },
+  emailBtnText: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: 'rgba(242,244,248,0.65)',
+    letterSpacing: 0.2,
+  },
+  createAccountText: {
+    fontSize: 13,
+    color: 'rgba(242,244,248,0.35)',
+  },
+  createAccountLink: {
+    color: 'rgba(62,198,198,0.75)',
+    fontWeight: '600',
   },
 });

@@ -1,11 +1,7 @@
-import { AppUser, Budget, BudgetCategory, BudgetInvite, CategorizeNotificationTransactionDto, CreateNotificationTransactionDto, Currency, NotificationTransaction, PeriodComparisonDto, PeriodHistoryItemDto, Spending, UpdateUserActivityDto } from '@/types/Types';
+import { AppUser, AuthResponse, Budget, BudgetCategory, BudgetInvite, CategorizeNotificationTransactionDto, CreateNotificationTransactionDto, Currency, NotificationTransaction, PeriodComparisonDto, PeriodHistoryItemDto, Spending, UpdateUserActivityDto } from '@/types/Types';
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
-
-export interface GoogleAuthResponse {
-  jwt: string;
-  user: string;
-}
+import { NativeModules } from 'react-native';
 
 export interface GoogleUserDto {
   id: string,
@@ -18,7 +14,6 @@ export interface GoogleUserDto {
 
 export const BASE_URL = process.env["EXPO_PUBLIC_API_URL"] ?? "https://api.taviraofficial.com";
 console.log(`API ADDRESS: ${BASE_URL}`);
-
 
 const api = axios.create({
   baseURL: BASE_URL,
@@ -33,9 +28,6 @@ let _memoryToken: string | null = null;
 export const setMemoryToken = (token: string | null) => { _memoryToken = token; };
 
 api.interceptors.request.use((config) => {
-  console.log(`TOKEN: ${_memoryToken}`);
-  console.log(`WHOLE REQUEST: ${JSON.stringify(config)}`);
-  
   if (_memoryToken && config.headers) {
     config.headers.Authorization = `Bearer ${_memoryToken}`;
   }
@@ -48,26 +40,98 @@ export const setOnUnauthorized = (callback: () => void) => {
   onUnauthorized = callback;
 };
 
+// Refresh token queue — prevents concurrent 401s from triggering multiple refreshes
+let isRefreshing = false;
+let failedQueue: Array<{ resolve: (token: string) => void; reject: (error: unknown) => void }> = [];
+
+function processQueue(error: unknown, token: string | null = null) {
+  failedQueue.forEach((p) => (error ? p.reject(error) : p.resolve(token!)));
+  failedQueue = [];
+}
+
+const AUTH_URLS = ['/api/auth/refresh', '/api/auth/login', '/api/auth/register', '/api/user'];
+
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
+    const originalRequest = error?.config as (typeof error.config & { _retry?: boolean }) | undefined;
     const status = error?.response?.status;
-    const url = error?.config?.url;
-    const method = error?.config?.method?.toUpperCase();
-    console.log(`API ERROR: ${method} ${url} → ${status}`);
-    if (status === 401) {
-      await SecureStore.deleteItemAsync('token');
-      onUnauthorized?.();
+    const url: string = originalRequest?.url ?? '';
+
+    if (
+      status === 401 &&
+      originalRequest &&
+      !originalRequest._retry &&
+      !AUTH_URLS.some((u) => url.includes(u))
+    ) {
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        }).then((token) => {
+          originalRequest.headers.Authorization = `Bearer ${token}`;
+          return api(originalRequest);
+        });
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      try {
+        const refreshToken = await SecureStore.getItemAsync('refreshToken');
+        if (!refreshToken) throw new Error('No refresh token stored');
+
+        const { data } = await api.post<AuthResponse>('/api/auth/refresh', { refreshToken });
+
+        setMemoryToken(data.accessToken);
+        NativeModules.WalletSync?.setToken(data.accessToken).catch?.(() => {});
+        await SecureStore.setItemAsync('token', data.accessToken);
+        await SecureStore.setItemAsync('refreshToken', data.refreshToken);
+
+        processQueue(null, data.accessToken);
+        originalRequest.headers.Authorization = `Bearer ${data.accessToken}`;
+        return api(originalRequest);
+      } catch (refreshError) {
+        processQueue(refreshError, null);
+        setMemoryToken(null);
+        await SecureStore.deleteItemAsync('token');
+        await SecureStore.deleteItemAsync('refreshToken');
+        onUnauthorized?.();
+        return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
+      }
     }
+
     return Promise.reject(error);
   }
 );
 
-export const googleLogin = async (userDto: GoogleUserDto): Promise<string> => {
-  console.log(`GG ${JSON.stringify(userDto)}`);
-  
-  const response = await api.post('/api/user', userDto);
+// Auth
+export const googleLogin = async (userDto: GoogleUserDto): Promise<AuthResponse> => {
+  const response = await api.post<AuthResponse>('/api/user', userDto);
   return response.data;
+};
+
+export const registerWithEmail = async (dto: {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+}): Promise<AuthResponse> => {
+  const response = await api.post<AuthResponse>('/api/auth/register', dto);
+  return response.data;
+};
+
+export const loginWithEmail = async (dto: {
+  email: string;
+  password: string;
+}): Promise<AuthResponse> => {
+  const response = await api.post<AuthResponse>('/api/auth/login', dto);
+  return response.data;
+};
+
+export const revokeToken = async (refreshToken: string): Promise<void> => {
+  await api.post('/api/auth/revoke', { refreshToken });
 };
 
 export const getUser = async (): Promise<AppUser> => {
@@ -132,23 +196,17 @@ export const createBudgetCategory = async (budgetCategory: BudgetCategory): Prom
 };
 
 export const deleteSpending = async (spendingId: number): Promise<number> => {
-  const response = await api.delete("/api/spending", {
-    params: { spendingId }
-  });
+  const response = await api.delete("/api/spending", { params: { spendingId } });
   return response.data;
 };
 
 export const deleteBudgetCategory = async (budgetCategoryId: number): Promise<number> => {
-  const response = await api.delete("/api/budgetcategory", {
-    params: { budgetCategoryId }
-  });
+  const response = await api.delete("/api/budgetcategory", { params: { budgetCategoryId } });
   return response.data;
 };
 
 export const deleteBudget = async (budgetId: number): Promise<number> => {
-  const response = await api.delete("/api/budget", {
-    params: { budgetId }
-  });
+  const response = await api.delete("/api/budget", { params: { budgetId } });
   return response.data;
 };
 
@@ -162,7 +220,6 @@ export const getSpendingsByCategoryAndPeriod = async (budgetCategoryId: number, 
   return response.data;
 };
 
-// Statistics
 export const getPeriodComparison = async (budgetId: number): Promise<PeriodComparisonDto> => {
   const response = await api.get(`/api/statistics/period-comparison?budgetId=${budgetId}`);
   return response.data;
