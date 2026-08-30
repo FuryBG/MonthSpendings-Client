@@ -102,6 +102,10 @@ export const categorizeNotificationTransaction = async (dto: CategorizeNotificat
   return response.data;
 };
 
+export const deleteNotificationTransaction = async (id: number): Promise<void> => {
+  await api.delete(`/api/notification-transactions/${id}`);
+};
+
 export const createBudget = async (budget: Budget): Promise<Budget> => {
   const response = await api.post('/api/budget', budget);
   return response.data;

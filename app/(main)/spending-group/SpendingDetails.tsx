@@ -12,7 +12,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
-import { ActivityIndicator, Button, Card, Chip, Dialog, Divider, HelperText, Icon, Portal, Surface, Text, TextInput, useTheme } from 'react-native-paper';
+import { ActivityIndicator, Button, Card, Chip, Divider, HelperText, Icon, Surface, Text, TextInput, useTheme } from 'react-native-paper';
 
 const COLOR_EXPENSE = Tavira.expense;
 const COLOR_INCOME  = Tavira.income;
@@ -203,9 +203,11 @@ export default function SpendingDetailsScreen() {
   const showSuccess = useSnackbarStore((s) => s.showSuccess);
   const showError   = useSnackbarStore((s) => s.showError);
   const sheetRef       = useRef<BottomSheetRef>(null);
+  const deleteSheetRef = useRef<BottomSheetRef>(null);
   const amountInputRef = useRef<any>(null);
-  const [sheetVisible,  setSheetVisible]  = useState(false);
-  const [negativeInput, setNegativeInput] = useState(false);
+  const [sheetVisible,       setSheetVisible]       = useState(false);
+  const [negativeInput,      setNegativeInput]      = useState(false);
+  const [deleteSheetVisible, setDeleteSheetVisible] = useState(false);
   const { control, handleSubmit, reset } = useForm<Spending>({
     defaultValues: { id: 0, amount: undefined as any, budgetCategoryId: 0, description: '' },
   });
@@ -304,6 +306,7 @@ export default function SpendingDetailsScreen() {
       onPress={() => {
         swipeableRefs.current.get(spendingId)?.close();
         setConfirmSpendingId(spendingId);
+        setDeleteSheetVisible(true);
       }}
     >
       <Icon source="trash-can-outline" size={22} color={theme.colors.onError} />
@@ -403,28 +406,37 @@ export default function SpendingDetailsScreen() {
         <View style={s.bottomSpacer} />
       </ScreenContainer>
 
-      <Portal>
-        <Dialog visible={confirmSpendingId != null} onDismiss={() => setConfirmSpendingId(null)}>
-          <Dialog.Title>Delete Transaction</Dialog.Title>
-          <Dialog.Content>
-            <Text variant="bodyMedium">This action cannot be undone.</Text>
-          </Dialog.Content>
-          <Dialog.Actions>
-            <Button onPress={() => setConfirmSpendingId(null)}>Cancel</Button>
-            <Button
-              textColor={theme.colors.error}
-              onPress={() => {
-                if (confirmSpendingId != null) {
-                  deleteSpendingMutation.mutate(confirmSpendingId);
-                  setConfirmSpendingId(null);
-                }
-              }}
-            >
-              Delete
-            </Button>
-          </Dialog.Actions>
-        </Dialog>
-      </Portal>
+      <BottomSheet
+        ref={deleteSheetRef}
+        visible={deleteSheetVisible}
+        onClose={(onDone) => { setDeleteSheetVisible(false); setConfirmSpendingId(null); onDone?.(); }}
+      >
+        <View style={sheetStyles.sheetCenteredContent}>
+          <View style={[sheetStyles.sheetConfirmIcon, { backgroundColor: theme.colors.errorContainer }]}>
+            <Icon source="trash-can-outline" size={28} color={theme.colors.error} />
+          </View>
+          <Text style={[sheetStyles.sheetConfirmTitle, { color: theme.colors.onSurface }]}>Delete Transaction</Text>
+          <Text style={[sheetStyles.sheetConfirmDesc, { color: theme.colors.onSurface }]}>This action cannot be undone.</Text>
+        </View>
+        <View style={sheetStyles.sheetActions}>
+          <Button mode="text" onPress={() => deleteSheetRef.current?.close()}>Cancel</Button>
+          <Button
+            mode="contained"
+            loading={deleteSpendingMutation.isPending}
+            buttonColor={theme.colors.error}
+            textColor={theme.colors.onError}
+            contentStyle={sheetStyles.sheetConfirmContent}
+            onPress={() => {
+              if (confirmSpendingId != null) {
+                deleteSpendingMutation.mutate(confirmSpendingId);
+                deleteSheetRef.current?.close();
+              }
+            }}
+          >
+            Delete
+          </Button>
+        </View>
+      </BottomSheet>
 
       <BottomSheet ref={sheetRef} visible={sheetVisible} onClose={handleSheetClose}>
         <Text style={sheetStyles.sheetTitle}>

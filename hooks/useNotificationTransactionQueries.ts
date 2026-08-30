@@ -1,4 +1,4 @@
-import { categorizeNotificationTransaction, createNotificationTransaction, getUncategorizedNotificationTransactions } from '@/app/services/api';
+import { categorizeNotificationTransaction, createNotificationTransaction, deleteNotificationTransaction, getUncategorizedNotificationTransactions } from '@/app/services/api';
 import { queryClient } from '@/lib/queryClient';
 import { useAuthStore } from '@/stores/authStore';
 import { CategorizeNotificationTransactionDto, CreateNotificationTransactionDto } from '@/types/Types';
@@ -28,6 +28,14 @@ export const useCategorizeNotificationTransactionMutation = () =>
 export const useCreateNotificationTransactionMutation = () =>
   useMutation({
     mutationFn: (dto: CreateNotificationTransactionDto) => createNotificationTransaction(dto),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: PENDING_NOTIFICATION_TRANSACTIONS_KEY });
+    },
+  });
+
+export const useDeleteNotificationTransactionMutation = () =>
+  useMutation({
+    mutationFn: (id: number) => deleteNotificationTransaction(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: PENDING_NOTIFICATION_TRANSACTIONS_KEY });
     },

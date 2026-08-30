@@ -1,7 +1,8 @@
+import { BottomSheet, BottomSheetRef, sheetStyles } from '@/components/BottomSheet';
 import { Modal, ModalRef } from '@/components/Modal';
 import { ScreenContainer } from '@/components/ScreenContainer';
 import { Tavira } from '@/constants/theme';
-import { PENDING_NOTIFICATION_TRANSACTIONS_KEY, useCategorizeNotificationTransactionMutation, usePendingNotificationTransactionsQuery } from '@/hooks/useNotificationTransactionQueries';
+import { PENDING_NOTIFICATION_TRANSACTIONS_KEY, useCategorizeNotificationTransactionMutation, useDeleteNotificationTransactionMutation, usePendingNotificationTransactionsQuery } from '@/hooks/useNotificationTransactionQueries';
 import { queryClient } from '@/lib/queryClient';
 import { useBudgetsQuery } from '@/hooks/useBudgetQueries';
 import { useTitleStore } from '@/stores/titleStore';
@@ -9,7 +10,8 @@ import { Budget, BudgetCategory, NotificationTransaction } from '@/types/Types';
 import { useFocusEffect } from 'expo-router';
 import React, { useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, ScrollView, StyleSheet, Switch, TouchableOpacity, View } from 'react-native';
-import { Chip, Icon, Text, useTheme } from 'react-native-paper';
+import { Swipeable } from 'react-native-gesture-handler';
+import { Button, Chip, Icon, Text, useTheme } from 'react-native-paper';
 
 function formatDate(iso: string): string {
   const d = new Date(iso);
@@ -36,13 +38,23 @@ function EmptyState() {
   );
 }
 
-type CardProps = { item: NotificationTransaction; onCategorize: (t: NotificationTransaction) => void };
+type CardProps = { item: NotificationTransaction; onCategorize: (t: NotificationTransaction) => void; swipeableRef: (r: Swipeable | null) => void; onDelete: (t: NotificationTransaction) => void };
 
-function TransactionCard({ item, onCategorize }: CardProps) {
+function TransactionCard({ item, onCategorize, swipeableRef, onDelete }: CardProps) {
   const theme = useTheme();
   const isDark = theme.dark;
 
+  const renderDeleteAction = () => (
+    <TouchableOpacity
+      style={[s.deleteAction, { backgroundColor: theme.colors.error }]}
+      onPress={() => { onDelete(item); }}
+    >
+      <Icon source="trash-can-outline" size={22} color={theme.colors.onError} />
+    </TouchableOpacity>
+  );
+
   return (
+    <Swipeable ref={swipeableRef} renderRightActions={renderDeleteAction}>
     <View style={[s.card, {
       backgroundColor: isDark ? Tavira.glassBg : '#FFFFFF',
       borderColor: isDark ? Tavira.glassBorder : 'rgba(11,27,58,0.08)',
@@ -78,6 +90,7 @@ function TransactionCard({ item, onCategorize }: CardProps) {
         </TouchableOpacity>
       </View>
     </View>
+    </Swipeable>
   );
 }
 
@@ -211,8 +224,11 @@ export default function PendingTransactions() {
   const { data: budgets = [] } = useBudgetsQuery();
   const { data: transactions = [], isLoading } = usePendingNotificationTransactionsQuery();
   const categorizeMutation = useCategorizeNotificationTransactionMutation();
+  const deleteMutation = useDeleteNotificationTransactionMutation();
   const setTitle = useTitleStore((s) => s.setTitle);
   const modalRef = useRef<ModalRef>(null);
+  const deleteSheetRef = useRef<BottomSheetRef>(null);
+  const swipeableRefs = useRef<Map<number, Swipeable | null>>(new Map());
   const theme = useTheme();
   const isDark = theme.dark;
 
@@ -220,6 +236,8 @@ export default function PendingTransactions() {
   const [selectedCategoryId, setSelectedCategoryId] = useState<number>(0);
   const [selectedTransaction, setSelectedTransaction] = useState<NotificationTransaction | null>(null);
   const [createRule, setCreateRule] = useState<boolean>(false);
+  const [confirmTransactionId, setConfirmTransactionId] = useState<number | null>(null);
+  const [deleteSheetVisible, setDeleteSheetVisible] = useState(false);
 
   useFocusEffect(() => {
     setTitle('Transactions');
@@ -249,6 +267,12 @@ export default function PendingTransactions() {
     }
   }
 
+  function onDelete(transaction: NotificationTransaction) {
+    swipeableRefs.current.get(transaction.id)?.close();
+    setConfirmTransactionId(transaction.id);
+    setDeleteSheetVisible(true);
+  }
+
   if (isLoading) {
     return (
       <ScreenContainer>
@@ -273,7 +297,12 @@ export default function PendingTransactions() {
           ListEmptyComponent={<EmptyState />}
           ItemSeparatorComponent={() => <View style={s.separator} />}
           renderItem={({ item }) => (
-            <TransactionCard item={item} onCategorize={onCategorize} />
+            <TransactionCard
+              item={item}
+              onCategorize={onCategorize}
+              swipeableRef={(r) => { swipeableRefs.current.set(item.id, r); }}
+              onDelete={onDelete}
+            />
           )}
         />
       </ScreenContainer>
@@ -297,12 +326,45 @@ export default function PendingTransactions() {
           />
         )}
       </Modal>
+
+      <BottomSheet
+        ref={deleteSheetRef}
+        visible={deleteSheetVisible}
+        onClose={(onDone) => { setDeleteSheetVisible(false); setConfirmTransactionId(null); onDone?.(); }}
+      >
+        <View style={sheetStyles.sheetCenteredContent}>
+          <View style={[sheetStyles.sheetConfirmIcon, { backgroundColor: theme.colors.errorContainer }]}>
+            <Icon source="trash-can-outline" size={28} color={theme.colors.error} />
+          </View>
+          <Text style={[sheetStyles.sheetConfirmTitle, { color: theme.colors.onSurface }]}>Delete Transaction</Text>
+          <Text style={[sheetStyles.sheetConfirmDesc, { color: theme.colors.onSurface }]}>This action cannot be undone.</Text>
+        </View>
+        <View style={sheetStyles.sheetActions}>
+          <Button mode="text" onPress={() => deleteSheetRef.current?.close()}>Cancel</Button>
+          <Button
+            mode="contained"
+            loading={deleteMutation.isPending}
+            buttonColor={theme.colors.error}
+            textColor={theme.colors.onError}
+            contentStyle={sheetStyles.sheetConfirmContent}
+            onPress={() => {
+              if (confirmTransactionId != null) {
+                deleteMutation.mutate(confirmTransactionId);
+                deleteSheetRef.current?.close();
+              }
+            }}
+          >
+            Delete
+          </Button>
+        </View>
+      </BottomSheet>
     </>
   );
 }
 
 const s = StyleSheet.create({
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  deleteAction: { justifyContent: 'center', alignItems: 'center', width: 72, borderRadius: 18, marginLeft: 8 },
   list: { paddingTop: 8, paddingBottom: 32 },
   listEmpty: { flex: 1 },
   separator: { height: 10 },
