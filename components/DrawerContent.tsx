@@ -219,7 +219,12 @@ export function DrawerContent(props: any) {
               icon="logout"
               label="Sign Out"
               destructive
-              onPress={async () => await signOut()}
+              onPress={() =>
+                Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
+                  { text: 'Cancel', style: 'cancel' },
+                  { text: 'Sign Out', style: 'destructive', onPress: async () => await signOut() },
+                ])
+              }
             />
           </View>
         </View>
