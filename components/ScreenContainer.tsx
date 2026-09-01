@@ -1,6 +1,6 @@
 import { Tavira } from '@/constants/theme';
 import { LinearGradient } from 'expo-linear-gradient';
-import React, { ReactNode, useMemo } from 'react';
+import React, { ReactNode, RefObject, useMemo } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useTheme } from 'react-native-paper';
 import { Edge, SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -11,6 +11,7 @@ interface ScreenContainerProps {
   removeSafeBottom?: boolean | null;
   topEdge?: boolean;
   glowColor?: 'teal' | 'purple';
+  scrollRef?: RefObject<ScrollView>;
 }
 
 export const ScreenContainer = ({
@@ -19,6 +20,7 @@ export const ScreenContainer = ({
   removeSafeBottom = false,
   topEdge = false,
   glowColor,
+  scrollRef,
 }: ScreenContainerProps) => {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
@@ -63,7 +65,7 @@ export const ScreenContainer = ({
         {glowStyle && <View style={glowStyle} />}
         <SafeAreaView edges={edges} style={styles.safeArea}>
           {scrollable ? (
-            <ScrollView style={dynamicStyles.container} showsVerticalScrollIndicator={false}>
+            <ScrollView ref={scrollRef} style={dynamicStyles.container} showsVerticalScrollIndicator={false}>
               {children}
             </ScrollView>
           ) : (

@@ -19,7 +19,7 @@ import { BudgetCategory, BudgetInvite, Spending } from "@/types/Types";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import { ScrollView, StyleSheet, TouchableOpacity, View, type ScrollView as ScrollViewType } from "react-native";
 import {
     Button,
     Card,
@@ -70,6 +70,7 @@ export default function ManageBudgetScreen() {
 
     const hasSeenScreen = useTourStore((s) => s.hasSeenScreen);
     const [tourVisible, setTourVisible] = useState(false);
+    const scrollRef = useRef<ScrollViewType>(null);
 
     useEffect(() => {
         if (!hasSeenScreen('ManageBudget')) {
@@ -81,6 +82,13 @@ export default function ManageBudgetScreen() {
     function onTourDismiss() {
         setTourVisible(false);
         useTourStore.getState().markScreenSeen('ManageBudget');
+    }
+
+    async function onTourBeforeStep(key: string) {
+        if (key === 'mb_period') {
+            scrollRef.current?.scrollToEnd({ animated: true });
+            await new Promise(r => setTimeout(r, 400));
+        }
     }
 
     const manageTourSteps: TourStep[] = [
@@ -577,7 +585,7 @@ export default function ManageBudgetScreen() {
 
     return (
         <>
-            <ScreenContainer scrollable={true}>
+            <ScreenContainer scrollable={true} scrollRef={scrollRef}>
 
                 {/* Header */}
                 <TourTarget id="mb_header">
@@ -773,7 +781,7 @@ export default function ManageBudgetScreen() {
             <BottomSheet ref={sheetRef} visible={sheetVisible} onClose={handleSheetClose}>
                 {renderSheetContent()}
             </BottomSheet>
-            <TourOverlay steps={manageTourSteps} visible={tourVisible} onDismiss={onTourDismiss} />
+            <TourOverlay steps={manageTourSteps} visible={tourVisible} onDismiss={onTourDismiss} onBeforeStep={onTourBeforeStep} />
         </>
     );
 }

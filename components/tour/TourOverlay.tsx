@@ -48,9 +48,9 @@ async function measureWithRetry(id: string, attempts = 5): Promise<Rect | null> 
   return null;
 }
 
-interface Props { steps: TourStep[]; visible: boolean; onDismiss: () => void }
+interface Props { steps: TourStep[]; visible: boolean; onDismiss: () => void; onBeforeStep?: (key: string) => Promise<void> }
 
-export function TourOverlay({ steps, visible, onDismiss }: Props) {
+export function TourOverlay({ steps, visible, onDismiss, onBeforeStep }: Props) {
   const { height: sh, width: sw } = useWindowDimensions();
 
   const [localVisible, setLocalVisible] = useState(false);
@@ -80,13 +80,18 @@ export function TourOverlay({ steps, visible, onDismiss }: Props) {
     setRect(null);
     cardFade.setValue(0);
     cardSlide.setValue(30);
-    measureWithRetry(step.key).then(r => {
+    const doMeasure = () => measureWithRetry(step.key).then(r => {
       setRect(r);
       Animated.parallel([
         Animated.timing(cardFade, { toValue: 1, duration: 220, useNativeDriver: true }),
         Animated.spring(cardSlide, { toValue: 0, useNativeDriver: true, tension: 120, friction: 10 }),
       ]).start();
     });
+    if (onBeforeStep) {
+      onBeforeStep(step.key).then(doMeasure);
+    } else {
+      doMeasure();
+    }
   }, [localVisible, index]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {

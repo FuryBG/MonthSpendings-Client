@@ -12,7 +12,7 @@ export interface GoogleUserDto {
   notificationToken: string
 }
 
-export const BASE_URL = process.env["EXPO_PUBLIC_API_URL"] ?? "https://api.taviraofficial.com";
+export const BASE_URL = process.env["EXPO_PUBLIC_API_URL"] ?? "https://f693-88-203-208-219.ngrok-free.app";
 console.log(`API ADDRESS: ${BASE_URL}`);
 
 const api = axios.create({
