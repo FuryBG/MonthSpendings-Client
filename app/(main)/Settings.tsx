@@ -1,24 +1,26 @@
 import { requestAccountDeletion, updateNotificationToken, updateSyncWalletTransactions } from '@/app/services/api';
 import { isDeviceLockAvailable } from '@/app/services/biometrics';
 import { ScreenContainer } from '@/components/ScreenContainer';
+import { ScreenIntroSheet } from '@/components/tour/ScreenIntroSheet';
 import { Tavira } from '@/constants/theme';
+import { useAmountVisibilityStore } from '@/stores/amountVisibilityStore';
 import { useAppLockStore } from '@/stores/appLockStore';
 import { useAuthStore } from '@/stores/authStore';
 import { useSnackbarStore } from '@/stores/snackbarStore';
+import { useTourStore } from '@/stores/tourStore';
 import { registerForPushNotificationsAsync } from '@/utils/registerForPushNotificationsAsync';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 import * as Notifications from 'expo-notifications';
-import { Stack } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import * as Updates from 'expo-updates';
 import { useEffect, useRef, useState } from 'react';
-import { Alert, AppState, AppStateStatus, Linking, Platform, Pressable, StyleSheet, View } from 'react-native';
-import { NativeModules } from 'react-native';
+import { Alert, AppState, AppStateStatus, Linking, NativeModules, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Icon, Switch, Text, useTheme } from 'react-native-paper';
 
 const WalletSync = NativeModules.WalletSync as
   | { isNotificationListenerEnabled: () => Promise<boolean> }
   | undefined;
-import { Icon, Switch, Text, useTheme } from 'react-native-paper';
 
 function SettingRow({
   icon,
@@ -118,12 +120,15 @@ function NotificationBanner({ canAskAgain, onPress }: { canAskAgain: boolean; on
 export default function SettingsScreen() {
   const theme = useTheme();
   const isDark = theme.dark;
+  const router = useRouter();
   const user = useAuthStore((s) => s.user);
   const refreshUser = useAuthStore((s) => s.refreshUser);
   const showError = useSnackbarStore((s) => s.showError);
   const showSuccess = useSnackbarStore((s) => s.showSuccess);
   const lockEnabled = useAppLockStore((s) => s.lockEnabled);
   const setLockEnabled = useAppLockStore((s) => s.setLockEnabled);
+  const amountsHidden = useAmountVisibilityStore((s) => s.hidden);
+  const toggleAmountsHidden = useAmountVisibilityStore((s) => s.toggleHidden);
 
   const [syncValue, setSyncValue] = useState(user!.syncWalletTransactions);
   const pendingEnable = useRef(false);
@@ -305,6 +310,38 @@ export default function SettingsScreen() {
             value={lockEnabled}
             onValueChange={handleLockToggle}
           />
+          <View style={[styles.rowDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)' }]} />
+          <SettingRow
+            icon="eye-off-outline"
+            label="Hide Amounts"
+            description="Mask all amounts across the app."
+            value={amountsHidden}
+            onValueChange={() => toggleAmountsHidden()}
+          />
+        </View>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={[styles.sectionLabel, { color: sectionLabelColor }]}>GENERAL</Text>
+        <View style={[styles.card, { backgroundColor: isDark ? Tavira.glassBg : theme.colors.surface, borderColor: isDark ? Tavira.glassBorder : 'transparent' }]}>
+          <Pressable
+            style={({ pressed }) => [styles.row, pressed && { opacity: 0.6 }]}
+            onPress={async () => {
+              await useTourStore.getState().resetTour();
+              router.back();
+            }}
+          >
+            <View style={[styles.iconWrap, { backgroundColor: isDark ? 'rgba(62,198,198,0.10)' : theme.colors.surfaceVariant }]}>
+              <Icon source="compass-outline" size={20} color={isDark ? Tavira.teal : theme.colors.primary} />
+            </View>
+            <View style={styles.labelWrap}>
+              <Text style={[styles.label, { color: isDark ? '#F2F4F8' : theme.colors.onBackground }]}>Show App Tour</Text>
+              <Text style={[styles.description, { color: isDark ? 'rgba(242,244,248,0.45)' : theme.colors.onSurfaceVariant }]}>
+                Replay the guided walkthrough
+              </Text>
+            </View>
+            <Icon source="chevron-right" size={18} color={isDark ? 'rgba(242,244,248,0.30)' : theme.colors.onSurfaceVariant} />
+          </Pressable>
         </View>
       </View>
 
@@ -333,6 +370,17 @@ export default function SettingsScreen() {
             : 'Embedded build'}
         </Text>
       </View>
+      <ScreenIntroSheet
+        screenKey="Settings"
+        icon="cog-outline"
+        title="App Settings"
+        bullets={[
+          { icon: 'fingerprint', text: 'Lock App requires biometrics or your device PIN when reopening Tavira' },
+          { icon: 'bell-sync-outline', text: 'Wallet Sync (Pro) reads payment notifications to log transactions automatically' },
+          { icon: 'eye-outline', text: 'Amount visibility can also be toggled from the home screen header' },
+          { icon: 'compass-outline', text: 'Tap "Show App Tour" above to replay this walkthrough any time' },
+        ]}
+      />
     </ScreenContainer>
   );
 }
@@ -374,6 +422,10 @@ const styles = StyleSheet.create({
   },
   rowDisabled: {
     opacity: 0.5,
+  },
+  rowDivider: {
+    height: 1,
+    marginHorizontal: 16,
   },
   iconWrap: {
     width: 38,

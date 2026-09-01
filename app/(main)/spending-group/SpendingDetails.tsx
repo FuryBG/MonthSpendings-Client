@@ -1,11 +1,14 @@
 import { BottomSheet, BottomSheetRef, sheetStyles } from '@/components/BottomSheet';
 import { MaskedAmount } from '@/components/MaskedAmount';
 import { ScreenContainer } from '@/components/ScreenContainer';
+import { TourOverlay, TourStep } from '@/components/tour/TourOverlay';
+import { TourTarget } from '@/components/tour/TourTarget';
 import { Tavira } from '@/constants/theme';
 import { useAddSpendingMutation, useBudgetsQuery, useDeleteSpendingMutation, useHistoricalSpendingsQuery } from '@/hooks/useBudgetQueries';
 import { useBudgetUIStore } from '@/stores/budgetUIStore';
 import { useSnackbarStore } from '@/stores/snackbarStore';
 import { useTitleStore } from '@/stores/titleStore';
+import { useTourStore } from '@/stores/tourStore';
 import { BudgetPeriod, Spending } from '@/types/Types';
 import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
@@ -208,6 +211,22 @@ export default function SpendingDetailsScreen() {
   const [sheetVisible,       setSheetVisible]       = useState(false);
   const [negativeInput,      setNegativeInput]      = useState(false);
   const [deleteSheetVisible, setDeleteSheetVisible] = useState(false);
+
+  const hasSeenScreen = useTourStore((s) => s.hasSeenScreen);
+  const [tourVisible, setTourVisible] = useState(false);
+
+  useEffect(() => {
+    if (!hasSeenScreen('SpendingDetails')) {
+      const t = setTimeout(() => setTourVisible(true), 700);
+      return () => clearTimeout(t);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function onSpendingTourDismiss() {
+    setTourVisible(false);
+    useTourStore.getState().markScreenSeen('SpendingDetails');
+  }
+
   const { control, handleSubmit, reset } = useForm<Spending>({
     defaultValues: { id: 0, amount: undefined as any, budgetCategoryId: 0, description: '' },
   });
@@ -258,6 +277,15 @@ export default function SpendingDetailsScreen() {
 
   const hasItems = displayedSpendings.length > 0;
   const symbol   = selectedMainBudget?.currency.symbol ?? '';
+
+  const spendingTourSteps = useMemo<TourStep[]>(() => {
+    const steps: TourStep[] = [
+      { key: 'sd_periods', icon: 'calendar-range', title: 'Browse Periods', description: 'Tap a period chip to switch between months and review your full spending history.' },
+    ];
+    if (hasItems) steps.push({ key: 'sd_summary', icon: 'chart-line', title: 'Period Summary', description: 'Shows net balance, total income added, and total spent for the selected period.' });
+    if (isCurrentPeriod) steps.push({ key: 'sd_actions', icon: 'plus-minus', title: 'Record Transactions', description: 'Tap Spend to deduct from this category, or Add Funds to top it up. Swipe left on any transaction to delete it.' });
+    return steps;
+  }, [hasItems, isCurrentPeriod]);
 
   const remaining = useMemo(() =>
     (selectedCategory?.spendings ?? []).reduce(
@@ -316,23 +344,25 @@ export default function SpendingDetailsScreen() {
   return (
     <>
       <ScreenContainer scrollable={true}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={s.periodPicker}
-        >
-          {(selectedMainBudget?.budgetPeriods ?? []).map(period => (
-            <Chip
-              key={period.id}
-              selected={period.id === selectedPeriodId}
-              onPress={() => setSelectedPeriodId(period.id)}
-              mode="outlined"
-              style={s.periodChip}
-            >
-              {formatPeriodLabel(period)}
-            </Chip>
-          ))}
-        </ScrollView>
+        <TourTarget id="sd_periods">
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={s.periodPicker}
+          >
+            {(selectedMainBudget?.budgetPeriods ?? []).map(period => (
+              <Chip
+                key={period.id}
+                selected={period.id === selectedPeriodId}
+                onPress={() => setSelectedPeriodId(period.id)}
+                mode="outlined"
+                style={s.periodChip}
+              >
+                {formatPeriodLabel(period)}
+              </Chip>
+            ))}
+          </ScrollView>
+        </TourTarget>
 
         {isPeriodLoading ? (
           <View style={s.loaderContainer}>
@@ -340,9 +370,9 @@ export default function SpendingDetailsScreen() {
           </View>
         ) : (
           <>
-            {hasItems && <SummaryHeaderCard spendings={displayedSpendings} symbol={symbol} />}
+            {hasItems && <TourTarget id="sd_summary"><SummaryHeaderCard spendings={displayedSpendings} symbol={symbol} /></TourTarget>}
             {!hasItems && <EmptyState />}
-            {isCurrentPeriod && <ActionRow remaining={remaining} onMinus={() => openSheet(true)} onPlus={() => openSheet(false)} />}
+            {isCurrentPeriod && <TourTarget id="sd_actions"><ActionRow remaining={remaining} onMinus={() => openSheet(true)} onPlus={() => openSheet(false)} /></TourTarget>}
           </>
         )}
 
@@ -500,6 +530,7 @@ export default function SpendingDetailsScreen() {
           </Button>
         </View>
       </BottomSheet>
+      <TourOverlay steps={spendingTourSteps} visible={tourVisible} onDismiss={onSpendingTourDismiss} />
     </>
   );
 }

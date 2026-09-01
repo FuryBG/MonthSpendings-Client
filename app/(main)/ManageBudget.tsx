@@ -1,5 +1,7 @@
 import { BottomSheet, BottomSheetRef, sheetStyles } from "@/components/BottomSheet";
 import { ScreenContainer } from "@/components/ScreenContainer";
+import { TourOverlay, TourStep } from "@/components/tour/TourOverlay";
+import { TourTarget } from "@/components/tour/TourTarget";
 import { Tavira } from "@/constants/theme";
 import {
     useAddBudgetCategoryMutation,
@@ -12,6 +14,7 @@ import {
 import { useAuthStore } from "@/stores/authStore";
 import { useSnackbarStore } from "@/stores/snackbarStore";
 import { useTitleStore } from "@/stores/titleStore";
+import { useTourStore } from "@/stores/tourStore";
 import { BudgetCategory, BudgetInvite, Spending } from "@/types/Types";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
@@ -64,6 +67,28 @@ export default function ManageBudgetScreen() {
     const [renameCategoryTarget, setRenameCategoryTarget] = useState<BudgetCategory | null>(null);
     const [carryMode, setCarryMode] = useState<'none' | 'sumIntoOne' | 'keepSame'>('none');
     const [carryCategoryId, setCarryCategoryId] = useState<number | null>(null);
+
+    const hasSeenScreen = useTourStore((s) => s.hasSeenScreen);
+    const [tourVisible, setTourVisible] = useState(false);
+
+    useEffect(() => {
+        if (!hasSeenScreen('ManageBudget')) {
+            const t = setTimeout(() => setTourVisible(true), 600);
+            return () => clearTimeout(t);
+        }
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+    function onTourDismiss() {
+        setTourVisible(false);
+        useTourStore.getState().markScreenSeen('ManageBudget');
+    }
+
+    const manageTourSteps: TourStep[] = [
+        { key: 'mb_header', icon: 'account-cash', title: 'Budget Overview', description: 'Shows the budget name and currency. Each budget is a separate spending envelope you can share with others.' },
+        { key: 'mb_members', icon: 'account-plus', title: 'Members & Invites', description: 'Tap Invite Member to share this budget by email. Shared members can add and view spending in real time.' },
+        { key: 'mb_categories', icon: 'cash-fast', title: 'Categories', description: 'Add, rename, or remove spending categories. Each category tracks its own balance independently.' },
+        { key: 'mb_period', icon: 'calendar-check', title: 'Finish Period', description: 'Close the current month and choose how to handle remaining balances — start fresh, carry into one category, or keep each.' },
+    ];
 
     useEffect(() => {
         if (activeSheet !== 'renameCategory') return;
@@ -555,19 +580,21 @@ export default function ManageBudgetScreen() {
             <ScreenContainer scrollable={true}>
 
                 {/* Header */}
-                <Card mode="outlined" style={styles.headerCard}>
-                    <Card.Content style={styles.headerContent}>
-                        <View style={styles.headerLeft}>
-                            <Icon source="account-cash" size={28} color={theme.colors.primary} />
-                            <Text style={styles.budgetName}>{selectedMainBudget?.name}</Text>
-                        </View>
-                        <View style={[styles.currencyBadge, { backgroundColor: theme.colors.primary }]}>
-                            <Text style={[styles.currencyText, { color: theme.colors.onPrimary }]}>
-                                {selectedMainBudget?.currency.symbol}
-                            </Text>
-                        </View>
-                    </Card.Content>
-                </Card>
+                <TourTarget id="mb_header">
+                    <Card mode="outlined" style={styles.headerCard}>
+                        <Card.Content style={styles.headerContent}>
+                            <View style={styles.headerLeft}>
+                                <Icon source="account-cash" size={28} color={theme.colors.primary} />
+                                <Text style={styles.budgetName}>{selectedMainBudget?.name}</Text>
+                            </View>
+                            <View style={[styles.currencyBadge, { backgroundColor: theme.colors.primary }]}>
+                                <Text style={[styles.currencyText, { color: theme.colors.onPrimary }]}>
+                                    {selectedMainBudget?.currency.symbol}
+                                </Text>
+                            </View>
+                        </Card.Content>
+                    </Card>
+                </TourTarget>
 
                 {/* Pending Invitations */}
                 {(user?.receivedBudgetInvites.filter(i => i.accepted === null).length ?? 0) > 0 && (
@@ -616,106 +643,112 @@ export default function ManageBudgetScreen() {
                 )}
 
                 {/* Members */}
-                <Card mode="outlined" style={styles.sectionCard}>
-                    <Card.Content>
-                        <Text style={styles.sectionTitle}>Members</Text>
-                        <Divider style={styles.divider} />
-                        {selectedMainBudget?.users?.map(member => (
-                            <View key={member.id} style={styles.memberRow}>
-                                <Icon source="account-circle" size={24} color={theme.colors.onSurfaceVariant} />
-                                <View style={styles.memberInfo}>
-                                    <Text style={styles.memberEmail} numberOfLines={1}>{member.email}</Text>
-                                    {(member.firstName || member.lastName) && (
-                                        <Text style={styles.memberName}>
-                                            {`${member.firstName} ${member.lastName}`.trim()}
-                                        </Text>
+                <TourTarget id="mb_members">
+                    <Card mode="outlined" style={styles.sectionCard}>
+                        <Card.Content>
+                            <Text style={styles.sectionTitle}>Members</Text>
+                            <Divider style={styles.divider} />
+                            {selectedMainBudget?.users?.map(member => (
+                                <View key={member.id} style={styles.memberRow}>
+                                    <Icon source="account-circle" size={24} color={theme.colors.onSurfaceVariant} />
+                                    <View style={styles.memberInfo}>
+                                        <Text style={styles.memberEmail} numberOfLines={1}>{member.email}</Text>
+                                        {(member.firstName || member.lastName) && (
+                                            <Text style={styles.memberName}>
+                                                {`${member.firstName} ${member.lastName}`.trim()}
+                                            </Text>
+                                        )}
+                                    </View>
+                                    {member.id === user?.id && (
+                                        <View style={[styles.youBadge, { backgroundColor: theme.colors.primaryContainer }]}>
+                                            <Text style={[styles.youBadgeText, { color: theme.colors.onPrimaryContainer }]}>You</Text>
+                                        </View>
                                     )}
                                 </View>
-                                {member.id === user?.id && (
-                                    <View style={[styles.youBadge, { backgroundColor: theme.colors.primaryContainer }]}>
-                                        <Text style={[styles.youBadgeText, { color: theme.colors.onPrimaryContainer }]}>You</Text>
-                                    </View>
-                                )}
-                            </View>
-                        ))}
-                        {(() => {
-                            return (
-                                <>
-                                    <Divider style={styles.divider} />
-                                    <TouchableOpacity style={styles.actionRow} onPress={() => openSheet('invite')}>
-                                        <Icon source="account-plus" size={20} color={theme.colors.primary} />
-                                        <Text style={[styles.actionRowText, { color: theme.colors.primary }]}>
-                                            Invite Member
-                                        </Text>
-                                    </TouchableOpacity>
-                                </>
-                            );
-                        })()}
-                    </Card.Content>
-                </Card>
+                            ))}
+                            {(() => {
+                                return (
+                                    <>
+                                        <Divider style={styles.divider} />
+                                        <TouchableOpacity style={styles.actionRow} onPress={() => openSheet('invite')}>
+                                            <Icon source="account-plus" size={20} color={theme.colors.primary} />
+                                            <Text style={[styles.actionRowText, { color: theme.colors.primary }]}>
+                                                Invite Member
+                                            </Text>
+                                        </TouchableOpacity>
+                                    </>
+                                );
+                            })()}
+                        </Card.Content>
+                    </Card>
+                </TourTarget>
 
                 {/* Categories */}
-                <Card mode="outlined" style={styles.sectionCard}>
-                    <Card.Content>
-                        <Text style={styles.sectionTitle}>Categories</Text>
-                        <Divider style={styles.divider} />
-                        {selectedMainBudget?.budgetCategories?.map(bc => (
-                            <List.Item
-                                key={bc.id}
-                                title={bc.name}
-                                left={props => <List.Icon {...props} icon="cash-fast" />}
-                                right={() => (
-                                    <View style={styles.categoryItemActions}>
-                                        <IconButton
-                                            icon="pencil-outline"
-                                            size={18}
-                                            onPress={() => openSheet('renameCategory', bc)}
-                                        />
-                                        <IconButton
-                                            icon="trash-can-outline"
-                                            size={18}
-                                            iconColor={COLOR_EXPENSE}
-                                            onPress={() => openSheet('deleteCategory', bc)}
-                                        />
-                                    </View>
-                                )}
-                            />
-                        ))}
-                        <Divider style={styles.divider} />
-                        <Button
-                            mode="outlined"
-                            icon="plus"
-                            onPress={() => openSheet('addCategory')}
-                            style={styles.addCategoryButton}
-                        >
-                            Add Category
-                        </Button>
-                    </Card.Content>
-                </Card>
+                <TourTarget id="mb_categories">
+                    <Card mode="outlined" style={styles.sectionCard}>
+                        <Card.Content>
+                            <Text style={styles.sectionTitle}>Categories</Text>
+                            <Divider style={styles.divider} />
+                            {selectedMainBudget?.budgetCategories?.map(bc => (
+                                <List.Item
+                                    key={bc.id}
+                                    title={bc.name}
+                                    left={props => <List.Icon {...props} icon="cash-fast" />}
+                                    right={() => (
+                                        <View style={styles.categoryItemActions}>
+                                            <IconButton
+                                                icon="pencil-outline"
+                                                size={18}
+                                                onPress={() => openSheet('renameCategory', bc)}
+                                            />
+                                            <IconButton
+                                                icon="trash-can-outline"
+                                                size={18}
+                                                iconColor={COLOR_EXPENSE}
+                                                onPress={() => openSheet('deleteCategory', bc)}
+                                            />
+                                        </View>
+                                    )}
+                                />
+                            ))}
+                            <Divider style={styles.divider} />
+                            <Button
+                                mode="outlined"
+                                icon="plus"
+                                onPress={() => openSheet('addCategory')}
+                                style={styles.addCategoryButton}
+                            >
+                                Add Category
+                            </Button>
+                        </Card.Content>
+                    </Card>
+                </TourTarget>
 
                 {/* Period */}
-                <Card mode="outlined" style={[styles.sectionCard, styles.periodCard]}>
-                    <Card.Content>
-                        <View style={styles.sectionTitleRow}>
-                            <Icon source="calendar-month" size={18} color={COLOR_AMBER} />
-                            <Text style={[styles.sectionTitle, { color: COLOR_AMBER, marginBottom: 0, marginLeft: 6 }]}>
-                                Budget Period
+                <TourTarget id="mb_period">
+                    <Card mode="outlined" style={[styles.sectionCard, styles.periodCard]}>
+                        <Card.Content>
+                            <View style={styles.sectionTitleRow}>
+                                <Icon source="calendar-month" size={18} color={COLOR_AMBER} />
+                                <Text style={[styles.sectionTitle, { color: COLOR_AMBER, marginBottom: 0, marginLeft: 6 }]}>
+                                    Budget Period
+                                </Text>
+                            </View>
+                            <Text style={styles.sectionDescription}>
+                                Closes the current period. Choose whether to start the next period fresh or carry remaining balances into a single category.
                             </Text>
-                        </View>
-                        <Text style={styles.sectionDescription}>
-                            Closes the current period. Choose whether to start the next period fresh or carry remaining balances into a single category.
-                        </Text>
-                        <Button
-                            mode="contained"
-                            buttonColor={COLOR_AMBER}
-                            textColor={Tavira.navy}
-                            style={styles.periodButton}
-                            onPress={() => openSheet('finishPeriod')}
-                        >
-                            Finish Period
-                        </Button>
-                    </Card.Content>
-                </Card>
+                            <Button
+                                mode="contained"
+                                buttonColor={COLOR_AMBER}
+                                textColor={Tavira.navy}
+                                style={styles.periodButton}
+                                onPress={() => openSheet('finishPeriod')}
+                            >
+                                Finish Period
+                            </Button>
+                        </Card.Content>
+                    </Card>
+                </TourTarget>
 
                 {/* Delete Budget */}
                 <View style={styles.deleteSection}>
@@ -740,6 +773,7 @@ export default function ManageBudgetScreen() {
             <BottomSheet ref={sheetRef} visible={sheetVisible} onClose={handleSheetClose}>
                 {renderSheetContent()}
             </BottomSheet>
+            <TourOverlay steps={manageTourSteps} visible={tourVisible} onDismiss={onTourDismiss} />
         </>
     );
 }

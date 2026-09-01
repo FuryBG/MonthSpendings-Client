@@ -1,6 +1,7 @@
 import { BottomSheet, BottomSheetRef, sheetStyles } from '@/components/BottomSheet';
 import { OverlayLoader } from '@/components/OverlayLoader';
 import { ProGate } from '@/components/ProGate';
+import { ScreenIntroSheet } from '@/components/tour/ScreenIntroSheet';
 import { Tavira } from '@/constants/theme';
 import { useCreateBudgetMutation } from '@/hooks/useBudgetQueries';
 import { useBudgetsQuery } from '@/hooks/useBudgetQueries';
@@ -343,6 +344,17 @@ export default function CreateBudgetScreen() {
                     })}
                 </ScrollView>
             </BottomSheet>
+            <ScreenIntroSheet
+                screenKey="CreateBudget"
+                icon="wallet-plus-outline"
+                title="Creating a Budget"
+                bullets={[
+                    { icon: 'label-outline', text: 'Give your budget a descriptive name' },
+                    { icon: 'currency-usd', text: 'All amounts in this budget will use the selected currency' },
+                    { icon: 'cash-fast', text: 'Add categories and set a starting balance for each spending envelope' },
+                    { icon: 'account-plus', text: 'After creating, invite collaborators from Budget Settings' },
+                ]}
+            />
         </LinearGradient>
     );
 }

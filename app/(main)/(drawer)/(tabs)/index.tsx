@@ -1,17 +1,20 @@
 import { BottomSheet, BottomSheetRef, sheetStyles } from '@/components/BottomSheet';
 import { MaskedAmount } from '@/components/MaskedAmount';
 import { ScreenContainer } from '@/components/ScreenContainer';
+import { TourOverlay, TourStep } from '@/components/tour/TourOverlay';
+import { TourTarget } from '@/components/tour/TourTarget';
 import { Tavira } from '@/constants/theme';
-import { usePendingNotificationTransactionsQuery } from '@/hooks/useNotificationTransactionQueries';
 import { useAddSpendingMutation, useBudgetsQuery, useUpdateBudgetCategoryNameMutation } from '@/hooks/useBudgetQueries';
+import { usePendingNotificationTransactionsQuery } from '@/hooks/useNotificationTransactionQueries';
 import { useAuthStore } from '@/stores/authStore';
 import { useBudgetUIStore } from '@/stores/budgetUIStore';
 import { applyOrder, useOrderStore } from '@/stores/orderStore';
 import { useSnackbarStore } from '@/stores/snackbarStore';
+import { useTourStore } from '@/stores/tourStore';
 import { BudgetCategory, Spending } from '@/types/Types';
 import * as Haptics from 'expo-haptics';
-import { useRouter } from 'expo-router';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
@@ -30,9 +33,10 @@ interface CategoryCardProps {
   onRenamePress: () => void;
   onMinus: () => void;
   onPlus: () => void;
+  highlightActions?: boolean;
 }
 
-function CategoryCard({ bc, currencySymbol, isDark, primaryColor, getSwipeableRef, onPress, onRenamePress, onMinus, onPlus }: CategoryCardProps) {
+function CategoryCard({ bc, currencySymbol, isDark, primaryColor, getSwipeableRef, onPress, onRenamePress, onMinus, onPlus, highlightActions }: CategoryCardProps) {
   const drag = useReorderableDrag();
   const remaining = Math.round(bc.spendings!.reduce((sum, s) => (s.amount > 0 ? sum + s.amount : sum - Math.abs(s.amount)), 0) * 100) / 100 || 0;
   const accentColor = ACCENT_COLORS[bc.id % ACCENT_COLORS.length];
@@ -73,26 +77,86 @@ function CategoryCard({ bc, currencySymbol, isDark, primaryColor, getSwipeableRe
               value={`${remaining.toFixed(2)} ${currencySymbol}`}
             />
           </View>
-          <View style={styles.cardActions}>
-            <TouchableOpacity
-              style={[styles.actionBtn, { backgroundColor: minusDisabled ? 'rgba(255,107,107,0.06)' : 'rgba(255,107,107,0.12)' }]}
-              disabled={minusDisabled}
-              onPress={onMinus}
-            >
-              <Icon source="minus" size={16} color={minusDisabled ? 'rgba(255,107,107,0.3)' : Tavira.expense} />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.actionBtn, { backgroundColor: 'rgba(62,198,198,0.12)' }]}
-              onPress={onPlus}
-            >
-              <Icon source="plus" size={16} color={Tavira.income} />
-            </TouchableOpacity>
-          </View>
+          {highlightActions ? (
+            <TourTarget id="cardActions">
+              <View style={styles.cardActions}>
+                <TouchableOpacity
+                  style={[styles.actionBtn, { backgroundColor: minusDisabled ? 'rgba(255,107,107,0.06)' : 'rgba(255,107,107,0.12)' }]}
+                  disabled={minusDisabled}
+                  onPress={onMinus}
+                >
+                  <Icon source="minus" size={16} color={minusDisabled ? 'rgba(255,107,107,0.3)' : Tavira.expense} />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.actionBtn, { backgroundColor: 'rgba(62,198,198,0.12)' }]}
+                  onPress={onPlus}
+                >
+                  <Icon source="plus" size={16} color={Tavira.income} />
+                </TouchableOpacity>
+              </View>
+            </TourTarget>
+          ) : (
+            <View style={styles.cardActions}>
+              <TouchableOpacity
+                style={[styles.actionBtn, { backgroundColor: minusDisabled ? 'rgba(255,107,107,0.06)' : 'rgba(255,107,107,0.12)' }]}
+                disabled={minusDisabled}
+                onPress={onMinus}
+              >
+                <Icon source="minus" size={16} color={minusDisabled ? 'rgba(255,107,107,0.3)' : Tavira.expense} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.actionBtn, { backgroundColor: 'rgba(62,198,198,0.12)' }]}
+                onPress={onPlus}
+              >
+                <Icon source="plus" size={16} color={Tavira.income} />
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
       </TouchableOpacity>
     </Swipeable>
   );
 }
+
+const HOME_STEPS_BASE: TourStep[] = [
+  {
+    key: 'budgetHeader',
+    icon: 'wallet-outline',
+    title: 'Your Active Budget',
+    description: 'Shows your selected budget name and currency. Tap the budget pill in the top bar to switch budgets or create a new one.',
+  },
+  {
+    key: 'categoryCard',
+    icon: 'cash-fast',
+    title: 'Spending Categories',
+    description: 'Each card is a spending envelope. The balance shows what remains this period. Long-press any card to reorder or swipe left to edit name.',
+  },
+  {
+    key: 'cardActions',
+    icon: 'plus-minus',
+    title: 'Add or Spend',
+    description: 'Tap + to top up a category, or − to record a spend. Tap the card itself to see the full transaction history.',
+  },
+  {
+    key: 'eyeToggle',
+    icon: 'eye-outline',
+    title: 'Hide Amounts',
+    description: 'Tap the eye icon in the header to mask all balances — handy when your screen is visible to others.',
+  },
+  {
+    key: 'menuButton',
+    icon: 'menu',
+    title: 'Navigation Menu',
+    description: 'Open the menu to access Settings, view Invitations, and manage or create budgets.',
+  },
+];
+
+const PENDING_STEP: TourStep = {
+  key: 'pendingBanner',
+  icon: 'bank-transfer',
+  title: 'Pending Transactions',
+  description: 'When Wallet Sync is enabled, bank payment notifications appear here for you to categorize into your budget.',
+};
 
 export default function HomeScreen() {
   const { data: budgets = [] } = useBudgetsQuery();
@@ -100,6 +164,8 @@ export default function HomeScreen() {
   const { selectedMainBudgetId } = useBudgetUIStore();
   const user = useAuthStore((s) => s.user);
   const { categoryOrders, setCategoryOrder } = useOrderStore();
+  const isActive = useTourStore((s) => s.isActive);
+  const { endTour } = useTourStore.getState();
   const skipGlobal = { skipGlobalError: true };
   const addSpendingMutation = useAddSpendingMutation(skipGlobal);
   const updateCategoryNameMutation = useUpdateBudgetCategoryNameMutation(skipGlobal);
@@ -200,6 +266,25 @@ export default function HomeScreen() {
     return () => clearTimeout(t);
   }, [sheetVisible]);
 
+  // Start tour the first time a budget exists and the tour hasn't been seen
+  // useFocusEffect so it re-checks when returning from Settings after "Show App Tour"
+  useFocusEffect(useCallback(() => {
+    if (budgets.length === 0) return;
+    const { hasSeenTour, startTour } = useTourStore.getState();
+    if (!hasSeenTour) {
+      const t = setTimeout(() => startTour(), 700);
+      return () => clearTimeout(t);
+    }
+  }, [budgets.length])); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const tourSteps = useMemo<TourStep[]>(() => {
+    const steps = [...HOME_STEPS_BASE];
+    if (transactions.length > 0) {
+      steps.splice(3, 0, PENDING_STEP);
+    }
+    return steps;
+  }, [transactions.length]);
+
   function handleReorder({ from, to }: { from: number; to: number }) {
     const newData = reorderItems(listData, from, to);
     setListData(newData);
@@ -207,22 +292,29 @@ export default function HomeScreen() {
     setCategoryOrder(user.id, selectedMainBudget.id, newData.map(c => c.id));
   }
 
-  const renderItem = ({ item: bc }: { item: BudgetCategory }) => (
-    <CategoryCard
-      bc={bc}
-      currencySymbol={selectedMainBudget?.currency.symbol ?? ''}
-      isDark={isDark}
-      primaryColor={theme.colors.primary}
-      getSwipeableRef={(r) => swipeableRefs.current.set(bc.id, r)}
-      onPress={() => onSpendingDetails(bc)}
-      onRenamePress={() => { swipeableRefs.current.get(bc.id)?.close(); openRenameSheet(bc); }}
-      onMinus={() => openSheet(bc, true)}
-      onPlus={() => openSheet(bc, false)}
-    />
-  );
+  const renderItem = ({ item: bc, index: itemIndex }: { item: BudgetCategory; index: number }) => {
+    const card = (
+      <CategoryCard
+        bc={bc}
+        currencySymbol={selectedMainBudget?.currency.symbol ?? ''}
+        isDark={isDark}
+        primaryColor={theme.colors.primary}
+        getSwipeableRef={(r) => swipeableRefs.current.set(bc.id, r)}
+        onPress={() => onSpendingDetails(bc)}
+        onRenamePress={() => { swipeableRefs.current.get(bc.id)?.close(); openRenameSheet(bc); }}
+        onMinus={() => openSheet(bc, true)}
+        onPlus={() => openSheet(bc, false)}
+        highlightActions={itemIndex === 0}
+      />
+    );
+    return itemIndex === 0 ? (
+      <TourTarget id="categoryCard">{card}</TourTarget>
+    ) : card;
+  };
 
   return (
     <>
+      <TourOverlay steps={tourSteps} visible={isActive} onDismiss={endTour} />
       <ScreenContainer glowColor="teal" removeSafeBottom={true}>
         {(selectedMainBudgetId == null || budgets.length === 0) ? (
           <View style={styles.emptyContainer}>
@@ -244,27 +336,31 @@ export default function HomeScreen() {
         ) : (
           <>
             {transactions.length > 0 && (
-              <TouchableOpacity onPress={onPendingTransactions} style={styles.pendingBanner}>
-                <View style={styles.pendingLeft}>
-                  <View style={styles.pendingIconWrap}>
-                    <Icon source="bank-transfer" size={18} color={Tavira.warning} />
+              <TourTarget id="pendingBanner">
+                <TouchableOpacity onPress={onPendingTransactions} style={styles.pendingBanner}>
+                  <View style={styles.pendingLeft}>
+                    <View style={styles.pendingIconWrap}>
+                      <Icon source="bank-transfer" size={18} color={Tavira.warning} />
+                    </View>
+                    <Text style={styles.pendingText}>Pending Bank Transactions</Text>
                   </View>
-                  <Text style={styles.pendingText}>Pending Bank Transactions</Text>
-                </View>
-                <View style={styles.pendingBadge}>
-                  <Text style={styles.pendingBadgeText}>{transactions.length}</Text>
-                </View>
-              </TouchableOpacity>
+                  <View style={styles.pendingBadge}>
+                    <Text style={styles.pendingBadgeText}>{transactions.length}</Text>
+                  </View>
+                </TouchableOpacity>
+              </TourTarget>
             )}
 
-            <View style={styles.budgetHeader}>
-              <Text style={[styles.budgetName, { color: isDark ? 'rgba(242,244,248,0.45)' : theme.colors.onSurfaceVariant }]}>
-                {selectedMainBudget?.name.toUpperCase()}
-              </Text>
-              <View style={styles.currencyPill}>
-                <Text style={styles.currencyText}>{selectedMainBudget?.currency.symbol} {selectedMainBudget?.currency.code}</Text>
+            <TourTarget id="budgetHeader">
+              <View style={styles.budgetHeader}>
+                <Text style={[styles.budgetName, { color: isDark ? 'rgba(242,244,248,0.45)' : theme.colors.onSurfaceVariant }]}>
+                  {selectedMainBudget?.name.toUpperCase()}
+                </Text>
+                <View style={styles.currencyPill}>
+                  <Text style={styles.currencyText}>{selectedMainBudget?.currency.symbol} {selectedMainBudget?.currency.code}</Text>
+                </View>
               </View>
-            </View>
+            </TourTarget>
 
             <View style={styles.categoriesList}>
               <ReorderableList

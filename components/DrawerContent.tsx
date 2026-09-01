@@ -93,6 +93,11 @@ export function DrawerContent(props: any) {
   const signOut = useAuthStore((s) => s.signOut);
   const { data: budgets = [] } = useBudgetsQuery();
 
+  const closeAndPush = (path: string) => {
+    props.navigation.closeDrawer();
+    router.push(path as any);
+  };
+
   if (!user) return null;
 
   const initials = [user.firstName, user.lastName]
@@ -116,45 +121,45 @@ export function DrawerContent(props: any) {
         <View>
           {/* Avatar + profile */}
           <View style={styles.profileSection}>
-            <View style={styles.avatarContainer}>
-              <View style={styles.avatarRingOuter} />
-              <LinearGradient
-                colors={Tavira.gradTeal}
-                style={styles.avatarRing}
-              >
-                <View style={[styles.avatar, { backgroundColor: isDark ? '#0F2244' : theme.colors.surfaceVariant }]}>
-                  <Text style={[styles.initials, { color: isDark ? Tavira.teal : theme.colors.primary }]}>
-                    {initials}
-                  </Text>
-                </View>
-              </LinearGradient>
+              <View style={styles.avatarContainer}>
+                <View style={styles.avatarRingOuter} />
+                <LinearGradient
+                  colors={Tavira.gradTeal}
+                  style={styles.avatarRing}
+                >
+                  <View style={[styles.avatar, { backgroundColor: isDark ? '#0F2244' : theme.colors.surfaceVariant }]}>
+                    <Text style={[styles.initials, { color: isDark ? Tavira.teal : theme.colors.primary }]}>
+                      {initials}
+                    </Text>
+                  </View>
+                </LinearGradient>
+              </View>
+              <View style={styles.profileInfo}>
+                {fullName ? (
+                  <View style={styles.nameRow}>
+                    <Text style={[styles.profileName, { color: isDark ? '#F2F4F8' : theme.colors.onBackground, flexShrink: 1 }]} numberOfLines={1}>
+                      {fullName}
+                    </Text>
+                    {user.isPro && (
+                      <LinearGradient
+                        colors={[Tavira.teal, Tavira.purple]}
+                        style={styles.proBadge}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                      >
+                        <Text style={styles.proText}>PRO</Text>
+                      </LinearGradient>
+                    )}
+                  </View>
+                ) : null}
+                <Text
+                  style={[styles.profileEmail, { color: isDark ? 'rgba(242,244,248,0.45)' : theme.colors.onSurfaceVariant }]}
+                  numberOfLines={1}
+                >
+                  {user.email}
+                </Text>
+              </View>
             </View>
-            <View style={styles.profileInfo}>
-              {fullName ? (
-                <View style={styles.nameRow}>
-                  <Text style={[styles.profileName, { color: isDark ? '#F2F4F8' : theme.colors.onBackground, flexShrink: 1 }]} numberOfLines={1}>
-                    {fullName}
-                  </Text>
-                  {user.isPro && (
-                    <LinearGradient
-                      colors={[Tavira.teal, Tavira.purple]}
-                      style={styles.proBadge}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 0 }}
-                    >
-                      <Text style={styles.proText}>PRO</Text>
-                    </LinearGradient>
-                  )}
-                </View>
-              ) : null}
-              <Text
-                style={[styles.profileEmail, { color: isDark ? 'rgba(242,244,248,0.45)' : theme.colors.onSurfaceVariant }]}
-                numberOfLines={1}
-              >
-                {user.email}
-              </Text>
-            </View>
-          </View>
 
           <Divider />
 
@@ -162,11 +167,11 @@ export function DrawerContent(props: any) {
           <View style={styles.section}>
             <SectionLabel label="BUDGETS" />
             <NavItem
-              icon="wallet-plus-outline"
-              label="Create Budget"
-              accent={Tavira.teal}
-              onPress={() => router.push('/(main)/CreateBudget')}
-            />
+                icon="wallet-plus-outline"
+                label="Create Budget"
+                accent={Tavira.teal}
+                onPress={() => closeAndPush('/(main)/CreateBudget')}
+              />
           </View>
 
           <Divider />
@@ -175,12 +180,12 @@ export function DrawerContent(props: any) {
           <View style={styles.section}>
             <SectionLabel label="ACCOUNT" />
             <NavItem
-              icon="email-outline"
-              label="Invitations"
-              badge={pendingInvites > 0 ? pendingInvites : undefined}
-              accent={Tavira.purple}
-              onPress={() => router.push('/(main)/Invites')}
-            />
+                icon="email-outline"
+                label="Invitations"
+                badge={pendingInvites > 0 ? pendingInvites : undefined}
+                accent={Tavira.purple}
+                onPress={() => closeAndPush('/(main)/Invites')}
+              />
             <NavItem
               icon="credit-card-outline"
               label="Manage Subscription"
@@ -200,7 +205,7 @@ export function DrawerContent(props: any) {
               icon="cog-outline"
               label="Settings"
               accent={Tavira.purple}
-              onPress={() => router.push('/(main)/Settings')}
+              onPress={() => closeAndPush('/(main)/Settings')}
             />
             <NavItem
               icon="shield-lock-outline"

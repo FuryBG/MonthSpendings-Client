@@ -1,11 +1,13 @@
 import { DrawerContent } from '@/components/DrawerContent';
 import { HeaderMenu } from '@/components/HeaderMenu';
+import { TourTarget } from '@/components/tour/TourTarget';
 import { Tavira } from '@/constants/theme';
 import { useBudgetsQuery } from '@/hooks/useBudgetQueries';
 import { useAmountVisibilityStore } from '@/stores/amountVisibilityStore';
 import { useAuthStore } from '@/stores/authStore';
 import { useBudgetUIStore } from '@/stores/budgetUIStore';
 import { useOrderStore } from '@/stores/orderStore';
+import { useTourStore } from '@/stores/tourStore';
 import { Budget } from '@/types/Types';
 import { useRouter } from 'expo-router';
 import { Drawer } from 'expo-router/drawer';
@@ -27,6 +29,10 @@ export default function DrawerLayout() {
 
   const budgetIdsKey = budgets.map((b) => b.id).join(',');
   const pendingInvites = user?.receivedBudgetInvites.filter((i) => i.accepted === null).length ?? 0;
+
+  useEffect(() => {
+    useTourStore.getState().load();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (user && budgets.length > 0) {
@@ -74,23 +80,27 @@ export default function DrawerLayout() {
                 onManage={onManageBudget}
                 onCreate={onCreate}
               />
-              <Appbar.Action
-                icon={amountsHidden ? 'eye-off-outline' : 'eye-outline'}
-                onPress={toggleAmountsHidden}
-                iconColor={theme.dark ? Tavira.teal : theme.colors.primary}
-              />
-              <View style={styles.menuButtonWrap}>
+              <TourTarget id="eyeToggle">
                 <Appbar.Action
-                  icon="menu"
-                  onPress={() => props.navigation.toggleDrawer()}
+                  icon={amountsHidden ? 'eye-off-outline' : 'eye-outline'}
+                  onPress={toggleAmountsHidden}
                   iconColor={theme.dark ? Tavira.teal : theme.colors.primary}
                 />
-                {pendingInvites > 0 && (
-                  <View style={[styles.menuBadge, { backgroundColor: Tavira.expense }]}>
-                    <Text style={styles.menuBadgeText}>{pendingInvites}</Text>
-                  </View>
-                )}
-              </View>
+              </TourTarget>
+              <TourTarget id="menuButton">
+                <View style={styles.menuButtonWrap}>
+                  <Appbar.Action
+                    icon="menu"
+                    onPress={() => props.navigation.toggleDrawer()}
+                    iconColor={theme.dark ? Tavira.teal : theme.colors.primary}
+                  />
+                  {pendingInvites > 0 && (
+                    <View style={[styles.menuBadge, { backgroundColor: Tavira.expense }]}>
+                      <Text style={styles.menuBadgeText}>{pendingInvites}</Text>
+                    </View>
+                  )}
+                </View>
+              </TourTarget>
             </Appbar.Header>
           ),
         }}
