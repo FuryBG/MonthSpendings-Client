@@ -12,8 +12,8 @@ export const useAmountVisibilityStore = create<AmountVisibilityState>((set, get)
 
   toggleHidden: async () => {
     const next = !get().hidden;
-    await AsyncStorage.setItem('amountsHidden', next ? '1' : '0');
     set({ hidden: next });
+    await AsyncStorage.setItem('amountsHidden', next ? '1' : '0');
   },
 
   loadHidden: async () => {

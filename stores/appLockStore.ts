@@ -11,8 +11,8 @@ export const useAppLockStore = create<AppLockState>((set) => ({
   lockEnabled: false,
 
   setLockEnabled: async (v) => {
-    await AsyncStorage.setItem('appLockEnabled', v ? '1' : '0');
     set({ lockEnabled: v });
+    await AsyncStorage.setItem('appLockEnabled', v ? '1' : '0');
   },
 
   load: async () => {

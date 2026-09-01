@@ -167,14 +167,14 @@ export default function SettingsScreen() {
   };
 
   const handleLockToggle = async (newValue: boolean) => {
+    await setLockEnabled(newValue);
     if (newValue) {
       const available = await isDeviceLockAvailable();
       if (!available) {
+        await setLockEnabled(false);
         showError('No biometrics or device PIN set up. Enable a screen lock in your device settings first.');
-        return;
       }
     }
-    await setLockEnabled(newValue);
   };
 
   const handleDeleteAccount = () => {
