@@ -131,6 +131,8 @@ export default function SettingsScreen() {
   const toggleAmountsHidden = useAmountVisibilityStore((s) => s.toggleHidden);
 
   const [syncValue, setSyncValue] = useState(user!.syncWalletTransactions);
+  const [lockValue, setLockValue] = useState(lockEnabled);
+  const [amountsValue, setAmountsValue] = useState(amountsHidden);
   const pendingEnable = useRef(false);
 
   useEffect(() => {
@@ -142,9 +144,9 @@ export default function SettingsScreen() {
   const [notifStatus, setNotifStatus] = useState<{ status: string; canAskAgain: boolean } | null>(null);
   const pendingNotifEnable = useRef(false);
 
-  useEffect(() => {
-    setSyncValue(user!.syncWalletTransactions);
-  }, [user?.syncWalletTransactions]);
+  useEffect(() => { setSyncValue(user!.syncWalletTransactions); }, [user?.syncWalletTransactions]);
+  useEffect(() => { setLockValue(lockEnabled); }, [lockEnabled]);
+  useEffect(() => { setAmountsValue(amountsHidden); }, [amountsHidden]);
 
   useEffect(() => {
     useAppLockStore.getState().load();
@@ -167,14 +169,17 @@ export default function SettingsScreen() {
   };
 
   const handleLockToggle = async (newValue: boolean) => {
-    await setLockEnabled(newValue);
+    setLockValue(newValue);
     if (newValue) {
       const available = await isDeviceLockAvailable();
       if (!available) {
+        setLockValue(false);
         await setLockEnabled(false);
         showError('No biometrics or device PIN set up. Enable a screen lock in your device settings first.');
+        return;
       }
     }
+    await setLockEnabled(newValue);
   };
 
   const handleDeleteAccount = () => {
@@ -307,7 +312,7 @@ export default function SettingsScreen() {
             icon="fingerprint"
             label="Lock App"
             description="Require biometrics or device PIN to open Tavira."
-            value={lockEnabled}
+            value={lockValue}
             onValueChange={handleLockToggle}
           />
           <View style={[styles.rowDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)' }]} />
@@ -315,8 +320,8 @@ export default function SettingsScreen() {
             icon="eye-off-outline"
             label="Hide Amounts"
             description="Mask all amounts across the app."
-            value={amountsHidden}
-            onValueChange={() => toggleAmountsHidden()}
+            value={amountsValue}
+            onValueChange={(v) => { setAmountsValue(v); toggleAmountsHidden(); }}
           />
         </View>
       </View>
