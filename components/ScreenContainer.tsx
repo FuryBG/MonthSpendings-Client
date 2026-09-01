@@ -11,7 +11,7 @@ interface ScreenContainerProps {
   removeSafeBottom?: boolean | null;
   topEdge?: boolean;
   glowColor?: 'teal' | 'purple';
-  scrollRef?: RefObject<ScrollView>;
+  scrollRef?: RefObject<ScrollView | null>;
 }
 
 export const ScreenContainer = ({
