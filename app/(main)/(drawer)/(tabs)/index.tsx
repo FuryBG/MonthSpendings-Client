@@ -165,6 +165,7 @@ export default function HomeScreen() {
   const user = useAuthStore((s) => s.user);
   const { categoryOrders, setCategoryOrder } = useOrderStore();
   const isActive = useTourStore((s) => s.isActive);
+  const hasSeenTour = useTourStore((s) => s.hasSeenTour);
   const { endTour } = useTourStore.getState();
   const skipGlobal = { skipGlobalError: true };
   const addSpendingMutation = useAddSpendingMutation(skipGlobal);
@@ -270,12 +271,11 @@ export default function HomeScreen() {
   // useFocusEffect so it re-checks when returning from Settings after "Show App Tour"
   useFocusEffect(useCallback(() => {
     if (budgets.length === 0) return;
-    const { hasSeenTour, startTour } = useTourStore.getState();
     if (!hasSeenTour) {
-      const t = setTimeout(() => startTour(), 700);
+      const t = setTimeout(() => useTourStore.getState().startTour(), 700);
       return () => clearTimeout(t);
     }
-  }, [budgets.length])); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [budgets.length, hasSeenTour])); // eslint-disable-line react-hooks/exhaustive-deps
 
   const tourSteps = useMemo<TourStep[]>(() => {
     const steps = [...HOME_STEPS_BASE];
