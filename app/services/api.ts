@@ -49,7 +49,7 @@ function processQueue(error: unknown, token: string | null = null) {
   failedQueue = [];
 }
 
-const AUTH_URLS = ['/api/auth/refresh', '/api/auth/login', '/api/auth/register', '/api/user'];
+const AUTH_URLS = ['/api/auth/refresh', '/api/auth/login', '/api/auth/register'];
 
 api.interceptors.response.use(
   (response) => response,
