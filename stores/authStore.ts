@@ -69,7 +69,16 @@ export const useAuthStore = create<AuthState>((set) => ({
         set({ user: null, userLoading: false });
       }
     } catch {
+      // Only clear the user if tokens were actually deleted (genuine auth failure,
+      // handled by the refresh interceptor). For transient errors (network down,
+      // server 5xx), the token is still in SecureStore — keep it for the next launch.
+      const tokenStillExists = await SecureStore.getItemAsync('token').catch(() => null);
       set({ user: null, userLoading: false });
+      if (tokenStillExists) {
+        // Token is valid but unreachable right now — restore memory token so the
+        // AppState foreground listener's refreshUser() can recover without re-login.
+        setMemoryToken(tokenStillExists);
+      }
     }
   },
 
