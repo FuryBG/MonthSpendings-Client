@@ -117,7 +117,10 @@ export enum AppNotificationType {
     ReceivedInvite,
     InviteResponse,
     SpendingAdd,
-    SpendingDelete
+    SpendingDelete,
+    BudgetCategoryUpdate,
+    InactivityReminder,
+    KickedFromBudget
 }
 
 export type AppNotification = {

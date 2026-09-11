@@ -85,7 +85,7 @@ function InviteCard({ invite, index, onRespond }: InviteCardProps) {
     const senderLabel = invite.senderName || invite.senderEmail || 'Unknown';
 
     return (
-        <Animated.View style={[c.card, { backgroundColor: isDark ? Tavira.glassBg : colors.surface, borderColor: isDark ? Tavira.glassBorder : 'transparent', borderWidth: isDark ? 1 : 0, opacity: fade, transform: [{ translateY: slide }] }]}>
+        <Animated.View style={[c.card, { backgroundColor: isDark ? Tavira.glassBg : colors.surface, borderColor: isDark ? Tavira.glassBorder : 'transparent', borderWidth: isDark ? 1 : 0, elevation: isDark ? 0 : 2, shadowOpacity: isDark ? 0 : 0.07, opacity: fade, transform: [{ translateY: slide }] }]}>
             <View style={[c.accent, { backgroundColor: accentColor }]} />
             <View style={c.body}>
 

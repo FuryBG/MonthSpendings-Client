@@ -79,6 +79,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
         const { type } = data as AppNotification;
         switch (type) {
           case AppNotificationType.ReceivedInvite:
+          case AppNotificationType.KickedFromBudget:
             useAuthStore.getState().restoreSession();
             break;
           case AppNotificationType.SpendingAdd:

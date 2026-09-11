@@ -8,6 +8,8 @@ import {
   finishBudget,
   getBudgets,
   getSpendingsByCategoryAndPeriod,
+  kickBudgetMember,
+  leaveBudget,
   updateBudgetCategoryName,
 } from '@/app/services/api';
 import { queryClient } from '@/lib/queryClient';
@@ -99,6 +101,24 @@ export const useFinishBudgetMutation = (meta?: MutationMeta) =>
 export const useUpdateBudgetCategoryNameMutation = (meta?: MutationMeta) =>
   useMutation({
     mutationFn: ({ id, newName }: { id: number; newName: string }) => updateBudgetCategoryName(id, newName),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['budgets'] });
+    },
+    meta,
+  });
+
+export const useKickBudgetMemberMutation = (meta?: MutationMeta) =>
+  useMutation({
+    mutationFn: ({ budgetId, userId }: { budgetId: number; userId: number }) => kickBudgetMember(budgetId, userId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['budgets'] });
+    },
+    meta,
+  });
+
+export const useLeaveBudgetMutation = (meta?: MutationMeta) =>
+  useMutation({
+    mutationFn: (budgetId: number) => leaveBudget(budgetId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['budgets'] });
     },

@@ -240,6 +240,14 @@ export const respondToInvite = async (inviteId: number, accepted: boolean): Prom
   return response.data;
 };
 
+export const kickBudgetMember = async (budgetId: number, userId: number): Promise<void> => {
+  await api.delete(`/api/budget/${budgetId}/members/${userId}`);
+};
+
+export const leaveBudget = async (budgetId: number): Promise<void> => {
+  await api.delete(`/api/budget/${budgetId}/leave`);
+};
+
 export const updateBudgetCategoryName = async (id: number, newName: string): Promise<BudgetCategory> => {
   const response = await api.patch(`/api/budgetcategory/${id}/name`, newName);
   return response.data;

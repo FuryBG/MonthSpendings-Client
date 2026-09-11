@@ -9,13 +9,15 @@ import {
     useDeleteBudgetCategoryMutation,
     useDeleteBudgetMutation,
     useFinishBudgetMutation,
+    useKickBudgetMemberMutation,
+    useLeaveBudgetMutation,
     useUpdateBudgetCategoryNameMutation,
 } from "@/hooks/useBudgetQueries";
 import { useAuthStore } from "@/stores/authStore";
 import { useSnackbarStore } from "@/stores/snackbarStore";
 import { useTitleStore } from "@/stores/titleStore";
 import { useTourStore } from "@/stores/tourStore";
-import { BudgetCategory, BudgetInvite, Spending } from "@/types/Types";
+import { AppUser, BudgetCategory, BudgetInvite, Spending } from "@/types/Types";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -38,7 +40,7 @@ const COLOR_EXPENSE = Tavira.expense;
 const COLOR_INCOME  = Tavira.income;
 const COLOR_AMBER   = Tavira.warning;
 
-type SheetType = 'invite' | 'addCategory' | 'deleteCategory' | 'renameCategory' | 'deleteBudget' | 'finishPeriod' | null;
+type SheetType = 'invite' | 'addCategory' | 'deleteCategory' | 'renameCategory' | 'deleteBudget' | 'finishPeriod' | 'kickMember' | 'leaveBudget' | null;
 
 export default function ManageBudgetScreen() {
     const router = useRouter();
@@ -52,12 +54,16 @@ export default function ManageBudgetScreen() {
     const deleteBudgetMutation = useDeleteBudgetMutation(skipGlobal);
     const finishBudgetMutation = useFinishBudgetMutation(skipGlobal);
     const updateCategoryNameMutation = useUpdateBudgetCategoryNameMutation(skipGlobal);
+    const kickMemberMutation = useKickBudgetMemberMutation(skipGlobal);
+    const leaveBudgetMutation = useLeaveBudgetMutation(skipGlobal);
     const showError = useSnackbarStore((s) => s.showError);
     const showSuccess = useSnackbarStore((s) => s.showSuccess);
     const setTitle = useTitleStore((s) => s.setTitle);
     const params = useLocalSearchParams();
     const [loading, setLoading] = useState(false);
     const [isDeletingBudget, setIsDeletingBudget] = useState(false);
+    const [isMembersEditMode, setIsMembersEditMode] = useState(false);
+    const [kickTargetMember, setKickTargetMember] = useState<AppUser | null>(null);
 
     const sheetRef = useRef<BottomSheetRef>(null);
     const renameInputRef = useRef<any>(null);
@@ -105,6 +111,7 @@ export default function ManageBudgetScreen() {
     }, [activeSheet]);
 
     const selectedMainBudget = budgets.find(b => b.id == Number(params.budgetId));
+    const isOwner = selectedMainBudget?.ownerId === user?.id;
 
     const { control, handleSubmit, reset } = useForm<BudgetCategory>({
         defaultValues: {
@@ -132,7 +139,7 @@ export default function ManageBudgetScreen() {
         defaultValues: { name: '' },
     });
 
-    function openSheet(type: SheetType, category?: BudgetCategory) {
+    function openSheet(type: SheetType, category?: BudgetCategory, member?: AppUser) {
         if (type === 'deleteCategory' && category) setConfirmDeleteCategory(category);
         if (type === 'renameCategory' && category) {
             setRenameCategoryTarget(category);
@@ -142,6 +149,7 @@ export default function ManageBudgetScreen() {
             setCarryMode('none');
             setCarryCategoryId(null);
         }
+        if (type === 'kickMember' && member) setKickTargetMember(member);
         setActiveSheet(type);
         setSheetVisible(true);
     }
@@ -284,6 +292,33 @@ export default function ManageBudgetScreen() {
             sheetRef.current?.close(() => showSuccess("Budget period finished successfully."));
         } catch {
             sheetRef.current?.close(() => showError("Finishing period was not successful."));
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    async function onKickMember() {
+        if (!kickTargetMember || !selectedMainBudget) return;
+        try {
+            setLoading(true);
+            await kickMemberMutation.mutateAsync({ budgetId: selectedMainBudget.id, userId: kickTargetMember.id });
+            setIsMembersEditMode(false);
+            sheetRef.current?.close(() => { setKickTargetMember(null); showSuccess(`${kickTargetMember.firstName || kickTargetMember.email} removed.`); });
+        } catch {
+            sheetRef.current?.close(() => showError("Removing member was not successful."));
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    async function onLeaveBudget() {
+        if (!selectedMainBudget) return;
+        try {
+            setLoading(true);
+            await leaveBudgetMutation.mutateAsync(selectedMainBudget.id);
+            sheetRef.current?.close(() => router.replace("/(main)/(drawer)/(tabs)"));
+        } catch {
+            sheetRef.current?.close(() => showError("Leaving budget was not successful."));
         } finally {
             setLoading(false);
         }
@@ -580,6 +615,53 @@ export default function ManageBudgetScreen() {
             );
         }
 
+        if (activeSheet === 'kickMember') {
+            const displayName = kickTargetMember?.firstName
+                ? `${kickTargetMember.firstName}${kickTargetMember.lastName ? ' ' + kickTargetMember.lastName : ''}`
+                : kickTargetMember?.email ?? 'this member';
+            return (
+                <View style={sheetStyles.sheetCenteredContent}>
+                    <View style={[sheetStyles.sheetConfirmIcon, { backgroundColor: 'rgba(248,113,113,0.12)' }]}>
+                        <Icon source="account-remove" size={28} color={COLOR_EXPENSE} />
+                    </View>
+                    <Text style={sheetStyles.sheetConfirmTitle}>Remove Member</Text>
+                    <Text style={sheetStyles.sheetConfirmDesc}>
+                        Remove {displayName} from this budget? They will be notified.
+                    </Text>
+                    <View style={sheetStyles.sheetActions}>
+                        <Button mode="text" onPress={() => sheetRef.current?.close()}>Cancel</Button>
+                        <Button mode="contained" buttonColor={COLOR_EXPENSE} textColor="#fff"
+                            loading={loading} onPress={onKickMember}
+                            contentStyle={sheetStyles.sheetConfirmContent}>
+                            Remove
+                        </Button>
+                    </View>
+                </View>
+            );
+        }
+
+        if (activeSheet === 'leaveBudget') {
+            return (
+                <View style={sheetStyles.sheetCenteredContent}>
+                    <View style={[sheetStyles.sheetConfirmIcon, { backgroundColor: 'rgba(248,113,113,0.12)' }]}>
+                        <Icon source="logout" size={28} color={COLOR_EXPENSE} />
+                    </View>
+                    <Text style={sheetStyles.sheetConfirmTitle}>Leave Budget</Text>
+                    <Text style={sheetStyles.sheetConfirmDesc}>
+                        Leave "{selectedMainBudget?.name}"? You will lose access to all transactions and categories.
+                    </Text>
+                    <View style={sheetStyles.sheetActions}>
+                        <Button mode="text" onPress={() => sheetRef.current?.close()}>Cancel</Button>
+                        <Button mode="contained" buttonColor={COLOR_EXPENSE} textColor="#fff"
+                            loading={loading} onPress={onLeaveBudget}
+                            contentStyle={sheetStyles.sheetConfirmContent}>
+                            Leave
+                        </Button>
+                    </View>
+                </View>
+            );
+        }
+
         return null;
     };
 
@@ -620,7 +702,7 @@ export default function ManageBudgetScreen() {
                             {user!.receivedBudgetInvites.filter(i => i.accepted === null).map(invite => (
                                 <View key={invite.id} style={styles.inviteRow}>
                                     <View style={styles.inviteInfo}>
-                                        <View style={styles.inviteIconWrap}>
+                                        <View style={[styles.inviteIconWrap, { backgroundColor: theme.colors.primaryContainer }]}>
                                             <Icon source="email-outline" size={18} color={theme.colors.primary} />
                                         </View>
                                         <View style={{ flex: 1, marginRight: 8 }}>
@@ -654,7 +736,26 @@ export default function ManageBudgetScreen() {
                 <TourTarget id="mb_members">
                     <Card mode="outlined" style={styles.sectionCard}>
                         <Card.Content>
-                            <Text style={styles.sectionTitle}>Members</Text>
+                            <View style={styles.membersTitleRow}>
+                                <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>Members</Text>
+                                {isOwner ? (
+                                    <IconButton
+                                        icon={isMembersEditMode ? "check" : "pencil-outline"}
+                                        size={18}
+                                        iconColor={isMembersEditMode ? Tavira.teal : theme.colors.onSurfaceVariant}
+                                        onPress={() => setIsMembersEditMode(v => !v)}
+                                        style={styles.editToggleBtn}
+                                    />
+                                ) : (
+                                    <IconButton
+                                        icon="logout"
+                                        size={18}
+                                        iconColor={COLOR_EXPENSE}
+                                        onPress={() => openSheet('leaveBudget')}
+                                        style={styles.editToggleBtn}
+                                    />
+                                )}
+                            </View>
                             <Divider style={styles.divider} />
                             {selectedMainBudget?.users?.map(member => (
                                 <View key={member.id} style={styles.memberRow}>
@@ -667,26 +768,28 @@ export default function ManageBudgetScreen() {
                                             </Text>
                                         )}
                                     </View>
-                                    {member.id === user?.id && (
+                                    {isOwner && isMembersEditMode && member.id !== selectedMainBudget?.ownerId ? (
+                                        <IconButton
+                                            icon="account-remove"
+                                            size={18}
+                                            iconColor={COLOR_EXPENSE}
+                                            onPress={() => openSheet('kickMember', undefined, member)}
+                                            style={styles.kickBtn}
+                                        />
+                                    ) : member.id === user?.id ? (
                                         <View style={[styles.youBadge, { backgroundColor: theme.colors.primaryContainer }]}>
                                             <Text style={[styles.youBadgeText, { color: theme.colors.onPrimaryContainer }]}>You</Text>
                                         </View>
-                                    )}
+                                    ) : null}
                                 </View>
                             ))}
-                            {(() => {
-                                return (
-                                    <>
-                                        <Divider style={styles.divider} />
-                                        <TouchableOpacity style={styles.actionRow} onPress={() => openSheet('invite')}>
-                                            <Icon source="account-plus" size={20} color={theme.colors.primary} />
-                                            <Text style={[styles.actionRowText, { color: theme.colors.primary }]}>
-                                                Invite Member
-                                            </Text>
-                                        </TouchableOpacity>
-                                    </>
-                                );
-                            })()}
+                            <Divider style={styles.divider} />
+                            <TouchableOpacity style={styles.actionRow} onPress={() => openSheet('invite')}>
+                                <Icon source="account-plus" size={20} color={theme.colors.primary} />
+                                <Text style={[styles.actionRowText, { color: theme.colors.primary }]}>
+                                    Invite Member
+                                </Text>
+                            </TouchableOpacity>
                         </Card.Content>
                     </Card>
                 </TourTarget>
@@ -840,6 +943,20 @@ const styles = StyleSheet.create({
     divider: {
         marginVertical: 8,
     },
+    membersTitleRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 4,
+    },
+    editToggleBtn: {
+        margin: 0,
+        marginRight: -6,
+    },
+    kickBtn: {
+        margin: 0,
+        marginRight: -6,
+    },
     memberRow: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -903,7 +1020,6 @@ const styles = StyleSheet.create({
         width: 34,
         height: 34,
         borderRadius: 10,
-        backgroundColor: 'rgba(186,218,85,0.12)',
         justifyContent: 'center',
         alignItems: 'center',
     },
