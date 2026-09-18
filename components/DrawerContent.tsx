@@ -186,7 +186,7 @@ export function DrawerContent(props: any) {
                 accent={Tavira.purple}
                 onPress={() => closeAndPush('/(main)/Invites')}
               />
-            <NavItem
+            {/* <NavItem
               icon="credit-card-outline"
               label="Manage Subscription"
               accent={Tavira.teal}
@@ -200,7 +200,7 @@ export function DrawerContent(props: any) {
                   RevenueCatUI.presentPaywall();
                 }
               }}
-            />
+            /> */}
             <NavItem
               icon="cog-outline"
               label="Settings"
