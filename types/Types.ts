@@ -127,32 +127,8 @@ export type AppNotification = {
     type: AppNotificationType
 }
 
-// Statistics
-export type PeriodComparisonDto = {
-    currentPeriod: PeriodSummaryDto
-    previousPeriod: PeriodSummaryDto | null
-    totalDelta: number
-    totalDeltaPercent: number | null
-}
-
-export type PeriodSummaryDto = {
-    periodId: number
-    startDate: string
-    endDate: string | null
-    totalSpent: number
-    categories: CategoryComparisonDto[]
-}
-
-export type CategoryComparisonDto = {
-    categoryId: number
-    categoryName: string
-    amount: number
-    isDeleted: boolean
-}
-
-export type PeriodHistoryItemDto = {
-    periodId: number
-    startDate: string
-    endDate: string | null
-    totalSpent: number
+export interface AppVersionInfo {
+  latestVersion: string;
+  minimumVersion: string;
+  androidStoreUrl: string;
 }

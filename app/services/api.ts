@@ -1,4 +1,4 @@
-import { AppUser, AuthResponse, Budget, BudgetCategory, BudgetInvite, CategorizeNotificationTransactionDto, CreateNotificationTransactionDto, Currency, NotificationTransaction, PeriodComparisonDto, PeriodHistoryItemDto, Spending, UpdateUserActivityDto } from '@/types/Types';
+import { AppUser, AppVersionInfo, AuthResponse, Budget, BudgetCategory, BudgetInvite, CategorizeNotificationTransactionDto, CreateNotificationTransactionDto, Currency, NotificationTransaction, Spending, UpdateUserActivityDto } from '@/types/Types';
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import { NativeModules } from 'react-native';
@@ -185,6 +185,11 @@ export const getCurrencies = async (): Promise<Currency[]> => {
   return response.data;
 };
 
+export const getAppVersion = async (): Promise<AppVersionInfo> => {
+  const response = await api.get<AppVersionInfo>('/api/appversion');
+  return response.data;
+};
+
 export const createSpending = async (spending: Spending): Promise<Spending> => {
   const response = await api.post('/api/spending', spending);
   return response.data;
@@ -217,16 +222,6 @@ export const finishBudget = async (budget: Budget): Promise<Budget> => {
 
 export const getSpendingsByCategoryAndPeriod = async (budgetCategoryId: number, budgetPeriodId: number): Promise<Spending[]> => {
   const response = await api.get('/api/spending/by-period', { params: { budgetCategoryId, budgetPeriodId } });
-  return response.data;
-};
-
-export const getPeriodComparison = async (budgetId: number): Promise<PeriodComparisonDto> => {
-  const response = await api.get(`/api/statistics/period-comparison?budgetId=${budgetId}`);
-  return response.data;
-};
-
-export const getPeriodsHistory = async (budgetId: number): Promise<PeriodHistoryItemDto[]> => {
-  const response = await api.get(`/api/statistics/periods-history?budgetId=${budgetId}`);
   return response.data;
 };
 

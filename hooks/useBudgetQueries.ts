@@ -16,6 +16,7 @@ import { queryClient } from '@/lib/queryClient';
 import { useAuthStore } from '@/stores/authStore';
 import { Budget, BudgetCategory, Spending } from '@/types/Types';
 import { MutationMeta, useMutation, useQuery } from '@tanstack/react-query';
+import { statsKeys } from '@/features/stats/api/statsKeys';
 
 export const useHistoricalSpendingsQuery = (budgetCategoryId: number, budgetPeriodId: number | null, enabled: boolean) =>
   useQuery({
@@ -38,7 +39,7 @@ export const useAddSpendingMutation = (meta?: MutationMeta) =>
     mutationFn: (spending: Spending) => createSpending(spending),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['budgets'] });
-      queryClient.invalidateQueries({ queryKey: ['period-comparison'] });
+      queryClient.invalidateQueries({ queryKey: statsKeys.all });
     },
     meta,
   });
@@ -48,7 +49,7 @@ export const useDeleteSpendingMutation = () =>
     mutationFn: (spendingId: number) => deleteSpending(spendingId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['budgets'] });
-      queryClient.invalidateQueries({ queryKey: ['period-comparison'] });
+      queryClient.invalidateQueries({ queryKey: statsKeys.all });
     },
   });
 
@@ -93,7 +94,7 @@ export const useFinishBudgetMutation = (meta?: MutationMeta) =>
     mutationFn: (budget: Budget) => finishBudget(budget),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['budgets'] });
-      queryClient.invalidateQueries({ queryKey: ['period-comparison'] });
+      queryClient.invalidateQueries({ queryKey: statsKeys.all });
     },
     meta,
   });

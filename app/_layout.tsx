@@ -2,6 +2,7 @@ import { setOnUnauthorized, updateNotificationToken, updateUserActivity } from '
 import { configureRevenueCat, identifyUser, logOutRevenueCat } from '@/app/services/revenuecat';
 import { GlobalSnackbar } from '@/components/GlobalSnackbar';
 import { LockGate } from '@/components/LockGate';
+import { UpdateRequiredDialog } from '@/components/UpdateRequiredDialog';
 import { NotificationProvider, useNotification } from '@/context/NotificationContext';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { queryClient } from '@/lib/queryClient';
@@ -186,6 +187,7 @@ export default function RootLayout() {
               <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
                 <Stack screenOptions={{ headerShown: false, animation: 'none' }} />
                 <GlobalSnackbar />
+                <UpdateRequiredDialog />
                 <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
               </ThemeProvider>
             </PaperProvider>

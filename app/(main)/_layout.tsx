@@ -92,6 +92,7 @@ export default function MainLayout() {
       <Stack.Screen name="PendingTransactions" options={{ title: 'Pending Transactions' }} />
       <Stack.Screen name="Invites" options={{ title: 'Invitations' }} />
       <Stack.Screen name="spending-group/SpendingDetails" options={{ title: 'Spending Details' }} />
+      <Stack.Screen name="stats/CategoryDetail" options={{ title: 'Category' }} />
     </Stack>
   );
 }

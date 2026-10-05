@@ -4,7 +4,10 @@ import { ScreenContainer } from '@/components/ScreenContainer';
 import { TourOverlay, TourStep } from '@/components/tour/TourOverlay';
 import { TourTarget } from '@/components/tour/TourTarget';
 import { Tavira } from '@/constants/theme';
+import { ParticipantsCard } from '@/features/spending-details/components/ParticipantsCard';
+import { summarizeByParticipant } from '@/features/spending-details/model/participants';
 import { useAddSpendingMutation, useBudgetsQuery, useDeleteSpendingMutation, useHistoricalSpendingsQuery } from '@/hooks/useBudgetQueries';
+import { useAuthStore } from '@/stores/authStore';
 import { useBudgetUIStore } from '@/stores/budgetUIStore';
 import { useSnackbarStore } from '@/stores/snackbarStore';
 import { useTitleStore } from '@/stores/titleStore';
@@ -201,6 +204,8 @@ export default function SpendingDetailsScreen() {
   const [confirmSpendingId, setConfirmSpendingId] = useState<number | null>(null);
   const swipeableRefs = useRef<Map<number, Swipeable | null>>(new Map());
   const [selectedPeriodId, setSelectedPeriodId] = useState<number | null>(null);
+  const [participantFilter, setParticipantFilter] = useState<number | null>(null);
+  const currentUserId = useAuthStore((s) => s.user?.id ?? null);
 
   const addSpendingMutation = useAddSpendingMutation({ skipGlobalError: true });
   const showSuccess = useSnackbarStore((s) => s.showSuccess);
@@ -270,9 +275,18 @@ export default function SpendingDetailsScreen() {
     ? (selectedCategory?.spendings ?? [])
     : historicalSpendings;
 
+  const participants = useMemo(
+    () => summarizeByParticipant(displayedSpendings, selectedMainBudget?.users ?? null, currentUserId),
+    [displayedSpendings, selectedMainBudget?.users, currentUserId]
+  );
+  const showParticipants = participants.length > 1;
+  const activeParticipant = showParticipants ? participants.find(p => p.userId === participantFilter) : undefined;
+
   const groupedSpendings = useMemo(
-    () => groupSpendings(displayedSpendings),
-    [displayedSpendings]
+    () => groupSpendings(activeParticipant
+      ? displayedSpendings.filter(sp => sp.createdByUserId === activeParticipant.userId)
+      : displayedSpendings),
+    [displayedSpendings, activeParticipant]
   );
 
   const hasItems = displayedSpendings.length > 0;
@@ -354,7 +368,7 @@ export default function SpendingDetailsScreen() {
               <Chip
                 key={period.id}
                 selected={period.id === selectedPeriodId}
-                onPress={() => setSelectedPeriodId(period.id)}
+                onPress={() => { setSelectedPeriodId(period.id); setParticipantFilter(null); }}
                 mode="outlined"
                 style={s.periodChip}
               >
@@ -371,9 +385,23 @@ export default function SpendingDetailsScreen() {
         ) : (
           <>
             {hasItems && <TourTarget id="sd_summary"><SummaryHeaderCard spendings={displayedSpendings} symbol={symbol} /></TourTarget>}
+            {hasItems && showParticipants && (
+              <ParticipantsCard
+                participants={participants}
+                symbol={symbol}
+                selectedUserId={activeParticipant?.userId ?? null}
+                onSelect={setParticipantFilter}
+              />
+            )}
             {!hasItems && <EmptyState />}
             {isCurrentPeriod && <TourTarget id="sd_actions"><ActionRow remaining={remaining} onMinus={() => openSheet(true)} onPlus={() => openSheet(false)} /></TourTarget>}
           </>
+        )}
+
+        {!isPeriodLoading && activeParticipant && groupedSpendings.length === 0 && (
+          <Text variant="bodyMedium" style={[s.filterEmpty, { color: theme.colors.onSurfaceVariant }]}>
+            {activeParticipant.isYou ? 'You have' : `${activeParticipant.name} has`} no transactions here in this period.
+          </Text>
         )}
 
         {!isPeriodLoading && groupedSpendings.map(group => (
@@ -650,6 +678,10 @@ const s = StyleSheet.create({
   },
   emptyTitle: {
     fontWeight:     '600',
+  },
+  filterEmpty: {
+    textAlign:      'center',
+    paddingVertical: 24,
   },
   bottomSpacer: {
     height:         24,

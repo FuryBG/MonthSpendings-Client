@@ -1,6 +1,7 @@
 import { HapticTab } from "@/components/HapticTab";
 import { IconSymbol } from "@/components/IconSymbol";
 import { Tavira } from "@/constants/theme";
+import { useStatsSelection } from "@/features/stats/state/useStatsSelection";
 import { Tabs } from "expo-router";
 import { Platform, StyleSheet, View } from "react-native";
 import { useTheme } from "react-native-paper";
@@ -48,6 +49,12 @@ export default function TabsLayout() {
       />
       <Tabs.Screen
         name="explore"
+        listeners={({ navigation }) => ({
+          // Coming to Stats from another tab starts fresh: "This period", no comparison.
+          tabPress: () => {
+            if (!navigation.isFocused()) useStatsSelection.getState().reset();
+          },
+        })}
         options={{
           title: 'Stats',
           tabBarIcon: ({ color, focused }) => (
