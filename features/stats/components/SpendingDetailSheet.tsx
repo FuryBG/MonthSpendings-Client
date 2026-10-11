@@ -6,6 +6,8 @@ import { formatLongDate, formatMoney } from '../model/format';
 import { categoryColor } from '../model/palette';
 import type { RangeSpending } from '../model/types';
 import { useStatsColors } from './primitives/useStatsColors';
+import { useTranslation } from 'react-i18next';
+import { displaySpendingDescription } from '@/utils/spendingDescription';
 
 type Props = {
   spending: RangeSpending | null;
@@ -15,22 +17,23 @@ type Props = {
 
 export function SpendingDetailSheet({ spending, symbol, onClose }: Props) {
   const c = useStatsColors();
+  const { t } = useTranslation();
 
   return (
     <BottomSheet visible={spending != null} onClose={(done) => { onClose(); done?.(); }}>
       {spending ? (
         <View style={s.root}>
           <MaskedAmount value={formatMoney(spending.amount, symbol)} style={[s.amount, { color: c.text }]} />
-          <Text style={[s.title, { color: c.text }]}>{spending.description?.trim() || 'No description'}</Text>
+          <Text style={[s.title, { color: c.text }]}>{spending.description?.trim() ? displaySpendingDescription(spending.description.trim()) : t('stats.spending.noDescription')}</Text>
 
           <View style={[s.table, { borderColor: c.border }]}>
-            <Row label="Category" colors={c}>
+            <Row label={t('stats.spending.category')} colors={c}>
               <View style={s.category}>
                 <View style={[s.swatch, { backgroundColor: categoryColor(spending.categoryId) }]} />
                 <Text style={[s.value, { color: c.text }]}>{spending.categoryName}</Text>
               </View>
             </Row>
-            <Row label="Date" colors={c}>
+            <Row label={t('stats.spending.date')} colors={c}>
               <Text style={[s.value, { color: c.text }]}>{formatLongDate(spending.date)}</Text>
             </Row>
           </View>

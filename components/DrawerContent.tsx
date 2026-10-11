@@ -9,6 +9,8 @@ import * as WebBrowser from 'expo-web-browser';
 import { Alert, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Icon, Text, useTheme } from 'react-native-paper';
 import RevenueCatUI from 'react-native-purchases-ui';
+import { useTranslation } from 'react-i18next';
+import i18n from '@/i18n';
 
 type NavItemProps = {
   icon: string;
@@ -50,7 +52,7 @@ function NavItem({ icon, label, onPress, badge, destructive, accent, soon, pro }
       <Text style={[styles.navLabel, { color: labelColor, opacity: isLocked ? 0.45 : 1 }]}>{label}</Text>
       {soon && (
         <View style={styles.soonBadge}>
-          <Text style={styles.soonText}>SOON</Text>
+          <Text style={styles.soonText}>{i18n.t('drawer.soon')}</Text>
         </View>
       )}
       {pro && (
@@ -87,6 +89,7 @@ function Divider() {
 
 export function DrawerContent(props: any) {
   const theme = useTheme();
+  const { t, i18n: i18nInstance } = useTranslation();
   const isDark = theme.dark;
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
@@ -165,10 +168,10 @@ export function DrawerContent(props: any) {
 
           {/* Budgets */}
           <View style={styles.section}>
-            <SectionLabel label="BUDGETS" />
+            <SectionLabel label={t('drawer.sections.budgets')} />
             <NavItem
                 icon="wallet-plus-outline"
-                label="Create Budget"
+                label={t('drawer.createBudget')}
                 accent={Tavira.teal}
                 onPress={() => closeAndPush('/(main)/CreateBudget')}
               />
@@ -178,10 +181,10 @@ export function DrawerContent(props: any) {
 
           {/* Account */}
           <View style={styles.section}>
-            <SectionLabel label="ACCOUNT" />
+            <SectionLabel label={t('drawer.sections.account')} />
             <NavItem
                 icon="email-outline"
-                label="Invitations"
+                label={t('drawer.invitations')}
                 badge={pendingInvites > 0 ? pendingInvites : undefined}
                 accent={Tavira.purple}
                 onPress={() => closeAndPush('/(main)/Invites')}
@@ -203,15 +206,15 @@ export function DrawerContent(props: any) {
             /> */}
             <NavItem
               icon="cog-outline"
-              label="Settings"
+              label={t('drawer.settings')}
               accent={Tavira.purple}
               onPress={() => closeAndPush('/(main)/Settings')}
             />
             <NavItem
               icon="shield-lock-outline"
-              label="Privacy Policy"
+              label={t('drawer.privacyPolicy')}
               accent={Tavira.purple}
-              onPress={() => WebBrowser.openBrowserAsync(`${BASE_URL}/privacy-policy`)}
+              onPress={() => WebBrowser.openBrowserAsync(`${BASE_URL}/privacy-policy?lang=${i18nInstance.language}`)}
             />
           </View>
         </View>
@@ -222,12 +225,12 @@ export function DrawerContent(props: any) {
           <View style={styles.section}>
             <NavItem
               icon="logout"
-              label="Sign Out"
+              label={t('drawer.signOut.label')}
               destructive
               onPress={() =>
-                Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
-                  { text: 'Cancel', style: 'cancel' },
-                  { text: 'Sign Out', style: 'destructive', onPress: async () => await signOut() },
+                Alert.alert(t('drawer.signOut.title'), t('drawer.signOut.message'), [
+                  { text: t('common.actions.cancel'), style: 'cancel' },
+                  { text: t('drawer.signOut.confirm'), style: 'destructive', onPress: async () => await signOut() },
                 ])
               }
             />

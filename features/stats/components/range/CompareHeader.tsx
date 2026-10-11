@@ -3,6 +3,7 @@ import { Icon, Text } from 'react-native-paper';
 import { COMPARE_A_COLOR, COMPARE_B_COLOR } from '../../model/palette';
 import type { ResolvedRange } from '../../model/types';
 import { useStatsColors } from '../primitives/useStatsColors';
+import i18n from '@/i18n';
 
 type Props = {
   rangeA: ResolvedRange;
@@ -21,12 +22,12 @@ export function CompareHeader({ rangeA, rangeB, onEditB, onClose }: Props) {
         <Text style={[s.label, { color: c.text }]} numberOfLines={1}>{rangeA.label}</Text>
       </View>
       <Text style={[s.vs, { color: c.faint }]}>vs</Text>
-      <Pressable onPress={onEditB} style={({ pressed }) => [s.side, pressed && { opacity: 0.6 }]} accessibilityLabel="Change comparison range">
+      <Pressable onPress={onEditB} style={({ pressed }) => [s.side, pressed && { opacity: 0.6 }]} accessibilityLabel={i18n.t('stats.compare.changeRange')}>
         <View style={[s.dot, { backgroundColor: COMPARE_B_COLOR }]} />
         <Text style={[s.label, { color: c.text }]} numberOfLines={1}>{rangeB.label}</Text>
         <Icon source="chevron-down" size={16} color={c.muted} />
       </Pressable>
-      <Pressable onPress={onClose} hitSlop={10} style={s.close} accessibilityLabel="Stop comparing">
+      <Pressable onPress={onClose} hitSlop={10} style={s.close} accessibilityLabel={i18n.t('stats.compare.stop')}>
         <Icon source="close" size={18} color={c.muted} />
       </Pressable>
     </View>

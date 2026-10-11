@@ -19,6 +19,7 @@ export type AppUser = {
     googlePhotoAddress: string
     isPro: boolean
     syncWalletTransactions: boolean
+    language: string
     subscription: {
         productId: string
         store: string

@@ -1,5 +1,6 @@
 import { Tavira } from '@/constants/theme';
 import type { AppUser, Spending } from '@/types/Types';
+import i18n from '@/i18n';
 
 export type ParticipantShare = {
   userId: number;
@@ -37,7 +38,7 @@ export function summarizeByParticipant(spendings: Spending[], members: AppUser[]
     if (!entry) {
       entry = {
         userId: sp.createdByUserId,
-        name: sp.createdByName?.trim() || sp.createdByEmail || 'Former member',
+        name: sp.createdByName?.trim() || sp.createdByEmail || i18n.t('participants.formerMember'),
         photoUrl: null,
         isYou: sp.createdByUserId === currentUserId,
         spent: 0,

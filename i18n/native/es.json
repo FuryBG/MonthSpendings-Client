@@ -1,0 +1,8 @@
+{
+  "ios": {
+    "NSFaceIDUsageDescription": "Permite que Tavira use Face ID para desbloquear la app."
+  },
+  "android": {
+    "wallet_sync_label": "Sincronización del monedero de Tavira"
+  }
+}

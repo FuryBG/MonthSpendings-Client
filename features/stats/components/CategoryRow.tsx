@@ -6,6 +6,7 @@ import { formatMoney } from '../model/format';
 import { categoryColor, COMPARE_A_COLOR, COMPARE_B_COLOR } from '../model/palette';
 import { DiffChip } from './primitives/DiffChip';
 import { useStatsColors } from './primitives/useStatsColors';
+import i18n from '@/i18n';
 
 type Props = {
   line: CategoryLine;
@@ -29,12 +30,12 @@ export function CategoryRow({ line, maxAmount, symbol, focused, onPress, onPress
       onPressOut={onPressOut}
       style={({ pressed }) => [s.row, (pressed || focused) && { backgroundColor: c.track }]}
       accessibilityRole="button"
-      accessibilityLabel={`${line.name}, ${formatMoney(line.amountA, symbol)}${comparing ? `, compared with ${formatMoney(line.amountB ?? 0, symbol)}` : ''}`}
+      accessibilityLabel={`${line.name}, ${formatMoney(line.amountA, symbol)}${comparing ? `, ${i18n.t('stats.comparedWith', { amount: formatMoney(line.amountB ?? 0, symbol) })}` : ''}`}
     >
       <View style={s.top}>
         <View style={[s.swatch, { backgroundColor: categoryColor(line.categoryId, line.isDeleted) }]} />
         <Text style={[s.name, { color: c.text }]} numberOfLines={1}>{line.name}</Text>
-        {line.isDeleted ? <Text style={[s.deleted, { color: c.faint, borderColor: c.border }]}>Deleted</Text> : null}
+        {line.isDeleted ? <Text style={[s.deleted, { color: c.faint, borderColor: c.border }]}>{i18n.t('stats.deletedCategory')}</Text> : null}
         <View style={s.spacer} />
         {comparing && line.diff
           ? <DiffChip diff={line.diff} symbol={symbol} compact />

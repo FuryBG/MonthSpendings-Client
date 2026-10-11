@@ -2,8 +2,10 @@ import { authenticate } from '@/app/services/biometrics';
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Icon } from 'react-native-paper';
+import { useTranslation } from 'react-i18next';
 
 export function LockGate({ onUnlock }: { onUnlock: () => void }) {
+  const { t } = useTranslation();
   const scale = useRef(new Animated.Value(0.93)).current;
   const shake = useRef(new Animated.Value(0)).current;
   const [showRetry, setShowRetry] = useState(false);
@@ -15,7 +17,7 @@ export function LockGate({ onUnlock }: { onUnlock: () => void }) {
 
   async function tryAuth() {
     setShowRetry(false);
-    const success = await authenticate('Unlock Tavira');
+    const success = await authenticate(t('lock.prompt'));
     if (success) {
       onUnlock();
     } else {
@@ -44,11 +46,11 @@ export function LockGate({ onUnlock }: { onUnlock: () => void }) {
         </Animated.View>
       </Pressable>
 
-      <Text style={styles.hint}>Unlock to continue</Text>
+      <Text style={styles.hint}>{t('lock.hint')}</Text>
 
       {showRetry && (
         <Pressable onPress={tryAuth} style={styles.retryBtn}>
-          <Text style={styles.retryText}>Try again</Text>
+          <Text style={styles.retryText}>{t('common.actions.tryAgain')}</Text>
         </Pressable>
       )}
     </View>

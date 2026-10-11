@@ -13,6 +13,8 @@ import {
 } from 'react-native';
 import { Icon, Portal, Snackbar, Text, TextInput } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
+import { getApiErrorMessage } from '@/utils/apiError';
 
 const inputTheme = {
   colors: {
@@ -26,6 +28,7 @@ const inputTheme = {
 
 export default function EmailLoginScreen() {
   const signIn = useAuthStore((s) => s.signIn);
+  const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
@@ -39,9 +42,9 @@ export default function EmailLoginScreen() {
 
   function validate() {
     const e: { email?: string; password?: string } = {};
-    if (!email.trim()) e.email = 'Email is required.';
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) e.email = 'Enter a valid email address.';
-    if (!password) e.password = 'Password is required.';
+    if (!email.trim()) e.email = t('auth.validation.emailRequired');
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) e.email = t('auth.validation.emailInvalid');
+    if (!password) e.password = t('auth.validation.passwordRequired');
     setErrors(e);
     return Object.keys(e).length === 0;
   }
@@ -53,14 +56,13 @@ export default function EmailLoginScreen() {
       const tokens = await loginWithEmail({ email: email.trim(), password });
       await signIn(tokens);
     } catch (err: unknown) {
-      const status = (err as { response?: { status?: number; data?: unknown } })?.response?.status;
-      const data = (err as { response?: { data?: unknown } })?.response?.data;
+      const status = (err as { response?: { status?: number } })?.response?.status;
       if (status === 423) {
-        setSnackMessage(typeof data === 'string' ? data : 'Account locked. Try again later.');
+        setSnackMessage(getApiErrorMessage(err, t('auth.errors.accountLocked')));
       } else if (status === 429) {
-        setSnackMessage('Too many attempts. Please wait a minute and try again.');
+        setSnackMessage(t('auth.errors.tooManyAttempts'));
       } else {
-        setSnackMessage('Invalid email or password.');
+        setSnackMessage(t('auth.errors.invalidCredentials'));
       }
       setSnackVisible(true);
     } finally {
@@ -84,18 +86,18 @@ export default function EmailLoginScreen() {
         >
           <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} activeOpacity={0.7}>
             <Icon source="arrow-left" size={20} color="rgba(242,244,248,0.5)" />
-            <Text style={styles.backText}>Back</Text>
+            <Text style={styles.backText}>{t('common.actions.back')}</Text>
           </TouchableOpacity>
 
           <View style={styles.header}>
-            <Text style={styles.title}>Welcome back</Text>
-            <Text style={styles.subtitle}>Sign in with your Tavira account</Text>
+            <Text style={styles.title}>{t('auth.emailLogin.title')}</Text>
+            <Text style={styles.subtitle}>{t('auth.emailLogin.subtitle')}</Text>
           </View>
 
           <View style={styles.card}>
             <View style={styles.fieldGroup}>
               <TextInput
-                label="Email"
+                label={t('auth.fields.email')}
                 value={email}
                 onChangeText={(v) => { setEmail(v); setErrors((e) => ({ ...e, email: undefined })); }}
                 keyboardType="email-address"
@@ -112,7 +114,7 @@ export default function EmailLoginScreen() {
 
             <View style={styles.fieldGroup}>
               <TextInput
-                label="Password"
+                label={t('auth.fields.password')}
                 value={password}
                 onChangeText={(v) => { setPassword(v); setErrors((e) => ({ ...e, password: undefined })); }}
                 secureTextEntry={!showPassword}
@@ -134,7 +136,7 @@ export default function EmailLoginScreen() {
             </View>
 
             <TouchableOpacity style={styles.forgotWrap} activeOpacity={0.7}>
-              <Text style={styles.forgotText}>Forgot password?</Text>
+              <Text style={styles.forgotText}>{t('auth.emailLogin.forgotPassword')}</Text>
             </TouchableOpacity>
           </View>
 
@@ -150,7 +152,7 @@ export default function EmailLoginScreen() {
               end={{ x: 1, y: 0 }}
               style={styles.primaryBtn}
             >
-              <Text style={styles.primaryBtnText}>{loading ? 'Signing in…' : 'Sign in'}</Text>
+              <Text style={styles.primaryBtnText}>{loading ? t('auth.signingIn') : t('auth.signIn')}</Text>
               {!loading && <Icon source="arrow-right" size={18} color="#fff" />}
             </LinearGradient>
           </TouchableOpacity>
@@ -161,8 +163,8 @@ export default function EmailLoginScreen() {
             style={styles.switchLink}
           >
             <Text style={styles.switchText}>
-              No account?{'  '}
-              <Text style={styles.switchHighlight}>Create one</Text>
+              {t('auth.noAccount')}{'  '}
+              <Text style={styles.switchHighlight}>{t('auth.createOne')}</Text>
             </Text>
           </TouchableOpacity>
         </ScrollView>
@@ -173,7 +175,7 @@ export default function EmailLoginScreen() {
           visible={snackVisible}
           onDismiss={() => setSnackVisible(false)}
           duration={4000}
-          action={{ label: 'OK', onPress: () => setSnackVisible(false) }}
+          action={{ label: t('common.actions.ok'), onPress: () => setSnackVisible(false) }}
         >
           {snackMessage}
         </Snackbar>

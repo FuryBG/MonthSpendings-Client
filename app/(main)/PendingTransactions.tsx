@@ -12,14 +12,18 @@ import React, { useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, ScrollView, StyleSheet, Switch, TouchableOpacity, View } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import { Button, Chip, Icon, Text, useTheme } from 'react-native-paper';
+import { useTranslation } from 'react-i18next';
+import { localeTag } from '@/i18n';
 
 function formatDate(iso: string): string {
   const d = new Date(iso);
-  return `${d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} · ${d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false })}`;
+  const locale = localeTag();
+  return `${d.toLocaleDateString(locale, { day: 'numeric', month: 'short' })} · ${d.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', hour12: false })}`;
 }
 
 function EmptyState() {
   const theme = useTheme();
+  const { t } = useTranslation();
   const isDark = theme.dark;
   return (
     <View style={s.emptyContainer}>
@@ -30,9 +34,9 @@ function EmptyState() {
       }]}>
         <Icon source="wallet-check-outline" size={36} color={isDark ? Tavira.teal : theme.colors.primary} />
       </View>
-      <Text style={[s.emptyTitle, { color: theme.colors.onSurface }]}>All caught up</Text>
+      <Text style={[s.emptyTitle, { color: theme.colors.onSurface }]}>{t('pending.empty.title')}</Text>
       <Text style={[s.emptySubtitle, { color: theme.colors.onSurfaceVariant }]}>
-        No transactions waiting to be categorized.{'\n'}New wallet notifications will appear here automatically.
+        {t('pending.empty.description')}
       </Text>
     </View>
   );
@@ -42,6 +46,7 @@ type CardProps = { item: NotificationTransaction; onCategorize: (t: Notification
 
 function TransactionCard({ item, onCategorize, swipeableRef, onDelete }: CardProps) {
   const theme = useTheme();
+  const { t } = useTranslation();
   const isDark = theme.dark;
 
   const renderDeleteAction = () => (
@@ -86,7 +91,7 @@ function TransactionCard({ item, onCategorize, swipeableRef, onDelete }: CardPro
       <View style={s.cardFooter}>
         <TouchableOpacity style={s.categorizeBtn} onPress={() => onCategorize(item)}>
           <Icon source="tag-outline" size={15} color={Tavira.navy} />
-          <Text style={s.categorizeBtnText}>Categorize</Text>
+          <Text style={s.categorizeBtnText}>{t('pending.categorize')}</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -116,6 +121,7 @@ function CategorizeBody({
   onToggleRule,
 }: ModalBodyProps) {
   const theme = useTheme();
+  const { t } = useTranslation();
   const isDark = theme.dark;
 
   return (
@@ -126,14 +132,14 @@ function CategorizeBody({
         borderWidth: 1,
       }]}>
         <View style={s.summaryRow}>
-          <Text style={[s.summaryLabel, { color: theme.colors.onSurfaceVariant }]}>Amount</Text>
+          <Text style={[s.summaryLabel, { color: theme.colors.onSurfaceVariant }]}>{t('pending.fields.amount')}</Text>
           <Text style={[s.summaryAmount, { color: Tavira.expense }]}>
             −{transaction.amount.toFixed(2)} {transaction.currency}
           </Text>
         </View>
         <View style={[s.summaryDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : theme.colors.outlineVariant }]} />
         <View style={s.summaryRow}>
-          <Text style={[s.summaryLabel, { color: theme.colors.onSurfaceVariant }]}>Merchant</Text>
+          <Text style={[s.summaryLabel, { color: theme.colors.onSurfaceVariant }]}>{t('pending.fields.merchant')}</Text>
           <Text style={[s.summaryMerchant, { color: isDark ? '#F2F4F8' : Tavira.navy }]}>
             {transaction.merchantName}
           </Text>
@@ -143,7 +149,7 @@ function CategorizeBody({
         </Text>
       </View>
 
-      <Text style={[s.sectionLabel, { color: isDark ? 'rgba(242,244,248,0.5)' : theme.colors.onSurfaceVariant }]}>Budget</Text>
+      <Text style={[s.sectionLabel, { color: isDark ? 'rgba(242,244,248,0.5)' : theme.colors.onSurfaceVariant }]}>{t('pending.fields.budget')}</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.chipRow}>
         {budgets.map(b => (
           <Chip
@@ -159,7 +165,7 @@ function CategorizeBody({
         ))}
       </ScrollView>
 
-      <Text style={[s.sectionLabel, { color: isDark ? 'rgba(242,244,248,0.5)' : theme.colors.onSurfaceVariant }]}>Category</Text>
+      <Text style={[s.sectionLabel, { color: isDark ? 'rgba(242,244,248,0.5)' : theme.colors.onSurfaceVariant }]}>{t('pending.fields.category')}</Text>
       {selectedBudget ? (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.chipRow}>
           {(selectedBudget.budgetCategories ?? []).map(c => (
@@ -176,7 +182,7 @@ function CategorizeBody({
           ))}
         </ScrollView>
       ) : (
-        <Text style={[s.hint, { color: theme.colors.onSurfaceVariant }]}>Select a budget first</Text>
+        <Text style={[s.hint, { color: theme.colors.onSurfaceVariant }]}>{t('pending.selectBudgetFirst')}</Text>
       )}
 
       <View style={[s.ruleDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : theme.colors.outlineVariant }]} />
@@ -198,11 +204,11 @@ function CategorizeBody({
               s.ruleLabel,
               { color: createRule ? (isDark ? Tavira.teal : '#0B9EA0') : (isDark ? 'rgba(242,244,248,0.8)' : theme.colors.onSurface) },
             ]}>
-              Auto-categorize similar
+              {t('pending.rule.title')}
             </Text>
           </View>
           <Text style={[s.ruleHint, { color: isDark ? 'rgba(242,244,248,0.38)' : theme.colors.onSurfaceVariant }]}>
-            Save this choice for future transactions from {transaction.merchantName}
+            {t('pending.rule.description', { merchant: transaction.merchantName })}
           </Text>
         </View>
         <Switch
@@ -230,6 +236,7 @@ export default function PendingTransactions() {
   const deleteSheetRef = useRef<BottomSheetRef>(null);
   const swipeableRefs = useRef<Map<number, Swipeable | null>>(new Map());
   const theme = useTheme();
+  const { t } = useTranslation();
   const isDark = theme.dark;
 
   const [selectedBudget, setSelectedBudget] = useState<Budget | null>(null);
@@ -240,7 +247,7 @@ export default function PendingTransactions() {
   const [deleteSheetVisible, setDeleteSheetVisible] = useState(false);
 
   useFocusEffect(() => {
-    setTitle('Transactions');
+    setTitle(t('navigation.transactions'));
     queryClient.invalidateQueries({ queryKey: PENDING_NOTIFICATION_TRANSACTIONS_KEY });
   });
 
@@ -254,9 +261,9 @@ export default function PendingTransactions() {
 
   async function onSave() {
     try {
-      const t = selectedTransaction!;
+      const tx = selectedTransaction!;
       await categorizeMutation.mutateAsync({
-        id: t.id,
+        id: tx.id,
         categoryId: selectedCategoryId,
         createRule,
       });
@@ -310,7 +317,7 @@ export default function PendingTransactions() {
       <Modal
         ref={modalRef}
         loading={categorizeMutation.isPending}
-        title="Categorize Transaction"
+        title={t('pending.modalTitle')}
         onSubmit={(cancelled: boolean) => (cancelled ? null : onSave())}
       >
         {selectedTransaction && (
@@ -336,11 +343,11 @@ export default function PendingTransactions() {
           <View style={[sheetStyles.sheetConfirmIcon, { backgroundColor: theme.colors.errorContainer }]}>
             <Icon source="trash-can-outline" size={28} color={theme.colors.error} />
           </View>
-          <Text style={[sheetStyles.sheetConfirmTitle, { color: theme.colors.onSurface }]}>Delete Transaction</Text>
-          <Text style={[sheetStyles.sheetConfirmDesc, { color: theme.colors.onSurface }]}>This action cannot be undone.</Text>
+          <Text style={[sheetStyles.sheetConfirmTitle, { color: theme.colors.onSurface }]}>{t('pending.delete.title')}</Text>
+          <Text style={[sheetStyles.sheetConfirmDesc, { color: theme.colors.onSurface }]}>{t('common.cannotBeUndone')}</Text>
         </View>
         <View style={sheetStyles.sheetActions}>
-          <Button mode="text" onPress={() => deleteSheetRef.current?.close()}>Cancel</Button>
+          <Button mode="text" onPress={() => deleteSheetRef.current?.close()}>{t('common.actions.cancel')}</Button>
           <Button
             mode="contained"
             loading={deleteMutation.isPending}
@@ -354,7 +361,7 @@ export default function PendingTransactions() {
               }
             }}
           >
-            Delete
+            {t('common.actions.delete')}
           </Button>
         </View>
       </BottomSheet>

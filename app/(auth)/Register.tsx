@@ -13,6 +13,8 @@ import {
 } from 'react-native';
 import { Icon, Portal, Snackbar, Text, TextInput } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
+import { getApiErrorMessage } from '@/utils/apiError';
 
 const inputTheme = {
   colors: {
@@ -25,26 +27,27 @@ const inputTheme = {
 };
 
 const PASSWORD_CHECKS = [
-  { label: '8+ characters', test: (p: string) => p.length >= 8 },
-  { label: 'Uppercase letter', test: (p: string) => /[A-Z]/.test(p) },
-  { label: 'One digit', test: (p: string) => /\d/.test(p) },
-  { label: 'Special character', test: (p: string) => /[\W_]/.test(p) },
-];
+  { labelKey: 'auth.register.passwordChecks.length', test: (p: string) => p.length >= 8 },
+  { labelKey: 'auth.register.passwordChecks.uppercase', test: (p: string) => /[A-Z]/.test(p) },
+  { labelKey: 'auth.register.passwordChecks.digit', test: (p: string) => /\d/.test(p) },
+  { labelKey: 'auth.register.passwordChecks.special', test: (p: string) => /[\W_]/.test(p) },
+] as const;
 
 function PasswordStrength({ password }: { password: string }) {
+  const { t } = useTranslation();
   if (!password) return null;
   return (
     <View style={strengthStyles.wrap}>
       {PASSWORD_CHECKS.map((c) => {
         const ok = c.test(password);
         return (
-          <View key={c.label} style={strengthStyles.row}>
+          <View key={c.labelKey} style={strengthStyles.row}>
             <Icon
               source={ok ? 'check-circle-outline' : 'circle-outline'}
               size={13}
               color={ok ? '#3EC6C6' : 'rgba(242,244,248,0.25)'}
             />
-            <Text style={[strengthStyles.label, ok && strengthStyles.labelOk]}>{c.label}</Text>
+            <Text style={[strengthStyles.label, ok && strengthStyles.labelOk]}>{t(c.labelKey)}</Text>
           </View>
         );
       })}
@@ -69,6 +72,7 @@ type FieldErrors = {
 
 export default function RegisterScreen() {
   const signIn = useAuthStore((s) => s.signIn);
+  const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
@@ -90,15 +94,15 @@ export default function RegisterScreen() {
 
   function validate() {
     const e: FieldErrors = {};
-    if (!firstName.trim()) e.firstName = 'Required.';
-    if (!lastName.trim()) e.lastName = 'Required.';
-    if (!email.trim()) e.email = 'Email is required.';
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) e.email = 'Enter a valid email address.';
-    if (!password) e.password = 'Password is required.';
+    if (!firstName.trim()) e.firstName = t('auth.validation.required');
+    if (!lastName.trim()) e.lastName = t('auth.validation.required');
+    if (!email.trim()) e.email = t('auth.validation.emailRequired');
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) e.email = t('auth.validation.emailInvalid');
+    if (!password) e.password = t('auth.validation.passwordRequired');
     else if (!PASSWORD_CHECKS.every((c) => c.test(password)))
-      e.password = 'Password does not meet all requirements.';
-    if (!confirmPassword) e.confirmPassword = 'Please confirm your password.';
-    else if (password !== confirmPassword) e.confirmPassword = 'Passwords do not match.';
+      e.password = t('auth.validation.passwordRequirements');
+    if (!confirmPassword) e.confirmPassword = t('auth.validation.confirmPasswordRequired');
+    else if (password !== confirmPassword) e.confirmPassword = t('auth.validation.passwordsMismatch');
     setErrors(e);
     return Object.keys(e).length === 0;
   }
@@ -117,11 +121,11 @@ export default function RegisterScreen() {
     } catch (err: unknown) {
       const status = (err as { response?: { status?: number } })?.response?.status;
       if (status === 409) {
-        setSnackMessage('An account with this email already exists.');
+        setSnackMessage(getApiErrorMessage(err, t('auth.errors.emailExists')));
       } else if (status === 429) {
-        setSnackMessage('Too many attempts. Please wait a minute and try again.');
+        setSnackMessage(t('auth.errors.tooManyAttempts'));
       } else {
-        setSnackMessage('Something went wrong. Please try again.');
+        setSnackMessage(getApiErrorMessage(err));
       }
       setSnackVisible(true);
     } finally {
@@ -145,12 +149,12 @@ export default function RegisterScreen() {
         >
           <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} activeOpacity={0.7}>
             <Icon source="arrow-left" size={20} color="rgba(242,244,248,0.5)" />
-            <Text style={styles.backText}>Back</Text>
+            <Text style={styles.backText}>{t('common.actions.back')}</Text>
           </TouchableOpacity>
 
           <View style={styles.header}>
-            <Text style={styles.title}>Create account</Text>
-            <Text style={styles.subtitle}>Start tracking your spending with Tavira</Text>
+            <Text style={styles.title}>{t('auth.register.title')}</Text>
+            <Text style={styles.subtitle}>{t('auth.register.subtitle')}</Text>
           </View>
 
           <View style={styles.card}>
@@ -158,7 +162,7 @@ export default function RegisterScreen() {
             <View style={styles.nameRow}>
               <View style={[styles.fieldGroup, styles.nameField]}>
                 <TextInput
-                  label="First name"
+                  label={t('auth.fields.firstName')}
                   value={firstName}
                   onChangeText={(v) => { setFirstName(v); clearError('firstName'); }}
                   autoCapitalize="words"
@@ -172,7 +176,7 @@ export default function RegisterScreen() {
               </View>
               <View style={[styles.fieldGroup, styles.nameField]}>
                 <TextInput
-                  label="Last name"
+                  label={t('auth.fields.lastName')}
                   value={lastName}
                   onChangeText={(v) => { setLastName(v); clearError('lastName'); }}
                   autoCapitalize="words"
@@ -189,7 +193,7 @@ export default function RegisterScreen() {
             {/* Email */}
             <View style={styles.fieldGroup}>
               <TextInput
-                label="Email"
+                label={t('auth.fields.email')}
                 value={email}
                 onChangeText={(v) => { setEmail(v); clearError('email'); }}
                 keyboardType="email-address"
@@ -207,7 +211,7 @@ export default function RegisterScreen() {
             {/* Password */}
             <View style={styles.fieldGroup}>
               <TextInput
-                label="Password"
+                label={t('auth.fields.password')}
                 value={password}
                 onChangeText={(v) => { setPassword(v); clearError('password'); }}
                 secureTextEntry={!showPassword}
@@ -232,7 +236,7 @@ export default function RegisterScreen() {
             {/* Confirm password */}
             <View style={styles.fieldGroup}>
               <TextInput
-                label="Confirm password"
+                label={t('auth.fields.confirmPassword')}
                 value={confirmPassword}
                 onChangeText={(v) => { setConfirmPassword(v); clearError('confirmPassword'); }}
                 secureTextEntry={!showConfirm}
@@ -266,7 +270,7 @@ export default function RegisterScreen() {
               end={{ x: 1, y: 0 }}
               style={styles.primaryBtn}
             >
-              <Text style={styles.primaryBtnText}>{loading ? 'Creating account…' : 'Create account'}</Text>
+              <Text style={styles.primaryBtnText}>{loading ? t('auth.register.creating') : t('auth.register.submit')}</Text>
               {!loading && <Icon source="arrow-right" size={18} color="#fff" />}
             </LinearGradient>
           </TouchableOpacity>
@@ -277,8 +281,8 @@ export default function RegisterScreen() {
             style={styles.switchLink}
           >
             <Text style={styles.switchText}>
-              Already have an account?{'  '}
-              <Text style={styles.switchHighlight}>Sign in</Text>
+              {t('auth.register.haveAccount')}{'  '}
+              <Text style={styles.switchHighlight}>{t('auth.signIn')}</Text>
             </Text>
           </TouchableOpacity>
         </ScrollView>
@@ -289,7 +293,7 @@ export default function RegisterScreen() {
           visible={snackVisible}
           onDismiss={() => setSnackVisible(false)}
           duration={4000}
-          action={{ label: 'OK', onPress: () => setSnackVisible(false) }}
+          action={{ label: t('common.actions.ok'), onPress: () => setSnackVisible(false) }}
         >
           {snackMessage}
         </Snackbar>

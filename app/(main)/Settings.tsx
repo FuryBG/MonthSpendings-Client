@@ -17,6 +17,11 @@ import * as Updates from 'expo-updates';
 import { useEffect, useRef, useState } from 'react';
 import { Alert, AppState, AppStateStatus, Linking, NativeModules, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { Icon, Switch, Text, useTheme } from 'react-native-paper';
+import { useTranslation } from 'react-i18next';
+import i18n, { LANGUAGE_NATIVE_NAMES, localeTag } from '@/i18n';
+import { LanguageSheet } from '@/components/LanguageSheet';
+import { useLanguageStore } from '@/stores/languageStore';
+import { getApiErrorMessage } from '@/utils/apiError';
 
 const WalletSync = NativeModules.WalletSync as
   | { isNotificationListenerEnabled: () => Promise<boolean> }
@@ -82,6 +87,7 @@ function DangerRow({ icon, label, onPress }: { icon: string; label: string; onPr
 
 function NotificationBanner({ canAskAgain, onPress }: { canAskAgain: boolean; onPress: () => void }) {
   const theme = useTheme();
+  const { t } = useTranslation();
   const isDark = theme.dark;
   const subtitleColor = isDark ? 'rgba(245,158,11,0.65)' : 'rgba(160,95,0,0.85)';
 
@@ -101,11 +107,9 @@ function NotificationBanner({ canAskAgain, onPress }: { canAskAgain: boolean; on
         <Icon source="bell-off-outline" size={20} color={Tavira.warning} />
       </View>
       <View style={styles.labelWrap}>
-        <Text style={[styles.label, { color: Tavira.warning }]}>Notifications off</Text>
+        <Text style={[styles.label, { color: Tavira.warning }]}>{t('settings.notificationsOff.title')}</Text>
         <Text style={[styles.description, { color: subtitleColor }]}>
-          {canAskAgain
-            ? 'Tap to receive notifications for spendings, invites and wallet sync'
-            : 'Enable Notifications to receive alerts for spendings, invites and wallet sync'}
+          {canAskAgain ? t('settings.notificationsOff.tapToEnable') : t('settings.notificationsOff.openSettings')}
         </Text>
       </View>
       <Icon
@@ -119,7 +123,10 @@ function NotificationBanner({ canAskAgain, onPress }: { canAskAgain: boolean; on
 
 export default function SettingsScreen() {
   const theme = useTheme();
+  const { t, i18n: i18nInstance } = useTranslation();
   const isDark = theme.dark;
+  const language = useLanguageStore((s) => s.language);
+  const [languageSheetVisible, setLanguageSheetVisible] = useState(false);
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
   const refreshUser = useAuthStore((s) => s.refreshUser);
@@ -162,7 +169,7 @@ export default function SettingsScreen() {
     try {
       const token = await registerForPushNotificationsAsync();
       if (token) await updateNotificationToken(token);
-      showSuccess('Notifications enabled.');
+      showSuccess(i18n.t('settings.messages.notificationsEnabled'));
     } catch {
       // token registration failed silently
     }
@@ -175,7 +182,7 @@ export default function SettingsScreen() {
       if (!available) {
         setLockValue(false);
         await setLockEnabled(false);
-        showError('No biometrics or device PIN set up. Enable a screen lock in your device settings first.');
+        showError(t('settings.messages.noDeviceLock'));
         return;
       }
     }
@@ -184,19 +191,19 @@ export default function SettingsScreen() {
 
   const handleDeleteAccount = () => {
     Alert.alert(
-      'Delete Account',
-      'Your request will be reviewed. Your account and all associated data will be permanently deleted within 30 days. This cannot be undone.',
+      t('settings.deleteAccount.title'),
+      t('settings.deleteAccount.message'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.actions.cancel'), style: 'cancel' },
         {
-          text: 'Request Deletion',
+          text: t('settings.deleteAccount.confirm'),
           style: 'destructive',
           onPress: async () => {
             try {
               await requestAccountDeletion();
-              showSuccess('Deletion request submitted. We will process it within 30 days.');
-            } catch {
-              showError('Failed to submit request. Please try again.');
+              showSuccess(t('settings.deleteAccount.submitted'));
+            } catch (e) {
+              showError(getApiErrorMessage(e, t('settings.deleteAccount.failed')));
             }
           },
         },
@@ -218,11 +225,11 @@ export default function SettingsScreen() {
             await refreshUser();
           } catch {
             setSyncValue(false);
-            showError('Failed to enable Wallet Sync. Please try again.');
+            showError(i18n.t('settings.messages.walletSyncEnableFailed'));
           }
         } else {
           setSyncValue(false);
-          showError('Notification access is required for Wallet Sync.');
+          showError(i18n.t('settings.messages.walletSyncAccessRequired'));
         }
       }
 
@@ -266,7 +273,7 @@ export default function SettingsScreen() {
       await refreshUser();
     } catch {
       setSyncValue(!newValue);
-      showError('Failed to update Wallet Sync. Please try again.');
+      showError(t('settings.messages.walletSyncUpdateFailed'));
     }
   };
 
@@ -274,7 +281,7 @@ export default function SettingsScreen() {
 
   return (
     <ScreenContainer scrollable>
-      <Stack.Screen options={{ title: 'Settings' }} />
+      <Stack.Screen options={{ title: t('settings.title') }} />
 
       {notifStatus && notifStatus.status !== 'granted' && (
         <NotificationBanner canAskAgain={notifStatus.canAskAgain} onPress={handleEnableNotifications} />
@@ -282,12 +289,12 @@ export default function SettingsScreen() {
 
       {Platform.OS === 'android' && (
         <View style={styles.section}>
-          <Text style={[styles.sectionLabel, { color: sectionLabelColor }]}>NOTIFICATIONS</Text>
+          <Text style={[styles.sectionLabel, { color: sectionLabelColor }]}>{t('settings.sections.notifications')}</Text>
           <View style={[styles.card, { backgroundColor: isDark ? Tavira.glassBg : theme.colors.surface, borderColor: isDark ? Tavira.glassBorder : 'transparent' }]}>
             <SettingRow
               icon="bell-sync-outline"
-              label="Wallet Sync"
-              description="Reads payment notifications to log transactions automatically."
+              label={t('settings.walletSync.label')}
+              description={t('settings.walletSync.description')}
               value={syncValue}
               onValueChange={handleSyncToggle}
               disabled={!user!.isPro || notifStatus?.status !== 'granted'}
@@ -295,31 +302,31 @@ export default function SettingsScreen() {
           </View>
           {!user!.isPro ? (
             <Text style={[styles.proHint, { color: isDark ? 'rgba(242,244,248,0.35)' : theme.colors.onSurfaceVariant }]}>
-              Upgrade to Tavira Pro to enable Wallet Sync.
+              {t('settings.walletSync.proHint')}
             </Text>
           ) : notifStatus?.status !== 'granted' && (
             <Text style={[styles.proHint, { color: isDark ? 'rgba(242,244,248,0.35)' : theme.colors.onSurfaceVariant }]}>
-              Notifications must be enabled to use this feature.
+              {t('settings.walletSync.notificationsHint')}
             </Text>
           )}
         </View>
       )}
 
       <View style={styles.section}>
-        <Text style={[styles.sectionLabel, { color: sectionLabelColor }]}>SECURITY</Text>
+        <Text style={[styles.sectionLabel, { color: sectionLabelColor }]}>{t('settings.sections.security')}</Text>
         <View style={[styles.card, { backgroundColor: isDark ? Tavira.glassBg : theme.colors.surface, borderColor: isDark ? Tavira.glassBorder : 'transparent' }]}>
           <SettingRow
             icon="fingerprint"
-            label="Lock App"
-            description="Require biometrics or device PIN to open Tavira."
+            label={t('settings.lockApp.label')}
+            description={t('settings.lockApp.description')}
             value={lockValue}
             onValueChange={handleLockToggle}
           />
           <View style={[styles.rowDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)' }]} />
           <SettingRow
             icon="eye-off-outline"
-            label="Hide Amounts"
-            description="Mask all amounts across the app."
+            label={t('settings.hideAmounts.label')}
+            description={t('settings.hideAmounts.description')}
             value={amountsValue}
             onValueChange={(v) => { setAmountsValue(v); toggleAmountsHidden(); }}
           />
@@ -327,8 +334,25 @@ export default function SettingsScreen() {
       </View>
 
       <View style={styles.section}>
-        <Text style={[styles.sectionLabel, { color: sectionLabelColor }]}>GENERAL</Text>
+        <Text style={[styles.sectionLabel, { color: sectionLabelColor }]}>{t('settings.sections.general')}</Text>
         <View style={[styles.card, { backgroundColor: isDark ? Tavira.glassBg : theme.colors.surface, borderColor: isDark ? Tavira.glassBorder : 'transparent' }]}>
+          <Pressable
+            style={({ pressed }) => [styles.row, pressed && { opacity: 0.6 }]}
+            onPress={() => setLanguageSheetVisible(true)}
+            accessibilityRole="button"
+          >
+            <View style={[styles.iconWrap, { backgroundColor: isDark ? 'rgba(62,198,198,0.10)' : theme.colors.surfaceVariant }]}>
+              <Icon source="translate" size={20} color={isDark ? Tavira.teal : theme.colors.primary} />
+            </View>
+            <View style={styles.labelWrap}>
+              <Text style={[styles.label, { color: isDark ? '#F2F4F8' : theme.colors.onBackground }]}>{t('settings.language.label')}</Text>
+              <Text style={[styles.description, { color: isDark ? 'rgba(242,244,248,0.45)' : theme.colors.onSurfaceVariant }]}>
+                {LANGUAGE_NATIVE_NAMES[language]}
+              </Text>
+            </View>
+            <Icon source="chevron-right" size={18} color={isDark ? 'rgba(242,244,248,0.30)' : theme.colors.onSurfaceVariant} />
+          </Pressable>
+          <View style={[styles.rowDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)' }]} />
           <Pressable
             style={({ pressed }) => [styles.row, pressed && { opacity: 0.6 }]}
             onPress={async () => {
@@ -340,9 +364,9 @@ export default function SettingsScreen() {
               <Icon source="compass-outline" size={20} color={isDark ? Tavira.teal : theme.colors.primary} />
             </View>
             <View style={styles.labelWrap}>
-              <Text style={[styles.label, { color: isDark ? '#F2F4F8' : theme.colors.onBackground }]}>Show App Tour</Text>
+              <Text style={[styles.label, { color: isDark ? '#F2F4F8' : theme.colors.onBackground }]}>{t('settings.appTour.label')}</Text>
               <Text style={[styles.description, { color: isDark ? 'rgba(242,244,248,0.45)' : theme.colors.onSurfaceVariant }]}>
-                Replay the guided walkthrough
+                {t('settings.appTour.description')}
               </Text>
             </View>
             <Icon source="chevron-right" size={18} color={isDark ? 'rgba(242,244,248,0.30)' : theme.colors.onSurfaceVariant} />
@@ -351,11 +375,11 @@ export default function SettingsScreen() {
       </View>
 
       <View style={styles.section}>
-        <Text style={[styles.sectionLabel, { color: isDark ? 'rgba(255,107,107,0.55)' : theme.colors.error }]}>DANGER ZONE</Text>
+        <Text style={[styles.sectionLabel, { color: isDark ? 'rgba(255,107,107,0.55)' : theme.colors.error }]}>{t('settings.sections.dangerZone')}</Text>
         <View style={[styles.card, { backgroundColor: isDark ? Tavira.glassBg : theme.colors.surface, borderColor: isDark ? 'rgba(255,107,107,0.15)' : 'rgba(217,79,79,0.15)' }]}>
           <DangerRow
             icon="account-remove-outline"
-            label="Delete Account"
+            label={t('settings.deleteAccount.title')}
             onPress={handleDeleteAccount}
           />
         </View>
@@ -364,27 +388,33 @@ export default function SettingsScreen() {
       <View style={styles.versionBlock}>
         <View style={[styles.versionDivider, { backgroundColor: isDark ? 'rgba(242,244,248,0.08)' : 'rgba(11,27,58,0.08)' }]} />
         <Text style={[styles.versionLabel, { color: isDark ? 'rgba(242,244,248,0.28)' : 'rgba(11,27,58,0.28)' }]}>
-          VERSION
+          {t('settings.version.label')}
         </Text>
         <Text style={[styles.versionNumber, { color: isDark ? 'rgba(242,244,248,0.55)' : 'rgba(11,27,58,0.55)' }]}>
           {Constants.expoConfig?.version ?? '—'}
         </Text>
         <Text style={[styles.versionMeta, { color: isDark ? 'rgba(242,244,248,0.25)' : 'rgba(11,27,58,0.25)' }]}>
           {Updates.updateId
-            ? 'OTA · ' + Updates.updateId.slice(0, 8) + (Updates.createdAt != null ? ' · ' + Updates.createdAt.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '')
-            : 'Embedded build'}
+            ? 'OTA · ' + Updates.updateId.slice(0, 8) + (Updates.createdAt != null ? ' · ' + Updates.createdAt.toLocaleDateString(localeTag(i18nInstance.language), { day: 'numeric', month: 'short', year: 'numeric' }) : '')
+            : t('settings.version.embedded')}
         </Text>
       </View>
       <ScreenIntroSheet
         screenKey="Settings"
         icon="cog-outline"
-        title="App Settings"
+        title={t('settings.intro.title')}
         bullets={[
-          { icon: 'fingerprint', text: 'Lock App requires biometrics or your device PIN when reopening Tavira' },
-          { icon: 'bell-sync-outline', text: 'Wallet Sync (Pro) reads payment notifications to log transactions automatically' },
-          { icon: 'eye-outline', text: 'Amount visibility can also be toggled from the home screen header' },
-          { icon: 'compass-outline', text: 'Tap "Show App Tour" above to replay this walkthrough any time' },
+          { icon: 'fingerprint', text: t('settings.intro.lockApp') },
+          { icon: 'bell-sync-outline', text: t('settings.intro.walletSync') },
+          { icon: 'eye-outline', text: t('settings.intro.amounts') },
+          { icon: 'translate', text: t('settings.intro.language') },
+          { icon: 'compass-outline', text: t('settings.intro.appTour') },
         ]}
+      />
+      <LanguageSheet
+        visible={languageSheetVisible}
+        onClose={() => setLanguageSheetVisible(false)}
+        onChanged={() => showSuccess(i18n.t('settings.language.changed'))}
       />
     </ScreenContainer>
   );

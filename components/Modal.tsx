@@ -9,6 +9,7 @@ import {
   View,
 } from 'react-native';
 import { Button, Text, useTheme } from 'react-native-paper';
+import { useTranslation } from 'react-i18next';
 
 type ModalProps = {
   title?: string;
@@ -25,6 +26,7 @@ export type ModalRef = {
 export const Modal = forwardRef<ModalRef, ModalProps>(
   function Modal({ title, onSubmit, children, loading }: ModalProps, ref) {
     const theme = useTheme();
+    const { t } = useTranslation();
     const [visible, setVisible] = useState(false);
 
     useImperativeHandle(ref, () => ({
@@ -65,7 +67,7 @@ export const Modal = forwardRef<ModalRef, ModalProps>(
                   {children}
                 </ScrollView>
                 <View style={[s.actions, { borderTopColor: theme.colors.outlineVariant }]}>
-                  <Button onPress={() => onHide(true)}>Cancel</Button>
+                  <Button onPress={() => onHide(true)}>{t('common.actions.cancel')}</Button>
                   <Button
                     onPress={() => onHide(false)}
                     loading={loading}
@@ -73,7 +75,7 @@ export const Modal = forwardRef<ModalRef, ModalProps>(
                     buttonColor={Tavira.teal}
                     textColor={Tavira.navy}
                   >
-                    Done
+                    {t('common.actions.done')}
                   </Button>
                 </View>
               </View>

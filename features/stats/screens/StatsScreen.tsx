@@ -19,6 +19,7 @@ import { RangeBar } from '../sections/RangeBar';
 import { TopSpendingsSection } from '../sections/TopSpendingsSection';
 import { TotalSection } from '../sections/TotalSection';
 import { useStatsSelection } from '../state/useStatsSelection';
+import { useTranslation } from 'react-i18next';
 
 /** Remounted (via sessionKey) whenever the selection is reset, so local UI state resets too. */
 export default function StatsScreen() {
@@ -28,6 +29,7 @@ export default function StatsScreen() {
 
 function StatsContent() {
   const c = useStatsColors();
+  const { t } = useTranslation();
   const router = useRouter();
   const queryClient = useQueryClient();
   const { budgetId, budget, periods, symbol, isLoading: budgetLoading } = useStatsBudget();
@@ -65,9 +67,9 @@ function StatsContent() {
       <ScreenContainer glowColor="purple" removeSafeBottom>
         <EmptyState
           icon="chart-donut"
-          title="No budget selected"
-          body="Create a budget or pick one from the menu to see where your money goes."
-          actionLabel="Create budget"
+          title={t('stats.noBudget.title')}
+          body={t('stats.noBudget.body')}
+          actionLabel={t('stats.noBudget.action')}
           onAction={() => router.push('/(main)/CreateBudget')}
         />
       </ScreenContainer>
@@ -96,9 +98,9 @@ function StatsContent() {
         {queryA.isError && !summaryA ? (
           <EmptyState
             icon="cloud-alert"
-            title="Stats didn't load"
-            body="Check your connection, then try again."
-            actionLabel="Try again"
+            title={t('stats.loadError.title')}
+            body={t('stats.loadError.body')}
+            actionLabel={t('common.actions.tryAgain')}
             onAction={() => queryA.refetch()}
           />
         ) : !summaryA || !rangeA ? (
@@ -117,7 +119,7 @@ function StatsContent() {
               onCompare={() => setCompareOpen(true)}
               pinnedPeriodId={pinnedPeriodId}
               onPinPeriod={setPinnedPeriodId}
-              pinnedHint={drillPeriod ? 'Showing this period below' : undefined}
+              pinnedHint={drillPeriod ? t('stats.pinnedHint') : undefined}
             />
             <View style={[s.stack, sectionStale && s.stale]}>
               <CategoriesSection summaryA={sectionSummary!} summaryB={summaryB} rangeA={rangeA} rangeB={rangeB} symbol={symbol} scopeLabel={scopeLabel} onOpenCategory={openCategory} />
@@ -130,11 +132,11 @@ function StatsContent() {
       <ScreenIntroSheet
         screenKey="Stats"
         icon="chart-box-outline"
-        title="Your spending, any way you slice it"
+        title={t('stats.intro.title')}
         bullets={[
-          { icon: 'calendar-range', text: 'Pick this period, the last 3, 6 or 12, or any custom run of periods.' },
-          { icon: 'gesture-swipe-horizontal', text: 'Slide across the chart to see each period’s total.' },
-          { icon: 'compare-horizontal', text: 'Tap Compare to put two ranges side by side, category by category.' },
+          { icon: 'calendar-range', text: t('stats.intro.ranges') },
+          { icon: 'gesture-swipe-horizontal', text: t('stats.intro.scrub') },
+          { icon: 'compare-horizontal', text: t('stats.intro.compare') },
         ]}
       />
     </ScreenContainer>

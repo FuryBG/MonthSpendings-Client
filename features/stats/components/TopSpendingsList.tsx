@@ -5,6 +5,7 @@ import { formatMoney, formatShortDate } from '../model/format';
 import { categoryColor } from '../model/palette';
 import type { RangeSpending } from '../model/types';
 import { useStatsColors } from './primitives/useStatsColors';
+import { displaySpendingDescription } from '@/utils/spendingDescription';
 
 type Props = {
   spendings: RangeSpending[];
@@ -21,7 +22,7 @@ export function TopSpendingsList({ spendings, symbol, onPress, hideCategory = fa
     <View>
       {spendings.map(sp => {
         const color = categoryColor(sp.categoryId);
-        const title = sp.description?.trim() || sp.categoryName;
+        const title = sp.description?.trim() ? displaySpendingDescription(sp.description.trim()) : sp.categoryName;
         const meta = hideCategory ? formatShortDate(sp.date) : `${sp.categoryName}, ${formatShortDate(sp.date)}`;
         return (
           <Pressable

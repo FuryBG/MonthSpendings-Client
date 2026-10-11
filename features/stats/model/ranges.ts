@@ -1,13 +1,19 @@
 import type { BudgetPeriod } from '@/types/Types';
 import { formatShortSpan } from './format';
 import type { PeriodRange, RangePreset, RangeSelection, ResolvedRange } from './types';
+import i18n from '@/i18n';
 
-export const PRESETS: { preset: RangePreset; label: string; count: number }[] = [
-  { preset: 'current', label: 'This period', count: 1 },
-  { preset: 'last3', label: 'Last 3', count: 3 },
-  { preset: 'last6', label: 'Last 6', count: 6 },
-  { preset: 'last12', label: 'Last 12', count: 12 },
+export const PRESETS: { preset: RangePreset; count: number }[] = [
+  { preset: 'current', count: 1 },
+  { preset: 'last3', count: 3 },
+  { preset: 'last6', count: 6 },
+  { preset: 'last12', count: 12 },
 ];
+
+/** Chip label for a preset, in the current app language. */
+export function presetLabel(count: number): string {
+  return count === 1 ? i18n.t('stats.range.thisPeriod') : i18n.t('stats.range.lastShort', { count });
+}
 
 export const DEFAULT_SELECTION: RangeSelection = { kind: 'preset', preset: 'current' };
 
@@ -36,7 +42,7 @@ export function rangeFromIndices(periods: BudgetPeriod[], a: number, b: number):
 function labelForIndices(periods: BudgetPeriod[], start: number, end: number): string {
   const last = periods.length - 1;
   const count = end - start + 1;
-  if (end === last) return count === 1 ? 'This period' : `Last ${count} periods`;
+  if (end === last) return count === 1 ? i18n.t('stats.range.thisPeriod') : i18n.t('stats.range.lastN', { count });
   // Past ranges are named by their dates, so A and B are never ambiguous.
   return formatShortSpan(periods[start].startDate, periods[end].endDate);
 }

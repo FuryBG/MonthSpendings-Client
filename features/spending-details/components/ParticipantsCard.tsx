@@ -6,6 +6,8 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Icon, Text, useTheme } from 'react-native-paper';
 import type { ParticipantShare } from '../model/participants';
 import { ParticipantAvatar } from './ParticipantAvatar';
+import { useTranslation } from 'react-i18next';
+import { localeTag } from '@/i18n';
 
 type Props = {
   participants: ParticipantShare[];
@@ -18,12 +20,13 @@ type Props = {
 const COLLAPSED_COUNT = 2;
 
 function money(amount: number, symbol: string) {
-  return `${amount.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${symbol}`;
+  return `${amount.toLocaleString(localeTag(), { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${symbol}`;
 }
 
 /** Who spent how much in this category; tap a person to filter the list to their spendings. */
 export function ParticipantsCard({ participants, symbol, selectedUserId, onSelect }: Props) {
   const theme = useTheme();
+  const { t } = useTranslation();
   const dark = theme.dark;
   const text = dark ? '#F2F4F8' : theme.colors.onSurface;
   const muted = theme.colors.onSurfaceVariant;
@@ -45,14 +48,14 @@ export function ParticipantsCard({ participants, symbol, selectedUserId, onSelec
   return (
     <View style={[s.card, { backgroundColor: dark ? Tavira.glassBg : theme.colors.surfaceVariant, borderColor: dark ? Tavira.glassBorder : 'transparent' }]}>
       <View style={s.header}>
-        <Text style={[s.title, { color: text }]}>Who spent</Text>
+        <Text style={[s.title, { color: text }]}>{t('participants.title')}</Text>
         {selectedUserId != null ? (
-          <Pressable onPress={() => onSelect(null)} hitSlop={10} style={s.clear} accessibilityLabel="Show everyone's spendings">
-            <Text style={[s.clearText, { color: muted }]}>Show everyone</Text>
+          <Pressable onPress={() => onSelect(null)} hitSlop={10} style={s.clear} accessibilityLabel={t('participants.showEveryoneA11y')}>
+            <Text style={[s.clearText, { color: muted }]}>{t('participants.showEveryone')}</Text>
             <Icon source="close" size={14} color={muted} />
           </Pressable>
         ) : (
-          <Text style={[s.hint, { color: muted }]}>Tap a person to filter</Text>
+          <Text style={[s.hint, { color: muted }]}>{t('participants.hint')}</Text>
         )}
       </View>
 
@@ -77,13 +80,13 @@ export function ParticipantsCard({ participants, symbol, selectedUserId, onSelec
             style={({ pressed }) => [s.row, selected && { backgroundColor: track }, (pressed || dimmed) && { opacity: dimmed ? 0.45 : 0.7 }]}
             accessibilityRole="button"
             accessibilityState={{ selected }}
-            accessibilityLabel={`${p.isYou ? 'You' : p.name} spent ${money(p.spent, symbol)}, ${p.share.toFixed(0)} percent`}
+            accessibilityLabel={t('participants.rowA11y', { name: p.isYou ? t('participants.you') : p.name, amount: money(p.spent, symbol), percent: p.share.toFixed(0) })}
           >
             <ParticipantAvatar name={p.name} photoUrl={p.photoUrl} color={p.color} />
             <View style={s.rowText}>
-              <Text style={[s.name, { color: text }]} numberOfLines={1}>{p.isYou ? 'You' : p.name}</Text>
+              <Text style={[s.name, { color: text }]} numberOfLines={1}>{p.isYou ? t('participants.you') : p.name}</Text>
               <Text style={[s.meta, { color: muted }]}>
-                {p.count === 0 ? 'Nothing spent' : `${p.count} ${p.count === 1 ? 'spending' : 'spendings'}, ${p.share.toFixed(0)}%`}
+                {p.count === 0 ? t('participants.nothingSpent') : t('participants.spendings', { count: p.count, percent: p.share.toFixed(0) })}
               </Text>
             </View>
             <MaskedAmount value={money(p.spent, symbol)} style={[s.amount, { color: p.spent > 0 ? Tavira.expense : muted }]} />
@@ -98,7 +101,7 @@ export function ParticipantsCard({ participants, symbol, selectedUserId, onSelec
           accessibilityRole="button"
         >
           <Text style={[s.moreText, { color: dark ? Tavira.teal : '#3E5BDB' }]}>
-            {expanded ? 'Show fewer' : `Show all ${participants.length}`}
+            {expanded ? t('stats.showFewer') : t('participants.showAll', { count: participants.length })}
           </Text>
           <Icon source={expanded ? 'chevron-up' : 'chevron-down'} size={16} color={dark ? Tavira.teal : '#3E5BDB'} />
         </Pressable>

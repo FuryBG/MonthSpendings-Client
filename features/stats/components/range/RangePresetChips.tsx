@@ -1,9 +1,10 @@
 import * as Haptics from 'expo-haptics';
 import { Pressable, ScrollView, StyleSheet } from 'react-native';
 import { Icon, Text } from 'react-native-paper';
-import { isPresetSelected, PRESETS } from '../../model/ranges';
+import { isPresetSelected, presetLabel, PRESETS } from '../../model/ranges';
 import type { RangeSelection } from '../../model/types';
 import { useStatsColors } from '../primitives/useStatsColors';
+import { useTranslation } from 'react-i18next';
 
 type Props = {
   selection: RangeSelection;
@@ -13,6 +14,7 @@ type Props = {
 
 export function RangePresetChips({ selection, onSelect, onCustom }: Props) {
   const c = useStatsColors();
+  const { t } = useTranslation();
 
   const chip = (key: string, label: string, active: boolean, onPress: () => void, icon?: string) => (
     <Pressable
@@ -33,8 +35,8 @@ export function RangePresetChips({ selection, onSelect, onCustom }: Props) {
 
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.row}>
-      {PRESETS.map(p => chip(p.preset, p.label, isPresetSelected(selection, p.preset), () => onSelect({ kind: 'preset', preset: p.preset })))}
-      {chip('custom', 'Custom', selection.kind === 'custom', onCustom, 'calendar-range')}
+      {PRESETS.map(p => chip(p.preset, presetLabel(p.count), isPresetSelected(selection, p.preset), () => onSelect({ kind: 'preset', preset: p.preset })))}
+      {chip('custom', t('stats.range.custom'), selection.kind === 'custom', onCustom, 'calendar-range')}
     </ScrollView>
   );
 }

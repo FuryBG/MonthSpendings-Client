@@ -20,6 +20,9 @@ import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import { Button, HelperText, Icon, Text, TextInput, useTheme } from 'react-native-paper';
 import ReorderableList, { reorderItems, useReorderableDrag } from 'react-native-reorderable-list';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
+import { getApiErrorMessage } from '@/utils/apiError';
 
 const ACCENT_COLORS = [Tavira.teal, Tavira.purple, '#7B8FFF', '#2DE6D0', '#8B5CF6', '#10B981'];
 
@@ -38,6 +41,7 @@ interface CategoryCardProps {
 
 function CategoryCard({ bc, currencySymbol, isDark, primaryColor, getSwipeableRef, onPress, onRenamePress, onMinus, onPlus, highlightActions }: CategoryCardProps) {
   const drag = useReorderableDrag();
+  const { t } = useTranslation();
   const remaining = Math.round(bc.spendings!.reduce((sum, s) => (s.amount > 0 ? sum + s.amount : sum - Math.abs(s.amount)), 0) * 100) / 100 || 0;
   const accentColor = ACCENT_COLORS[bc.id % ACCENT_COLORS.length];
   const isPositive = remaining > 0;
@@ -49,7 +53,7 @@ function CategoryCard({ bc, currencySymbol, isDark, primaryColor, getSwipeableRe
       renderRightActions={() => (
         <TouchableOpacity style={styles.renameAction} onPress={onRenamePress}>
           <Icon source="pencil-outline" size={20} color="#fff" />
-          <Text style={styles.renameActionText}>Edit</Text>
+          <Text style={styles.renameActionText}>{t('common.actions.edit')}</Text>
         </TouchableOpacity>
       )}
     >
@@ -118,45 +122,19 @@ function CategoryCard({ bc, currencySymbol, isDark, primaryColor, getSwipeableRe
   );
 }
 
-const HOME_STEPS_BASE: TourStep[] = [
-  {
-    key: 'budgetHeader',
-    icon: 'wallet-outline',
-    title: 'Your Active Budget',
-    description: 'Shows your selected budget name and currency. Tap the budget pill in the top bar to switch budgets or create a new one.',
-  },
-  {
-    key: 'categoryCard',
-    icon: 'cash-fast',
-    title: 'Spending Categories',
-    description: 'Each card is a spending envelope. The balance shows what remains this period. Long-press any card to reorder or swipe left to edit name.',
-  },
-  {
-    key: 'cardActions',
-    icon: 'plus-minus',
-    title: 'Add or Spend',
-    description: 'Tap + to top up a category, or − to record a spend. Tap the card itself to see the full transaction history.',
-  },
-  {
-    key: 'eyeToggle',
-    icon: 'eye-outline',
-    title: 'Hide Amounts',
-    description: 'Tap the eye icon in the header to mask all balances — handy when your screen is visible to others.',
-  },
-  {
-    key: 'menuButton',
-    icon: 'menu',
-    title: 'Navigation Menu',
-    description: 'Open the menu to access Settings, view Invitations, and manage or create budgets.',
-  },
-];
+function getHomeSteps(t: TFunction): TourStep[] {
+  return [
+    { key: 'budgetHeader', icon: 'wallet-outline', title: t('tour.home.budgetHeader.title'), description: t('tour.home.budgetHeader.description') },
+    { key: 'categoryCard', icon: 'cash-fast', title: t('tour.home.categoryCard.title'), description: t('tour.home.categoryCard.description') },
+    { key: 'cardActions', icon: 'plus-minus', title: t('tour.home.cardActions.title'), description: t('tour.home.cardActions.description') },
+    { key: 'eyeToggle', icon: 'eye-outline', title: t('tour.home.eyeToggle.title'), description: t('tour.home.eyeToggle.description') },
+    { key: 'menuButton', icon: 'menu', title: t('tour.home.menuButton.title'), description: t('tour.home.menuButton.description') },
+  ];
+}
 
-const PENDING_STEP: TourStep = {
-  key: 'pendingBanner',
-  icon: 'bank-transfer',
-  title: 'Pending Transactions',
-  description: 'When Wallet Sync is enabled, bank payment notifications appear here for you to categorize into your budget.',
-};
+function getPendingStep(t: TFunction): TourStep {
+  return { key: 'pendingBanner', icon: 'bank-transfer', title: t('tour.home.pendingBanner.title'), description: t('tour.home.pendingBanner.description') };
+}
 
 export default function HomeScreen() {
   const { data: budgets = [] } = useBudgetsQuery();
@@ -179,6 +157,7 @@ export default function HomeScreen() {
   const [renameCategory, setRenameCategory] = useState<BudgetCategory | null>(null);
   const router = useRouter();
   const theme = useTheme();
+  const { t } = useTranslation();
   const isDark = theme.dark;
   const sheetRef = useRef<BottomSheetRef>(null);
   const renameSheetRef = useRef<BottomSheetRef>(null);
@@ -238,9 +217,9 @@ export default function HomeScreen() {
     if (!renameCategory) return;
     try {
       await updateCategoryNameMutation.mutateAsync({ id: renameCategory.id, newName: name });
-      renameSheetRef.current?.close(() => { renameReset(); showSuccess('Category renamed.'); });
-    } catch {
-      renameSheetRef.current?.close(() => showError('Renaming failed.'));
+      renameSheetRef.current?.close(() => { renameReset(); showSuccess(t('budget.manage.messages.categoryRenamed')); });
+    } catch (e) {
+      renameSheetRef.current?.close(() => showError(getApiErrorMessage(e, t('home.messages.renameFailed'))));
     }
   }
 
@@ -255,16 +234,16 @@ export default function HomeScreen() {
       spending.budgetPeriodId = selectedMainBudget?.budgetPeriods[0].id ?? 0;
       spending.amount = negativeInput ? -Number(spending.amount) : Number(spending.amount);
       await addSpendingMutation.mutateAsync(spending);
-      sheetRef.current?.close(() => { reset(); showSuccess('Spending added.'); });
-    } catch {
-      sheetRef.current?.close(() => showError('Adding spending failed.'));
+      sheetRef.current?.close(() => { reset(); showSuccess(t('home.messages.spendingAdded')); });
+    } catch (e) {
+      sheetRef.current?.close(() => showError(getApiErrorMessage(e, t('home.messages.spendingFailed'))));
     }
   }
 
   useEffect(() => {
     if (!sheetVisible) return;
-    const t = setTimeout(() => amountInputRef.current?.focus?.(), 350);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => amountInputRef.current?.focus?.(), 350);
+    return () => clearTimeout(timer);
   }, [sheetVisible]);
 
   // Start tour the first time a budget exists and the tour hasn't been seen
@@ -272,18 +251,18 @@ export default function HomeScreen() {
   useFocusEffect(useCallback(() => {
     if (budgets.length === 0) return;
     if (!hasSeenTour) {
-      const t = setTimeout(() => useTourStore.getState().startTour(), 700);
-      return () => clearTimeout(t);
+      const timer = setTimeout(() => useTourStore.getState().startTour(), 700);
+      return () => clearTimeout(timer);
     }
   }, [budgets.length, hasSeenTour])); // eslint-disable-line react-hooks/exhaustive-deps
 
   const tourSteps = useMemo<TourStep[]>(() => {
-    const steps = [...HOME_STEPS_BASE];
+    const steps = getHomeSteps(t);
     if (transactions.length > 0) {
-      steps.splice(3, 0, PENDING_STEP);
+      steps.splice(3, 0, getPendingStep(t));
     }
     return steps;
-  }, [transactions.length]);
+  }, [transactions.length, t]);
 
   function handleReorder({ from, to }: { from: number; to: number }) {
     const newData = reorderItems(listData, from, to);
@@ -323,14 +302,14 @@ export default function HomeScreen() {
               <Icon source="wallet-outline" size={40} color={Tavira.teal} />
             </View>
             <Text style={[styles.emptyTitle, { color: isDark ? '#F2F4F8' : theme.colors.onBackground }]}>
-              Start your financial story
+              {t('home.empty.title')}
             </Text>
             <Text style={[styles.emptySubtitle, { color: isDark ? 'rgba(242,244,248,0.5)' : theme.colors.onSurfaceVariant }]}>
-              Create your first shared budget and begin tracking spending together.
+              {t('home.empty.description')}
             </Text>
             <TouchableOpacity style={styles.createBudgetBtn} onPress={onCreateBudget}>
               <Icon source="plus" size={18} color="#0B1B3A" />
-              <Text style={styles.createBudgetBtnText}>Create Budget</Text>
+              <Text style={styles.createBudgetBtnText}>{t('navigation.createBudget')}</Text>
             </TouchableOpacity>
           </View>
         ) : (
@@ -342,7 +321,7 @@ export default function HomeScreen() {
                     <View style={styles.pendingIconWrap}>
                       <Icon source="bank-transfer" size={18} color={Tavira.warning} />
                     </View>
-                    <Text style={styles.pendingText}>Pending Bank Transactions</Text>
+                    <Text style={styles.pendingText}>{t('home.pendingBanner')}</Text>
                   </View>
                   <View style={styles.pendingBadge}>
                     <Text style={styles.pendingBadgeText}>{transactions.length}</Text>
@@ -379,11 +358,13 @@ export default function HomeScreen() {
       {/* Add Spending Sheet */}
       <BottomSheet ref={sheetRef} visible={sheetVisible} onClose={handleSheetClose}>
         <Text style={sheetStyles.sheetTitle}>
-          {negativeInput ? `${selectedCategory?.name} — Spent` : `${selectedCategory?.name} — Add`}
+          {negativeInput
+            ? t('home.sheet.spentTitle', { name: selectedCategory?.name })
+            : t('home.sheet.addTitle', { name: selectedCategory?.name })}
         </Text>
         <Controller
           control={control}
-          rules={{ required: 'Amount is required', validate: v => v > 0 || 'Must be > 0' }}
+          rules={{ required: t('home.validation.amountRequired'), validate: v => v > 0 || t('home.validation.amountPositive') }}
           name="amount"
           render={({ field: { onChange, value }, fieldState }) => (
             <>
@@ -398,7 +379,7 @@ export default function HomeScreen() {
                 onSubmitEditing={handleSubmit(onModalSubmit)}
                 blurOnSubmit
                 style={sheetStyles.sheetInput}
-                label="Amount"
+                label={t('budget.fields.amount')}
                 mode="outlined"
                 activeOutlineColor={Tavira.teal}
               />
@@ -417,7 +398,7 @@ export default function HomeScreen() {
               onSubmitEditing={handleSubmit(onModalSubmit)}
               blurOnSubmit
               style={sheetStyles.sheetInput}
-              label="Description (optional)"
+              label={t('home.sheet.description')}
               mode="outlined"
               outlineColor="rgba(255,255,255,0.15)"
               activeOutlineColor={Tavira.teal}
@@ -427,7 +408,7 @@ export default function HomeScreen() {
         />
         <View style={sheetStyles.sheetActions}>
           <Button mode="text" onPress={() => sheetRef.current?.close(reset)}>
-            Cancel
+            {t('common.actions.cancel')}
           </Button>
           <Button
             mode="contained"
@@ -437,22 +418,22 @@ export default function HomeScreen() {
             textColor={Tavira.navy}
             contentStyle={sheetStyles.sheetConfirmContent}
           >
-            Confirm
+            {t('common.actions.confirm')}
           </Button>
         </View>
       </BottomSheet>
 
       {/* Rename Sheet */}
       <BottomSheet ref={renameSheetRef} visible={renameSheetVisible} onClose={handleRenameSheetClose}>
-        <Text style={sheetStyles.sheetTitle}>Rename — {renameCategory?.name}</Text>
+        <Text style={sheetStyles.sheetTitle}>{t('budget.manage.rename.title', { name: renameCategory?.name })}</Text>
         <Controller
           control={renameControl}
-          rules={{ required: 'Name is required' }}
+          rules={{ required: t('budget.validation.categoryNameRequired') }}
           name="name"
           render={({ field: { onChange, value }, fieldState }) => (
             <>
               <TextInput
-                label="Category name"
+                label={t('budget.fields.categoryName')}
                 value={value}
                 onChangeText={onChange}
                 error={fieldState.error != null}
@@ -467,7 +448,7 @@ export default function HomeScreen() {
         />
         <View style={sheetStyles.sheetActions}>
           <Button mode="text" onPress={() => renameSheetRef.current?.close(renameReset)}>
-            Cancel
+            {t('common.actions.cancel')}
           </Button>
           <Button
             mode="contained"
@@ -477,7 +458,7 @@ export default function HomeScreen() {
             textColor={Tavira.navy}
             contentStyle={sheetStyles.sheetConfirmContent}
           >
-            Save
+            {t('common.actions.save')}
           </Button>
         </View>
       </BottomSheet>

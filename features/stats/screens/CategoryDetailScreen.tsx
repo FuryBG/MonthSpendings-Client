@@ -11,10 +11,12 @@ import { useStatsBudget } from '../hooks/useStatsBudget';
 import { formatShortSpan } from '../model/format';
 import { TopSpendingsSection } from '../sections/TopSpendingsSection';
 import { TotalSection } from '../sections/TotalSection';
+import { useTranslation } from 'react-i18next';
 
 /** One category over the range picked on Stats (and the comparison range, if one is active). */
 export default function CategoryDetailScreen() {
   const c = useStatsColors();
+  const { t } = useTranslation();
   const params = useLocalSearchParams<{ categoryId: string; name?: string }>();
   const categoryId = Number(params.categoryId);
   const { budgetId, periods, symbol } = useStatsBudget();
@@ -32,14 +34,14 @@ export default function CategoryDetailScreen() {
 
   return (
     <ScreenContainer glowColor="teal" removeSafeBottom>
-      <Stack.Screen options={{ title: params.name ?? 'Category' }} />
+      <Stack.Screen options={{ title: params.name ?? t('navigation.category') }} />
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={s.content}
         refreshControl={<RefreshControl refreshing={queryA.isRefetching} onRefresh={() => { queryA.refetch(); queryB.refetch(); }} tintColor={c.muted} colors={[c.accent]} />}
       >
         {queryA.isError && !summaryA ? (
-          <EmptyState icon="cloud-alert" title="Stats didn't load" body="Check your connection, then try again." actionLabel="Try again" onAction={() => queryA.refetch()} />
+          <EmptyState icon="cloud-alert" title={t('stats.loadError.title')} body={t('stats.loadError.body')} actionLabel={t('common.actions.tryAgain')} onAction={() => queryA.refetch()} />
         ) : !summaryA || !rangeA ? (
           <View style={s.stack}>
             <SkeletonCard lines={[14, 44, 150]} />
@@ -53,10 +55,10 @@ export default function CategoryDetailScreen() {
               rangeA={rangeA}
               rangeB={rangeB}
               symbol={symbol}
-              title={`${params.name ?? 'Category'}, ${rangeA.label.toLowerCase()}`}
+              title={`${params.name ?? t('navigation.category')}, ${rangeA.label.toLowerCase()}`}
               pinnedPeriodId={pinnedPeriodId}
               onPinPeriod={setPinnedPeriodId}
-              pinnedHint={drillPeriod ? 'Showing this period below' : undefined}
+              pinnedHint={drillPeriod ? t('stats.pinnedHint') : undefined}
             />
             <View style={sectionStale && s.stale}>
             <TopSpendingsSection

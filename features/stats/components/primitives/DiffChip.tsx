@@ -4,6 +4,7 @@ import { Icon, Text } from 'react-native-paper';
 import type { Diff } from '../../model/compare';
 import { formatMoney, formatPercent } from '../../model/format';
 import { useStatsColors } from './useStatsColors';
+import i18n from '@/i18n';
 
 type Props = {
   diff: Diff;
@@ -17,12 +18,12 @@ export function DiffChip({ diff, symbol, compact = false }: Props) {
   const c = useStatsColors();
   const color = diff.direction === 'up' ? c.more : diff.direction === 'down' ? c.less : c.muted;
   const icon = diff.direction === 'up' ? 'arrow-top-right' : diff.direction === 'down' ? 'arrow-bottom-right' : 'minus';
-  const percent = diff.percent == null ? 'new' : formatPercent(diff.percent);
+  const percent = diff.percent == null ? i18n.t('stats.diff.new') : formatPercent(diff.percent);
 
   return (
     <View
       style={[s.chip, { backgroundColor: color.startsWith('#') ? `${color}1F` : c.track }]}
-      accessibilityLabel={`${diff.direction === 'up' ? 'More' : diff.direction === 'down' ? 'Less' : 'No change'}, ${percent}`}
+      accessibilityLabel={`${diff.direction === 'up' ? i18n.t('stats.diff.more') : diff.direction === 'down' ? i18n.t('stats.diff.less') : i18n.t('stats.diff.noChange')}, ${percent}`}
     >
       <Icon source={icon} size={13} color={color} />
       {!compact && (

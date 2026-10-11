@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Animated, Modal, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Icon, Text } from 'react-native-paper';
 import Svg, { Path, Rect as SvgRect } from 'react-native-svg';
+import { useTranslation } from 'react-i18next';
 
 export interface TourStep {
   key: string;
@@ -51,6 +52,7 @@ async function measureWithRetry(id: string, attempts = 5): Promise<Rect | null> 
 interface Props { steps: TourStep[]; visible: boolean; onDismiss: () => void; onBeforeStep?: (key: string) => Promise<void> }
 
 export function TourOverlay({ steps, visible, onDismiss, onBeforeStep }: Props) {
+  const { t } = useTranslation();
   const { height: sh, width: sw } = useWindowDimensions();
 
   const [localVisible, setLocalVisible] = useState(false);
@@ -226,10 +228,10 @@ export function TourOverlay({ steps, visible, onDismiss, onBeforeStep }: Props) 
             </View>
             <View style={s.actions}>
               <Pressable onPress={dismiss} style={({ pressed }) => [s.skipBtn, pressed && { opacity: 0.4 }]}>
-                <Text style={s.skipText}>Skip</Text>
+                <Text style={s.skipText}>{t('tour.skip')}</Text>
               </Pressable>
               <Pressable onPress={handleNext} style={({ pressed }) => [s.nextBtn, pressed && { opacity: 0.8 }]}>
-                <Text style={s.nextText}>{isLast ? 'Done' : 'Next →'}</Text>
+                <Text style={s.nextText}>{isLast ? t('tour.done') : t('tour.next')}</Text>
               </Pressable>
             </View>
           </View>

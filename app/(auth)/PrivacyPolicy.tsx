@@ -4,49 +4,14 @@ import { useEffect, useRef } from 'react';
 import { Animated, Easing, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Icon, Text } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
-const SECTIONS = [
-  {
-    title: 'Information We Collect',
-    body: 'We collect information you provide directly, including your name, email address, and profile photo obtained via Google Sign-In. Usage data such as feature interactions and error logs may be collected to improve the service.',
-  },
-  {
-    title: 'How We Use Your Information',
-    body: 'Your information is used to provide, maintain, and improve the Tavira budgeting service. We use your data to personalize your experience, send you relevant notifications, and respond to support requests.',
-  },
-  {
-    title: 'Data Sharing',
-    body: 'We do not sell or rent your personal information. We share data with trusted service providers who help operate Tavira, including RevenueCat (subscription management) and Google Firebase (authentication). These providers may collect and process certain data in accordance with their own privacy policies. We may also disclose information if required by law or to protect user rights.',
-  },
-  {
-    title: 'Data Security',
-    body: 'We implement industry-standard security measures including encryption in transit (TLS) and at rest to protect your data. Access to user data is restricted to authorized personnel only. While we strive to protect your information, no method of transmission over the internet is completely secure.',
-  },
-  {
-    title: 'Data Retention',
-    body: 'We retain your personal data for as long as your account remains active or as needed to provide the service. If you delete your account, your data will be permanently removed within 30 days, except where retention is required by law.',
-  },
-  {
-    title: 'Your Rights',
-    body: 'You have the right to access, correct, or delete the personal information we hold about you. To exercise any of these rights, contact us at support@tavira.app.',
-  },
-  {
-    title: "Children's Privacy",
-    body: 'Tavira is not directed to individuals under the age of 16. We do not knowingly collect personal information from children. If we become aware that a child has provided us with personal information, we will delete it promptly.',
-  },
-  {
-    title: 'Changes to This Policy',
-    body: 'We may update this Privacy Policy periodically to reflect changes in our practices or applicable regulations. Material changes will be communicated through the app or via email. Your continued use of Tavira after changes are posted constitutes your acceptance of the updated policy.',
-  },
-  {
-    title: 'Contact Us',
-    body: 'If you have any questions about this Privacy Policy or how we handle your data, please contact us at support@tavira.app. We are committed to addressing privacy concerns promptly and transparently.',
-  },
-];
+import { useTranslation } from 'react-i18next';
+import { getLegalContent } from '@/i18n/legal';
 
 export default function PrivacyPolicyScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { i18n } = useTranslation();
+  const doc = getLegalContent(i18n.language).privacy;
   const fadeIn = useRef(new Animated.Value(0)).current;
   const slideUp = useRef(new Animated.Value(20)).current;
 
@@ -66,7 +31,7 @@ export default function PrivacyPolicyScreen() {
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} hitSlop={12}>
           <Icon source="arrow-left" size={20} color="#5B7BFF" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Privacy Policy</Text>
+        <Text style={styles.headerTitle}>{doc.title}</Text>
         <View style={styles.headerSpacer} />
       </View>
 
@@ -75,12 +40,11 @@ export default function PrivacyPolicyScreen() {
         contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 48 }]}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.metaLabel}>Last updated: May 2025</Text>
-        <Text style={styles.intro}>
-          Your privacy matters to us. This policy explains what data Tavira collects, how it is used, and the choices you have regarding your information.
-        </Text>
+        <Text style={styles.metaLabel}>{doc.lastUpdated}</Text>
+        {doc.translationNotice ? <Text style={styles.notice}>{doc.translationNotice}</Text> : null}
+        <Text style={styles.intro}>{doc.intro}</Text>
 
-        {SECTIONS.map((section, index) => (
+        {doc.sections.map((section, index) => (
           <View key={section.title} style={styles.section}>
             <View style={styles.sectionHeader}>
               <View style={styles.accent} />
@@ -140,6 +104,15 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     textTransform: 'uppercase',
     marginBottom: 10,
+  },
+  notice: {
+    fontSize: 12,
+    color: 'rgba(242,244,248,0.45)',
+    lineHeight: 18,
+    borderLeftWidth: 2,
+    borderLeftColor: '#3EC6C6',
+    paddingLeft: 10,
+    marginBottom: 14,
   },
   intro: {
     fontSize: 14,

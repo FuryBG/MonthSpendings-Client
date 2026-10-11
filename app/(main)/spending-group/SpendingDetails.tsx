@@ -19,6 +19,10 @@ import { Controller, useForm } from 'react-hook-form';
 import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import { ActivityIndicator, Button, Card, Chip, Divider, HelperText, Icon, Surface, Text, TextInput, useTheme } from 'react-native-paper';
+import { useTranslation } from 'react-i18next';
+import i18n, { localeTag } from '@/i18n';
+import { getApiErrorMessage } from '@/utils/apiError';
+import { displaySpendingDescription } from '@/utils/spendingDescription';
 
 const COLOR_EXPENSE = Tavira.expense;
 const COLOR_INCOME  = Tavira.income;
@@ -41,9 +45,9 @@ function yesterdayKey(): string {
 
 function getDateLabel(isoDate: string): string {
   const key = toDateKey(isoDate);
-  if (key === todayKey())     return 'Today';
-  if (key === yesterdayKey()) return 'Yesterday';
-  return new Date(isoDate).toLocaleDateString('en-GB', {
+  if (key === todayKey())     return i18n.t('common.dates.today');
+  if (key === yesterdayKey()) return i18n.t('common.dates.yesterday');
+  return new Date(isoDate).toLocaleDateString(localeTag(), {
     weekday: 'short',
     day:     'numeric',
     month:   'short',
@@ -51,7 +55,7 @@ function getDateLabel(isoDate: string): string {
 }
 
 function formatTime(isoDate: string): string {
-  return new Date(isoDate).toLocaleTimeString('en-GB', {
+  return new Date(isoDate).toLocaleTimeString(localeTag(), {
     hour:   '2-digit',
     minute: '2-digit',
     hour12: false,
@@ -60,7 +64,7 @@ function formatTime(isoDate: string): string {
 
 function formatAmount(amount: number, symbol: string): string {
   const prefix = amount >= 0 ? '+' : '';
-  return `${prefix}${amount.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${symbol}`;
+  return `${prefix}${amount.toLocaleString(localeTag(), { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${symbol}`;
 }
 
 type SpendingGroup = {
@@ -71,8 +75,8 @@ type SpendingGroup = {
 
 function formatPeriodLabel(period: BudgetPeriod): string {
   const d = new Date(period.startDate);
-  const label = d.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
-  return period.endDate === null ? `${label} · Current` : label;
+  const label = d.toLocaleDateString(localeTag(), { month: 'short', year: 'numeric' });
+  return period.endDate === null ? i18n.t('spending.currentPeriod', { label }) : label;
 }
 
 function groupSpendings(spendings: Spending[]): SpendingGroup[] {
@@ -93,7 +97,7 @@ function groupSpendings(spendings: Spending[]): SpendingGroup[] {
   return Array.from(map.entries())
     .map(([key, items]) => ({
       dateKey: key,
-      label:   items[0].date ? getDateLabel(items[0].date) : 'Unknown date',
+      label:   items[0].date ? getDateLabel(items[0].date) : i18n.t('common.dates.unknown'),
       items,
     }))
     .sort((a, b) => b.dateKey.localeCompare(a.dateKey));
@@ -105,6 +109,8 @@ type SummaryProps = { spendings: Spending[]; symbol: string };
 
 function SummaryHeaderCard({ spendings, symbol }: SummaryProps) {
   const theme = useTheme();
+  const { t, i18n: i18nInstance } = useTranslation();
+  const locale = localeTag(i18nInstance.language);
   const { totalIncome, totalExpense, netBalance } = useMemo(() => {
     let income = 0, expense = 0;
     for (const sp of spendings) {
@@ -120,19 +126,19 @@ function SummaryHeaderCard({ spendings, symbol }: SummaryProps) {
     <Surface style={[s.summaryCard, { backgroundColor: theme.dark ? Tavira.glassBg : theme.colors.surfaceVariant, borderWidth: 1, borderColor: theme.dark ? Tavira.glassBorder : 'transparent' }]} elevation={0}>
       <View style={s.summaryCenter}>
         <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
-          NET BALANCE
+          {t('spending.summary.netBalance')}
         </Text>
         <MaskedAmount style={[s.summaryBalance, { color: balanceColor }]} value={formatAmount(netBalance, symbol)} />
       </View>
       <View style={[s.summaryDivider, { backgroundColor: theme.colors.outline }]} />
       <View style={s.summarySides}>
         <View style={s.summaryStat}>
-          <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>INCOME</Text>
-          <MaskedAmount style={[s.summaryStatAmount, { color: COLOR_INCOME }]} value={`+${totalIncome.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${symbol}`} />
+          <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>{t('spending.summary.income')}</Text>
+          <MaskedAmount style={[s.summaryStatAmount, { color: COLOR_INCOME }]} value={`+${totalIncome.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${symbol}`} />
         </View>
         <View style={s.summaryStat}>
-          <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>SPENT</Text>
-          <MaskedAmount style={[s.summaryStatAmount, { color: COLOR_EXPENSE }]} value={`-${totalExpense.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${symbol}`} />
+          <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>{t('spending.summary.spent')}</Text>
+          <MaskedAmount style={[s.summaryStatAmount, { color: COLOR_EXPENSE }]} value={`-${totalExpense.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${symbol}`} />
         </View>
       </View>
     </Surface>
@@ -142,6 +148,7 @@ function SummaryHeaderCard({ spendings, symbol }: SummaryProps) {
 type ActionRowProps = { remaining: number; onMinus: () => void; onPlus: () => void };
 
 function ActionRow({ remaining, onMinus, onPlus }: ActionRowProps) {
+  const { t } = useTranslation();
   const minusDisabled = remaining <= 0;
   return (
     <View style={s.actionRow}>
@@ -152,7 +159,7 @@ function ActionRow({ remaining, onMinus, onPlus }: ActionRowProps) {
         activeOpacity={0.7}
       >
         <Icon source="minus" size={16} color={minusDisabled ? 'rgba(255,107,107,0.3)' : Tavira.expense} />
-        <Text style={[s.actionRowBtnText, { color: minusDisabled ? 'rgba(255,107,107,0.3)' : Tavira.expense }]}>Spend</Text>
+        <Text style={[s.actionRowBtnText, { color: minusDisabled ? 'rgba(255,107,107,0.3)' : Tavira.expense }]}>{t('spending.actions.spend')}</Text>
       </TouchableOpacity>
       <TouchableOpacity
         style={[s.actionRowBtn, { backgroundColor: 'rgba(62,198,198,0.10)', borderColor: 'rgba(62,198,198,0.28)' }]}
@@ -160,7 +167,7 @@ function ActionRow({ remaining, onMinus, onPlus }: ActionRowProps) {
         activeOpacity={0.7}
       >
         <Icon source="plus" size={16} color={Tavira.teal} />
-        <Text style={[s.actionRowBtnText, { color: Tavira.teal }]}>Add Funds</Text>
+        <Text style={[s.actionRowBtnText, { color: Tavira.teal }]}>{t('spending.actions.addFunds')}</Text>
       </TouchableOpacity>
     </View>
   );
@@ -180,12 +187,13 @@ function DateSectionHeader({ label }: { label: string }) {
 
 function EmptyState() {
   const theme = useTheme();
+  const { t } = useTranslation();
   return (
     <View style={s.emptyContainer}>
       <Icon source="receipt-text-outline" size={52} color={theme.colors.onSurfaceVariant} />
-      <Text variant="titleMedium" style={s.emptyTitle}>No transactions yet</Text>
+      <Text variant="titleMedium" style={s.emptyTitle}>{t('spending.empty.title')}</Text>
       <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, textAlign: 'center' }}>
-        Swipe left on a transaction to delete it.
+        {t('spending.empty.description')}
       </Text>
     </View>
   );
@@ -200,6 +208,7 @@ export default function SpendingDetailsScreen() {
   const deleteSpendingMutation = useDeleteSpendingMutation();
   const { selectedCategoryId } = useLocalSearchParams();
   const theme = useTheme();
+  const { t } = useTranslation();
 
   const [confirmSpendingId, setConfirmSpendingId] = useState<number | null>(null);
   const swipeableRefs = useRef<Map<number, Swipeable | null>>(new Map());
@@ -222,8 +231,8 @@ export default function SpendingDetailsScreen() {
 
   useEffect(() => {
     if (!hasSeenScreen('SpendingDetails')) {
-      const t = setTimeout(() => setTourVisible(true), 700);
-      return () => clearTimeout(t);
+      const timer = setTimeout(() => setTourVisible(true), 700);
+      return () => clearTimeout(timer);
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -294,12 +303,12 @@ export default function SpendingDetailsScreen() {
 
   const spendingTourSteps = useMemo<TourStep[]>(() => {
     const steps: TourStep[] = [
-      { key: 'sd_periods', icon: 'calendar-range', title: 'Browse Periods', description: 'Tap a period chip to switch between months and review your full spending history.' },
+      { key: 'sd_periods', icon: 'calendar-range', title: t('tour.spending.periods.title'), description: t('tour.spending.periods.description') },
     ];
-    if (hasItems) steps.push({ key: 'sd_summary', icon: 'chart-line', title: 'Period Summary', description: 'Shows net balance, total income added, and total spent for the selected period.' });
-    if (isCurrentPeriod) steps.push({ key: 'sd_actions', icon: 'plus-minus', title: 'Record Transactions', description: 'Tap Spend to deduct from this category, or Add Funds to top it up. Swipe left on any transaction to delete it.' });
+    if (hasItems) steps.push({ key: 'sd_summary', icon: 'chart-line', title: t('tour.spending.summary.title'), description: t('tour.spending.summary.description') });
+    if (isCurrentPeriod) steps.push({ key: 'sd_actions', icon: 'plus-minus', title: t('tour.spending.actions.title'), description: t('tour.spending.actions.description') });
     return steps;
-  }, [hasItems, isCurrentPeriod]);
+  }, [hasItems, isCurrentPeriod, t]);
 
   const remaining = useMemo(() =>
     (selectedCategory?.spendings ?? []).reduce(
@@ -326,16 +335,16 @@ export default function SpendingDetailsScreen() {
       spending.budgetPeriodId   = currentPeriod?.id ?? 0;
       spending.amount = negativeInput ? -Number(spending.amount) : Number(spending.amount);
       await addSpendingMutation.mutateAsync(spending);
-      sheetRef.current?.close(() => { reset(); showSuccess('Spending added.'); });
-    } catch {
-      sheetRef.current?.close(() => showError('Adding spending failed.'));
+      sheetRef.current?.close(() => { reset(); showSuccess(t('home.messages.spendingAdded')); });
+    } catch (e) {
+      sheetRef.current?.close(() => showError(getApiErrorMessage(e, t('home.messages.spendingFailed'))));
     }
   }
 
   useEffect(() => {
     if (!sheetVisible) return;
-    const t = setTimeout(() => amountInputRef.current?.focus?.(), 350);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => amountInputRef.current?.focus?.(), 350);
+    return () => clearTimeout(timer);
   }, [sheetVisible]);
 
   useFocusEffect(() => {
@@ -400,7 +409,9 @@ export default function SpendingDetailsScreen() {
 
         {!isPeriodLoading && activeParticipant && groupedSpendings.length === 0 && (
           <Text variant="bodyMedium" style={[s.filterEmpty, { color: theme.colors.onSurfaceVariant }]}>
-            {activeParticipant.isYou ? 'You have' : `${activeParticipant.name} has`} no transactions here in this period.
+            {activeParticipant.isYou
+              ? t('spending.filterEmpty.you')
+              : t('spending.filterEmpty.other', { name: activeParticipant.name })}
           </Text>
         )}
 
@@ -424,7 +435,7 @@ export default function SpendingDetailsScreen() {
                             style={[s.description, { color: theme.colors.onSurfaceVariant }]}
                             numberOfLines={1}
                           >
-                            {sp.description}
+                            {displaySpendingDescription(sp.description)}
                           </Text>
                         ) : null}
                       </View>
@@ -440,7 +451,7 @@ export default function SpendingDetailsScreen() {
                             style={[s.bankChip, { borderColor: theme.colors.outline }]}
                             textStyle={[s.bankChipText, { color: theme.colors.onSurfaceVariant }]}
                           >
-                            Wallet
+                            {t('spending.walletChip')}
                           </Chip>
                         )}
                         {sp.createdByEmail != null && (
@@ -473,11 +484,11 @@ export default function SpendingDetailsScreen() {
           <View style={[sheetStyles.sheetConfirmIcon, { backgroundColor: theme.colors.errorContainer }]}>
             <Icon source="trash-can-outline" size={28} color={theme.colors.error} />
           </View>
-          <Text style={[sheetStyles.sheetConfirmTitle, { color: theme.colors.onSurface }]}>Delete Transaction</Text>
-          <Text style={[sheetStyles.sheetConfirmDesc, { color: theme.colors.onSurface }]}>This action cannot be undone.</Text>
+          <Text style={[sheetStyles.sheetConfirmTitle, { color: theme.colors.onSurface }]}>{t('pending.delete.title')}</Text>
+          <Text style={[sheetStyles.sheetConfirmDesc, { color: theme.colors.onSurface }]}>{t('common.cannotBeUndone')}</Text>
         </View>
         <View style={sheetStyles.sheetActions}>
-          <Button mode="text" onPress={() => deleteSheetRef.current?.close()}>Cancel</Button>
+          <Button mode="text" onPress={() => deleteSheetRef.current?.close()}>{t('common.actions.cancel')}</Button>
           <Button
             mode="contained"
             loading={deleteSpendingMutation.isPending}
@@ -491,18 +502,20 @@ export default function SpendingDetailsScreen() {
               }
             }}
           >
-            Delete
+            {t('common.actions.delete')}
           </Button>
         </View>
       </BottomSheet>
 
       <BottomSheet ref={sheetRef} visible={sheetVisible} onClose={handleSheetClose}>
         <Text style={sheetStyles.sheetTitle}>
-          {negativeInput ? `${selectedCategory?.name} — Spent` : `${selectedCategory?.name} — Add`}
+          {negativeInput
+            ? t('home.sheet.spentTitle', { name: selectedCategory?.name })
+            : t('home.sheet.addTitle', { name: selectedCategory?.name })}
         </Text>
         <Controller
           control={control}
-          rules={{ required: 'Amount is required', validate: v => v > 0 || 'Must be > 0' }}
+          rules={{ required: t('home.validation.amountRequired'), validate: v => v > 0 || t('home.validation.amountPositive') }}
           name="amount"
           render={({ field: { onChange, value }, fieldState }) => (
             <>
@@ -517,7 +530,7 @@ export default function SpendingDetailsScreen() {
                 onSubmitEditing={handleSubmit(onModalSubmit)}
                 blurOnSubmit
                 style={sheetStyles.sheetInput}
-                label="Amount"
+                label={t('budget.fields.amount')}
                 mode="outlined"
                 activeOutlineColor={Tavira.teal}
               />
@@ -536,7 +549,7 @@ export default function SpendingDetailsScreen() {
               onSubmitEditing={handleSubmit(onModalSubmit)}
               blurOnSubmit
               style={sheetStyles.sheetInput}
-              label="Description (optional)"
+              label={t('home.sheet.description')}
               mode="outlined"
               outlineColor="rgba(255,255,255,0.15)"
               activeOutlineColor={Tavira.teal}
@@ -545,7 +558,7 @@ export default function SpendingDetailsScreen() {
           )}
         />
         <View style={sheetStyles.sheetActions}>
-          <Button mode="text" onPress={() => sheetRef.current?.close(reset)}>Cancel</Button>
+          <Button mode="text" onPress={() => sheetRef.current?.close(reset)}>{t('common.actions.cancel')}</Button>
           <Button
             mode="contained"
             loading={addSpendingMutation.isPending}
@@ -554,7 +567,7 @@ export default function SpendingDetailsScreen() {
             textColor={Tavira.navy}
             contentStyle={sheetStyles.sheetConfirmContent}
           >
-            Confirm
+            {t('common.actions.confirm')}
           </Button>
         </View>
       </BottomSheet>

@@ -9,6 +9,7 @@ import { formatMoney, formatSpan, pluralPeriods } from '../../model/format';
 import { rangeFromIndices } from '../../model/ranges';
 import type { ResolvedRange } from '../../model/types';
 import { useStatsColors } from '../primitives/useStatsColors';
+import { useTranslation } from 'react-i18next';
 
 type Props = {
   visible: boolean;
@@ -29,6 +30,7 @@ type Draft = { start: number; end: number };
  */
 export function PeriodTimelineSheet({ visible, title, periods, totalsById, symbol, initial, onConfirm, onClose }: Props) {
   const c = useStatsColors();
+  const { t } = useTranslation();
   const sheetRef = useRef<BottomSheetRef>(null);
   const [touched, setTouched] = useState<Draft | null>(null);
 
@@ -59,8 +61,8 @@ export function PeriodTimelineSheet({ visible, title, periods, totalsById, symbo
   };
 
   const hint = waitingForEnd
-    ? 'Now tap the other end of the range.'
-    : 'Tap a period, then another one. Everything between them is included.';
+    ? t('stats.picker.hintEnd')
+    : t('stats.picker.hintStart');
 
   return (
     <BottomSheet ref={sheetRef} visible={visible} onClose={(done) => { setTouched(null); onClose(); done?.(); }} panelStyle={s.panel}>
@@ -122,7 +124,7 @@ export function PeriodTimelineSheet({ visible, title, periods, totalsById, symbo
         accessibilityRole="button"
       >
         <Text style={[s.applyText, { color: c.onAccent }]}>
-          {waitingForEnd ? 'Pick the other end' : `Show ${pluralPeriods(hi - lo + 1)}`}
+          {waitingForEnd ? t('stats.picker.pickOtherEnd') : t('stats.picker.show', { periods: pluralPeriods(hi - lo + 1) })}
         </Text>
       </Pressable>
     </BottomSheet>

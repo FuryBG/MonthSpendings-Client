@@ -17,11 +17,16 @@ import { Modal, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-nat
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { HelperText, Icon, IconButton, Text, TextInput, useTheme } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
+import { getCurrencyName } from '@/i18n/currencies';
+import { useSnackbarStore } from '@/stores/snackbarStore';
+import { getApiErrorMessage, isProRequired } from '@/utils/apiError';
 
 export default function CreateBudgetScreen() {
     const router = useRouter();
     const navigation = useNavigation();
     const theme = useTheme();
+    const { t, i18n } = useTranslation();
     const insets = useSafeAreaInsets();
     const user = useAuthStore((s) => s.user);
     const { data: budgets = [] } = useBudgetsQuery();
@@ -33,6 +38,7 @@ export default function CreateBudgetScreen() {
     const [currencySearch, setCurrencySearch] = useState('');
     const [isCreatingBudget, setIsCreatingBudget] = useState(false);
     const [showProGate, setShowProGate] = useState(false);
+    const showError = useSnackbarStore((s) => s.showError);
 
     const { control, handleSubmit, watch, setValue } = useForm<Budget>({
         defaultValues: {
@@ -75,10 +81,11 @@ export default function CreateBudgetScreen() {
             const budget = await createBudgetMutation.mutateAsync(data);
             await setMainBudget(budget.id);
             router.replace('/(main)/(drawer)/(tabs)');
-        } catch (error: any) {
-            const message = error?.response?.data;
-            if (typeof message === 'string' && message.includes('Pro')) {
+        } catch (error: unknown) {
+            if (isProRequired(error)) {
                 setShowProGate(true);
+            } else {
+                showError(getApiErrorMessage(error));
             }
         } finally {
             setIsCreatingBudget(false);
@@ -92,11 +99,11 @@ export default function CreateBudgetScreen() {
                     style={[styles.createBtn, { backgroundColor: theme.dark ? Tavira.teal : theme.colors.primary }]}
                     onPress={handleSubmit(onSubmit)}
                 >
-                    <Text style={[styles.createBtnText, { color: theme.dark ? Tavira.navy : theme.colors.onPrimary }]}>Create</Text>
+                    <Text style={[styles.createBtnText, { color: theme.dark ? Tavira.navy : theme.colors.onPrimary }]}>{t('budget.create.submit')}</Text>
                 </TouchableOpacity>
             ),
         });
-    }, [handleSubmit, theme]);
+    }, [handleSubmit, theme, t]);
 
     function selectCurrency(c: Currency) {
         setValue('currency', c);
@@ -106,28 +113,30 @@ export default function CreateBudgetScreen() {
         });
     }
 
+    const search = currencySearch.toLocaleLowerCase();
     const filteredCurrencies = currencies.filter(c =>
-        c.code.toLowerCase().includes(currencySearch.toLowerCase()) ||
-        c.name.toLowerCase().includes(currencySearch.toLowerCase())
+        c.code.toLowerCase().includes(search) ||
+        c.name.toLowerCase().includes(search) ||
+        getCurrencyName(c, i18n.language).toLocaleLowerCase().includes(search)
     );
 
     return (
         <LinearGradient colors={theme.dark ? Tavira.gradNavy : [theme.colors.background, theme.colors.background]} style={styles.root}>
-            <OverlayLoader isVisible={createBudgetMutation.isPending || isCreatingBudget} message="Creating budget..." />
+            <OverlayLoader isVisible={createBudgetMutation.isPending || isCreatingBudget} message={t('budget.create.creating')} />
 
             <KeyboardAwareScrollView
                 style={styles.scroll}
                 contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 40 }]}>
-                <Text style={[styles.sectionLabel, { color: theme.colors.onBackground }]}>BUDGET DETAILS</Text>
+                <Text style={[styles.sectionLabel, { color: theme.colors.onBackground }]}>{t('budget.create.detailsSection')}</Text>
                 <View style={[styles.card, { backgroundColor: theme.dark ? Tavira.glassBg : theme.colors.surface, borderColor: theme.dark ? Tavira.glassBorder : theme.colors.outline }]}>
                     <Controller
                         control={control}
-                        rules={{ required: 'Budget name is required' }}
+                        rules={{ required: t('budget.validation.nameRequired') }}
                         name="name"
                         render={({ field: { onChange, value }, fieldState }) => (
                             <>
                                 <TextInput
-                                    label="Budget name"
+                                    label={t('budget.fields.name')}
                                     value={value}
                                     onChangeText={onChange}
                                     error={fieldState.error != null}
@@ -143,7 +152,7 @@ export default function CreateBudgetScreen() {
 
                     <Controller
                         control={control}
-                        rules={{ required: 'Currency is required' }}
+                        rules={{ required: t('budget.validation.currencyRequired') }}
                         name="currency.code"
                         render={({ field: { value }, fieldState }) => (
                             <>
@@ -170,10 +179,10 @@ export default function CreateBudgetScreen() {
                                         {selectedCurrency ? (
                                             <View>
                                                 <Text style={[styles.currencyCode, { color: theme.colors.onSurface }]}>{selectedCurrency.code}</Text>
-                                                <Text style={[styles.currencyName, { color: theme.colors.onSurface }]}>{selectedCurrency.name}</Text>
+                                                <Text style={[styles.currencyName, { color: theme.colors.onSurface }]}>{getCurrencyName(selectedCurrency, i18n.language)}</Text>
                                             </View>
                                         ) : (
-                                            <Text style={[styles.currencyPlaceholder, { color: theme.colors.onSurface }]}>Select currency</Text>
+                                            <Text style={[styles.currencyPlaceholder, { color: theme.colors.onSurface }]}>{t('budget.fields.selectCurrency')}</Text>
                                         )}
                                     </View>
                                     <Icon source="chevron-down" size={20} color={theme.colors.onSurface} />
@@ -187,7 +196,7 @@ export default function CreateBudgetScreen() {
                 </View>
 
                 <View style={styles.sectionRow}>
-                    <Text style={[styles.sectionLabel, { color: theme.colors.onBackground }]}>CATEGORIES</Text>
+                    <Text style={[styles.sectionLabel, { color: theme.colors.onBackground }]}>{t('budget.create.categoriesSection')}</Text>
                     <View style={[styles.countBadge, { backgroundColor: theme.colors.primary }]}>
                         <Text style={[styles.countText, { color: theme.colors.onPrimary }]}>{categories.length}</Text>
                     </View>
@@ -213,12 +222,12 @@ export default function CreateBudgetScreen() {
                         <View style={styles.categoryFields}>
                             <Controller
                                 control={control}
-                                rules={{ required: 'Required' }}
+                                rules={{ required: t('common.validation.required') }}
                                 name={`budgetCategories.${index}.name`}
                                 render={({ field: { onChange, value }, fieldState }) => (
                                     <View style={styles.nameField}>
                                         <TextInput
-                                            label="Name"
+                                            label={t('budget.fields.categoryName')}
                                             value={value}
                                             onChangeText={onChange}
                                             error={fieldState.error != null}
@@ -233,12 +242,12 @@ export default function CreateBudgetScreen() {
                             />
                             <Controller
                                 control={control}
-                                rules={{ required: 'Required' }}
+                                rules={{ required: t('common.validation.required') }}
                                 name={`budgetCategories.${index}.spendings.0.amount`}
                                 render={({ field: { onChange, value }, fieldState }) => (
                                     <View style={styles.amountField}>
                                         <TextInput
-                                            label={selectedCurrencyCode || 'Amount'}
+                                            label={selectedCurrencyCode || t('budget.fields.amount')}
                                             keyboardType="numeric"
                                             value={value ? value.toString() : ''}
                                             onChangeText={onChange}
@@ -279,7 +288,7 @@ export default function CreateBudgetScreen() {
                     })}
                 >
                     <Icon source="plus" size={18} color={theme.colors.primary} />
-                    <Text style={[styles.addCategoryText, { color: theme.colors.primary }]}>Add Category</Text>
+                    <Text style={[styles.addCategoryText, { color: theme.colors.primary }]}>{t('budget.create.addCategory')}</Text>
                 </TouchableOpacity>
             </KeyboardAwareScrollView>
 
@@ -291,7 +300,7 @@ export default function CreateBudgetScreen() {
                     >
                         <Icon source="close" size={24} color={theme.colors.onBackground} />
                     </TouchableOpacity>
-                    <ProGate featureName="Multiple Budgets" onUnlocked={() => setShowProGate(false)} />
+                    <ProGate featureName={t('pro.features.multipleBudgets')} onUnlocked={() => setShowProGate(false)} />
                 </View>
             </Modal>
 
@@ -300,11 +309,11 @@ export default function CreateBudgetScreen() {
                 visible={currencySheetVisible}
                 onClose={(done) => { setCurrencySheetVisible(false); setCurrencySearch(''); done?.(); }}
             >
-                <Text style={sheetStyles.sheetTitle}>Select Currency</Text>
+                <Text style={sheetStyles.sheetTitle}>{t('budget.currencySheet.title')}</Text>
                 <TextInput
                     value={currencySearch}
                     onChangeText={setCurrencySearch}
-                    placeholder="Search..."
+                    placeholder={t('common.search')}
                     dense
                     mode="outlined"
                     left={<TextInput.Icon icon="magnify" />}
@@ -336,7 +345,7 @@ export default function CreateBudgetScreen() {
                                 </View>
                                 <View style={styles.currencyRowInfo}>
                                     <Text style={[styles.currencyCode, { color: theme.colors.onSurface }]}>{c.code}</Text>
-                                    <Text style={[styles.currencyName, { color: theme.colors.onSurface }]}>{c.name}</Text>
+                                    <Text style={[styles.currencyName, { color: theme.colors.onSurface }]}>{getCurrencyName(c, i18n.language)}</Text>
                                 </View>
                                 {isSelected && <Icon source="check" size={18} color={theme.colors.primary} />}
                             </TouchableOpacity>
@@ -347,12 +356,12 @@ export default function CreateBudgetScreen() {
             <ScreenIntroSheet
                 screenKey="CreateBudget"
                 icon="wallet-plus-outline"
-                title="Creating a Budget"
+                title={t('budget.create.intro.title')}
                 bullets={[
-                    { icon: 'label-outline', text: 'Give your budget a descriptive name' },
-                    { icon: 'currency-usd', text: 'All amounts in this budget will use the selected currency' },
-                    { icon: 'cash-fast', text: 'Add categories and set a starting balance for each spending envelope' },
-                    { icon: 'account-plus', text: 'After creating, invite collaborators from Budget Settings' },
+                    { icon: 'label-outline', text: t('budget.create.intro.name') },
+                    { icon: 'currency-usd', text: t('budget.create.intro.currency') },
+                    { icon: 'cash-fast', text: t('budget.create.intro.categories') },
+                    { icon: 'account-plus', text: t('budget.create.intro.invite') },
                 ]}
             />
         </LinearGradient>

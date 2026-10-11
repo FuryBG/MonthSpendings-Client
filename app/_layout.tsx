@@ -1,4 +1,4 @@
-import { setOnUnauthorized, updateNotificationToken, updateUserActivity } from '@/app/services/api';
+import { setOnUnauthorized, updateLanguage, updateNotificationToken, updateUserActivity } from '@/app/services/api';
 import { configureRevenueCat, identifyUser, logOutRevenueCat } from '@/app/services/revenuecat';
 import { GlobalSnackbar } from '@/components/GlobalSnackbar';
 import { LockGate } from '@/components/LockGate';
@@ -6,8 +6,10 @@ import { UpdateRequiredDialog } from '@/components/UpdateRequiredDialog';
 import { NotificationProvider, useNotification } from '@/context/NotificationContext';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { queryClient } from '@/lib/queryClient';
+import '@/i18n';
 import { useAppLockStore } from '@/stores/appLockStore';
 import { useAuthStore } from '@/stores/authStore';
+import { useLanguageStore } from '@/stores/languageStore';
 import { useSnackbarStore } from '@/stores/snackbarStore';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
@@ -126,10 +128,12 @@ export default function RootLayout() {
       // kept alive by the Android notification listener background service.
       useSnackbarStore.getState().hide();
 
-      // Read lock pref and stored token in parallel — both are fast local reads.
-      // Do this BEFORE restoreSession so the gate appears before any app content shows.
-      const [, token] = await Promise.all([
+      // Read lock pref, language and stored token in parallel — all are fast local reads.
+      // Do this BEFORE restoreSession so the gate appears before any app content shows
+      // and API requests already carry the right Accept-Language.
+      const [, , token] = await Promise.all([
         useAppLockStore.getState().load(),
+        useLanguageStore.getState().load(),
         SecureStore.getItemAsync('token'),
       ]);
       if (useAppLockStore.getState().lockEnabled && token) {
@@ -150,6 +154,7 @@ export default function RootLayout() {
     const sub = AppState.addEventListener('change', (next) => {
       if (appState.current.match(/inactive|background/) && next === 'active') {
         useSnackbarStore.getState().hide();
+        useLanguageStore.getState().syncWithDevice();
         useAuthStore.getState().refreshUser();
         queryClient.invalidateQueries();
         const { lockEnabled } = useAppLockStore.getState();
@@ -170,6 +175,11 @@ export default function RootLayout() {
       identifyUser(user.id.toString());
       updateUserActivity({ timezone: Intl.DateTimeFormat().resolvedOptions().timeZone })
         .catch(() => {});
+      // Keep the server-side language (used for push notifications) in sync with the app.
+      const { language } = useLanguageStore.getState();
+      if (user.language !== language) {
+        updateLanguage(language).catch(() => {});
+      }
     } else if (!userLoading) {
       // Only log out RC once the session is fully resolved — avoids a race where
       // logOut() fires concurrently with identifyUser() during session restore.

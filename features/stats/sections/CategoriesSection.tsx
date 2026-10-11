@@ -9,6 +9,7 @@ import { StatCard } from '../components/primitives/StatCard';
 import { useStatsColors } from '../components/primitives/useStatsColors';
 import { CategoryLine, CategorySort, mergeCategories, sortCategoryLines } from '../model/compare';
 import type { RangeSummary, ResolvedRange } from '../model/types';
+import { useTranslation } from 'react-i18next';
 
 type Props = {
   summaryA: RangeSummary;
@@ -23,6 +24,7 @@ type Props = {
 
 export function CategoriesSection({ summaryA, summaryB, rangeA, rangeB, symbol, scopeLabel, onOpenCategory }: Props) {
   const c = useStatsColors();
+  const { t } = useTranslation();
   const compare = summaryB != null;
   const [sort, setSort] = useState<CategorySort>('amount');
   const [focusedId, setFocusedId] = useState<number | null>(null);
@@ -35,9 +37,9 @@ export function CategoriesSection({ summaryA, summaryB, rangeA, rangeB, symbol, 
   return (
     <StatCard>
       <SectionHeader
-        title="By category"
-        subtitle={compare ? (sort === 'change' ? 'Sorted by biggest change' : 'Sorted by amount') : scopeLabel}
-        actionLabel={compare ? (sort === 'change' ? 'Sort by amount' : 'Sort by change') : undefined}
+        title={t('stats.categories.title')}
+        subtitle={compare ? (sort === 'change' ? t('stats.categories.sortedByChange') : t('stats.categories.sortedByAmount')) : scopeLabel}
+        actionLabel={compare ? (sort === 'change' ? t('stats.categories.sortByAmount') : t('stats.categories.sortByChange')) : undefined}
         onAction={compare ? () => setSort(sort === 'change' ? 'amount' : 'change') : undefined}
       />
 
@@ -48,7 +50,7 @@ export function CategoriesSection({ summaryA, summaryB, rangeA, rangeB, symbol, 
       ) : null}
 
       {lines.length === 0 ? (
-        <Text style={[s.empty, { color: c.muted }]}>Nothing spent in this range yet.</Text>
+        <Text style={[s.empty, { color: c.muted }]}>{t('stats.nothingSpent')}</Text>
       ) : (
         <>
           {!compare ? (

@@ -1,4 +1,4 @@
-const { withAndroidManifest, withDangerousMod } = require('@expo/config-plugins');
+const { AndroidConfig, withAndroidManifest, withDangerousMod, withStringsXml } = require('@expo/config-plugins');
 const fs = require('fs');
 const path = require('path');
 
@@ -39,7 +39,8 @@ function withWalletManifest(config) {
       app.service.push({
         $: {
           'android:name': '.WalletNotificationService',
-          'android:label': 'Tavira Wallet Sync',
+          // Shown in Android's Notification access list; translated via app.json "locales" (android.wallet_sync_label).
+          'android:label': '@string/wallet_sync_label',
           'android:permission': 'android.permission.BIND_NOTIFICATION_LISTENER_SERVICE',
           'android:process': ':wallet',
           'android:exported': 'true',
@@ -56,6 +57,17 @@ function withWalletManifest(config) {
       });
     }
 
+    return config;
+  });
+}
+
+// Default (English) value for the service label; bg/es come from i18n/native/*.json.
+function withWalletStrings(config) {
+  return withStringsXml(config, (config) => {
+    config.modResults = AndroidConfig.Strings.setStringItem(
+      [{ $: { name: 'wallet_sync_label', translatable: 'true' }, _: 'Tavira Wallet Sync' }],
+      config.modResults,
+    );
     return config;
   });
 }
@@ -103,6 +115,7 @@ function withWalletMainApplication(config) {
 
 module.exports = (config) => {
   config = withWalletKotlinFiles(config);
+  config = withWalletStrings(config);
   config = withWalletManifest(config);
   config = withWalletMainApplication(config);
   return config;

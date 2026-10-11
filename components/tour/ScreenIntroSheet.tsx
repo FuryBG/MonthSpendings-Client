@@ -4,6 +4,7 @@ import { FC, useEffect, useRef, useState } from 'react';
 import { Animated, Modal, Pressable, StyleSheet, View } from 'react-native';
 import { Icon, Text, useTheme } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 
 interface Bullet {
   icon: string;
@@ -19,6 +20,7 @@ interface ScreenIntroSheetProps {
 
 export const ScreenIntroSheet: FC<ScreenIntroSheetProps> = ({ screenKey, icon, title, bullets }) => {
   const theme = useTheme();
+  const { t } = useTranslation();
   const isDark = theme.dark;
   const insets = useSafeAreaInsets();
   const hasSeenScreen = useTourStore((s) => s.hasSeenScreen);
@@ -99,7 +101,7 @@ export const ScreenIntroSheet: FC<ScreenIntroSheetProps> = ({ screenKey, icon, t
           </View>
 
           <Pressable style={({ pressed }) => [s.gotItBtn, pressed && { opacity: 0.82 }]} onPress={close}>
-            <Text style={s.gotItText}>Got it</Text>
+            <Text style={s.gotItText}>{t('common.actions.gotIt')}</Text>
           </Pressable>
         </Animated.View>
       </View>

@@ -10,6 +10,7 @@ import { Icon, Portal, Snackbar, Text } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as WebBrowser from 'expo-web-browser';
 import { BASE_URL, googleLogin } from '../services/api';
+import { Trans, useTranslation } from 'react-i18next';
 
 function TaviraLogoMark() {
   const scale = useRef(new Animated.Value(1)).current;
@@ -38,6 +39,7 @@ function TaviraLogoMark() {
 }
 
 function GoogleButton({ onPress, loading }: { onPress: () => void; loading: boolean }) {
+  const { t } = useTranslation();
   const opacity = useRef(new Animated.Value(1)).current;
 
   function handlePressIn() {
@@ -61,7 +63,7 @@ function GoogleButton({ onPress, loading }: { onPress: () => void; loading: bool
           <Text style={styles.googleG}>G</Text>
         </View>
         <Text style={styles.googleBtnText}>
-          {loading ? 'Signing in…' : 'Continue with Google'}
+          {loading ? t('auth.signingIn') : t('auth.login.continueWithGoogle')}
         </Text>
         {!loading && <Icon source="arrow-right" size={18} color="rgba(242,244,248,0.5)" />}
         {loading && (
@@ -76,6 +78,7 @@ function GoogleButton({ onPress, loading }: { onPress: () => void; loading: bool
 
 export default function LoginScreen() {
   const signIn = useAuthStore((s) => s.signIn);
+  const { t, i18n: i18nInstance } = useTranslation();
   const { expoPushToken } = useNotification();
   const router = useRouter();
   const [visible, setVisible] = useState(false);
@@ -144,7 +147,7 @@ export default function LoginScreen() {
 
         {/* Feature pills */}
         <View style={styles.pillsRow}>
-          {['Joint budgets', 'Bank sync', 'Live stats'].map((label) => (
+          {[t('auth.login.pills.jointBudgets'), t('auth.login.pills.bankSync'), t('auth.login.pills.liveStats')].map((label) => (
             <View key={label} style={styles.pill}>
               <Text style={styles.pillText}>{label}</Text>
             </View>
@@ -156,28 +159,27 @@ export default function LoginScreen() {
 
         {/* Sign-in */}
         <View style={styles.authSection}>
-          <Text style={styles.authHint}>Sign in to your account</Text>
+          <Text style={styles.authHint}>{t('auth.login.hint')}</Text>
           <GoogleButton onPress={onSignIn} loading={signing} />
           <TouchableOpacity style={styles.emailBtn} onPress={() => router.push('/(auth)/EmailLogin')} activeOpacity={0.75}>
             <Icon source="email-outline" size={18} color="rgba(242,244,248,0.55)" />
-            <Text style={styles.emailBtnText}>Continue with email</Text>
+            <Text style={styles.emailBtnText}>{t('auth.login.continueWithEmail')}</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={() => router.push('/(auth)/Register')} activeOpacity={0.75}>
             <Text style={styles.createAccountText}>
-              No account?{' '}
-              <Text style={styles.createAccountLink}>Create one</Text>
+              {t('auth.noAccount')}{' '}
+              <Text style={styles.createAccountLink}>{t('auth.createOne')}</Text>
             </Text>
           </TouchableOpacity>
           <Text style={styles.legalText}>
-            By continuing you agree to our{' '}
-            <Text style={styles.legalLink} onPress={() => router.push('/(auth)/TermsOfService')}>
-              Terms of Service
-            </Text>
-            {' '}and{' '}
-            <Text style={styles.legalLink} onPress={() => WebBrowser.openBrowserAsync(`${BASE_URL}/privacy-policy`)}>
-              Privacy Policy
-            </Text>
-            .
+            <Trans
+              i18nKey="auth.login.legal"
+              components={{
+                // Trans fills these with the translated link text.
+                terms: <Text style={styles.legalLink} onPress={() => router.push('/(auth)/TermsOfService')}>{null}</Text>,
+                privacy: <Text style={styles.legalLink} onPress={() => WebBrowser.openBrowserAsync(`${BASE_URL}/privacy-policy?lang=${i18nInstance.language}`)}>{null}</Text>,
+              }}
+            />
           </Text>
         </View>
       </Animated.View>
@@ -187,9 +189,9 @@ export default function LoginScreen() {
           visible={visible}
           onDismiss={() => setVisible(false)}
           duration={5000}
-          action={{ label: 'OK', onPress: () => setVisible(false) }}
+          action={{ label: t('common.actions.ok'), onPress: () => setVisible(false) }}
         >
-          Google sign-in failed. Please try again.
+          {t('auth.login.googleFailed')}
         </Snackbar>
       </Portal>
     </LinearGradient>
@@ -265,6 +267,8 @@ const styles = StyleSheet.create({
   },
   pillsRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignSelf: 'stretch',
     justifyContent: 'center',
     gap: 8,
     marginTop: 32,

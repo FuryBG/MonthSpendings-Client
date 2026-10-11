@@ -11,6 +11,7 @@ import { formatSpan, pluralPeriods } from '../model/format';
 import { previousRange, resolveSelection, selectionFromRange, yearEarlierRange } from '../model/ranges';
 import type { RangeSelection, ResolvedRange } from '../model/types';
 import { useStatsSelection } from '../state/useStatsSelection';
+import { useTranslation } from 'react-i18next';
 
 type Props = {
   periods: BudgetPeriod[];
@@ -25,6 +26,7 @@ type Props = {
 /** Sticky range controls: presets, custom picker, and the compare flow. */
 export function RangeBar({ periods, symbol, totalsById, rangeA, rangeB, compareOpen, onCompareOpenChange }: Props) {
   const c = useStatsColors();
+  const { t } = useTranslation();
   const selectionA = useStatsSelection(s => s.selectionA);
   const setA = useStatsSelection(s => s.setA);
   const setB = useStatsSelection(s => s.setB);
@@ -66,7 +68,7 @@ export function RangeBar({ periods, symbol, totalsById, rangeA, rangeB, compareO
 
       <PeriodTimelineSheet
         visible={pickerFor != null}
-        title={pickerFor === 'B' ? 'Compare with which periods?' : 'Choose periods'}
+        title={pickerFor === 'B' ? t('stats.picker.compareTitle') : t('stats.picker.title')}
         periods={periods}
         totalsById={totalsById}
         symbol={symbol}

@@ -7,16 +7,20 @@ import { ActivityIndicator, Animated, Platform, StyleSheet, TouchableOpacity, Vi
 import { Icon, Text, useTheme } from 'react-native-paper';
 import RevenueCatUI, { PAYWALL_RESULT } from 'react-native-purchases-ui';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 
 type Status = 'idle' | 'activating' | 'success' | 'timedOut' | 'error';
 
 type ProGateProps = {
   featureName: string;
+  /** Why Pro is needed (e.g. the API's message); defaults to the generic Pro pitch. */
+  description?: string;
   onUnlocked?: () => void;
 };
 
-export function ProGate({ featureName, onUnlocked }: ProGateProps) {
+export function ProGate({ featureName, description, onUnlocked }: ProGateProps) {
   const theme = useTheme();
+  const { t } = useTranslation();
   const isDark = theme.dark;
   const insets = useSafeAreaInsets();
   const headerHeight = 64 + insets.top;
@@ -131,10 +135,10 @@ export function ProGate({ featureName, onUnlocked }: ProGateProps) {
           <>
             <ActivityIndicator size="large" color={Tavira.teal} style={{ marginBottom: 8 }} />
             <Text style={[s.title, { color: titleColor }]}>
-              {isRestore ? 'Restoring your Pro account…' : 'Activating your Pro account…'}
+              {isRestore ? t('pro.activating.restoreTitle') : t('pro.activating.purchaseTitle')}
             </Text>
             <Text style={[s.description, { color: subtitleColor }]}>
-              Confirming with our servers.{'\n'}This usually takes a few seconds.
+              {t('pro.activating.description')}
             </Text>
           </>
         )}
@@ -142,9 +146,9 @@ export function ProGate({ featureName, onUnlocked }: ProGateProps) {
         {status === 'success' && (
           <>
             {iconRingEl('check-circle-outline')}
-            <Text style={[s.title, { color: titleColor }]}>You're now Pro!</Text>
+            <Text style={[s.title, { color: titleColor }]}>{t('pro.success.title')}</Text>
             <Text style={[s.description, { color: subtitleColor }]}>
-              Welcome to Tavira Pro.{'\n'}All features are now unlocked.
+              {t('pro.success.description')}
             </Text>
           </>
         )}
@@ -153,12 +157,10 @@ export function ProGate({ featureName, onUnlocked }: ProGateProps) {
           <>
             {iconRingEl('clock-outline')}
             <Text style={[s.title, { color: titleColor }]}>
-              {isRestore ? 'Restore in progress' : 'Purchase received'}
+              {isRestore ? t('pro.timedOut.restoreTitle') : t('pro.timedOut.purchaseTitle')}
             </Text>
             <Text style={[s.description, { color: subtitleColor }]}>
-              {isRestore
-                ? 'Your Pro access is being restored.\nCheck again or come back shortly.'
-                : 'Your Pro account is still activating.\nCheck again or come back shortly.'}
+              {isRestore ? t('pro.timedOut.restoreDescription') : t('pro.timedOut.purchaseDescription')}
             </Text>
             <TouchableOpacity onPress={handleCheckAgain} activeOpacity={0.82} style={s.unlockBtn}>
               <LinearGradient
@@ -167,7 +169,7 @@ export function ProGate({ featureName, onUnlocked }: ProGateProps) {
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
               >
-                <Text style={s.unlockBtnText}>Check again</Text>
+                <Text style={s.unlockBtnText}>{t('pro.timedOut.checkAgain')}</Text>
               </LinearGradient>
             </TouchableOpacity>
           </>
@@ -176,9 +178,9 @@ export function ProGate({ featureName, onUnlocked }: ProGateProps) {
         {status === 'error' && (
           <>
             {iconRingEl('alert-circle-outline')}
-            <Text style={[s.title, { color: titleColor }]}>Purchase failed</Text>
+            <Text style={[s.title, { color: titleColor }]}>{t('pro.error.title')}</Text>
             <Text style={[s.description, { color: subtitleColor }]}>
-              Something went wrong.{'\n'}Please try again or contact support.
+              {t('pro.error.description')}
             </Text>
             <TouchableOpacity onPress={() => setStatus('idle')} activeOpacity={0.82} style={s.unlockBtn}>
               <LinearGradient
@@ -187,7 +189,7 @@ export function ProGate({ featureName, onUnlocked }: ProGateProps) {
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
               >
-                <Text style={s.unlockBtnText}>Try again</Text>
+                <Text style={s.unlockBtnText}>{t('common.actions.tryAgain')}</Text>
               </LinearGradient>
             </TouchableOpacity>
           </>
@@ -212,11 +214,11 @@ export function ProGate({ featureName, onUnlocked }: ProGateProps) {
             </LinearGradient>
 
             <Text style={[s.title, { color: titleColor }]}>
-              {featureName} is a{'\n'}Pro Feature
+              {t('pro.gate.title', { feature: featureName })}
             </Text>
 
             <Text style={[s.description, { color: subtitleColor }]}>
-              Unlock unlimited budgets, bank sync,{'\n'}and collaborative spending with Tavira Pro.
+              {description ?? t('pro.gate.description')}
             </Text>
 
             <TouchableOpacity onPress={handleUnlock} disabled={loading} activeOpacity={0.82} style={s.unlockBtn}>
@@ -226,7 +228,7 @@ export function ProGate({ featureName, onUnlocked }: ProGateProps) {
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
               >
-                <Text style={s.unlockBtnText}>{loading ? 'Opening…' : 'Unlock Pro'}</Text>
+                <Text style={s.unlockBtnText}>{loading ? t('pro.gate.opening') : t('pro.gate.unlock')}</Text>
               </LinearGradient>
             </TouchableOpacity>
 

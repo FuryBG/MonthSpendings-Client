@@ -7,6 +7,7 @@ import { formatSpan, pluralPeriods } from '../../model/format';
 import { COMPARE_A_COLOR, COMPARE_B_COLOR } from '../../model/palette';
 import type { ResolvedRange } from '../../model/types';
 import { useStatsColors } from '../primitives/useStatsColors';
+import { useTranslation } from 'react-i18next';
 
 type Props = {
   visible: boolean;
@@ -21,6 +22,7 @@ type Props = {
 
 export function CompareSheet({ visible, periods, rangeA, previous, yearEarlier, onPick, onCustom, onClose }: Props) {
   const c = useStatsColors();
+  const { t } = useTranslation();
   const sheetRef = useRef<BottomSheetRef>(null);
 
   const span = (r: ResolvedRange) => formatSpan(periods[r.startIndex].startDate, periods[r.endIndex].endDate);
@@ -28,7 +30,7 @@ export function CompareSheet({ visible, periods, rangeA, previous, yearEarlier, 
 
   return (
     <BottomSheet ref={sheetRef} visible={visible} onClose={(done) => { onClose(); done?.(); }}>
-      <Text style={[s.title, { color: c.text }]}>Compare with</Text>
+      <Text style={[s.title, { color: c.text }]}>{t('stats.compare.title')}</Text>
 
       <View style={[s.current, { borderColor: c.border }]}>
         <View style={[s.dot, { backgroundColor: COMPARE_A_COLOR }]} />
@@ -41,7 +43,7 @@ export function CompareSheet({ visible, periods, rangeA, previous, yearEarlier, 
         {previous ? (
           <CompareOption
             icon="history"
-            title={previous.count === 1 ? 'Previous period' : previous.count === rangeA.count ? `Previous ${previous.count} periods` : `The ${pluralPeriods(previous.count)} before`}
+            title={previous.count === 1 ? t('stats.compare.previousPeriod') : previous.count === rangeA.count ? t('stats.compare.previousN', { count: previous.count }) : t('stats.compare.theNBefore', { periods: pluralPeriods(previous.count) })}
             detail={span(previous)}
             recommended
             onPress={() => closeThen(() => onPick(previous))}
@@ -50,16 +52,16 @@ export function CompareSheet({ visible, periods, rangeA, previous, yearEarlier, 
         {yearEarlier ? (
           <CompareOption
             icon="calendar-arrow-left"
-            title="Same periods a year earlier"
+            title={t('stats.compare.yearEarlier')}
             detail={span(yearEarlier)}
             onPress={() => closeThen(() => onPick(yearEarlier))}
           />
         ) : null}
-        <CompareOption icon="calendar-range" title="Choose periods" detail="Pick any first and last period" onPress={() => closeThen(onCustom)} />
+        <CompareOption icon="calendar-range" title={t('stats.picker.title')} detail={t('stats.compare.customDetail')} onPress={() => closeThen(onCustom)} />
       </View>
 
       {!previous ? (
-        <Text style={[s.note, { color: c.faint }]}>There are no earlier periods yet, so only a custom range is available.</Text>
+        <Text style={[s.note, { color: c.faint }]}>{t('stats.compare.noEarlier')}</Text>
       ) : null}
     </BottomSheet>
   );

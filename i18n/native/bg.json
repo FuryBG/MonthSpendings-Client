@@ -1,0 +1,8 @@
+{
+  "ios": {
+    "NSFaceIDUsageDescription": "Разрешете на Tavira да използва Face ID, за да отключва приложението."
+  },
+  "android": {
+    "wallet_sync_label": "Синхронизация на портфейла в Tavira"
+  }
+}

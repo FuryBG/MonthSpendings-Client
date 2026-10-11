@@ -64,3 +64,12 @@ Custom light/dark themes defined in `app/_layout.tsx`. Primary color: `#5C7A1A` 
 ### Path Alias
 
 `@/*` maps to the project root (configured in `tsconfig.json`).
+
+### Localization (en / bg / es)
+
+- **Setup:** `i18next` + `react-i18next` + `expo-localization`, initialised in `i18n/index.ts` (imported by `app/_layout.tsx`). Never hardcode user-visible text — use `const { t } = useTranslation()` in components, `i18n.t(...)` outside React.
+- **Strings:** English source in `i18n/locales/en/<namespace>.ts`; `bg/index.ts` and `es/index.ts` are typed as `Translation`, so a missing/extra key fails `tsc`, and `t()` keys are type-checked. Plurals use `_one`/`_other` suffixes. Legal texts live in `i18n/legal/`, currency names in `i18n/currencies.ts`.
+- **Language choice:** `stores/languageStore.ts` — follows the phone language (unsupported → English) until the user picks one in Settings (`components/LanguageSheet.tsx`). The choice is sent to the API (`PUT /api/user/language`) for push notifications, and every request carries `Accept-Language`.
+- **Formatting:** use `localeTag()` from `@/i18n` for `toLocale*`/`Intl` — never a hardcoded locale.
+- **API errors:** HTTP status + a translated message (plain string body; ProblemDetails for validation). Show it with `getApiErrorMessage(err, fallback)`; open the ProGate when `isProRequired(err)` (HTTP 402). Branch on status, never on message text.
+- **Native strings** (iOS permission prompts, Android wallet-sync label): `i18n/native/*.json` via `expo.locales` in `app.json`.

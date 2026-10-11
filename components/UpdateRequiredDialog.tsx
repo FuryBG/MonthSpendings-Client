@@ -6,6 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useRef, useState } from 'react';
 import { AppState, Linking, Modal, Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Icon, Text, useTheme } from 'react-native-paper';
+import { useTranslation } from 'react-i18next';
 
 type UpdateKind = 'optional' | 'required';
 
@@ -47,6 +48,7 @@ function resolveUpdate(info: AppVersionInfo, currentVersion: string): PendingUpd
  */
 export function UpdateRequiredDialog() {
   const theme = useTheme();
+  const { t } = useTranslation();
   const isDark = theme.dark;
   const [update, setUpdate] = useState<PendingUpdate | null>(null);
   const dismissedVersion = useRef<string | null>(null);
@@ -119,32 +121,30 @@ export function UpdateRequiredDialog() {
             </View>
           </LinearGradient>
 
-          <View style={s.versionRow} accessible accessibilityLabel={`Version ${update.currentVersion} to ${update.latestVersion}`}>
+          <View style={s.versionRow} accessible accessibilityLabel={t('update.versionLabel', { from: update.currentVersion, to: update.latestVersion })}>
             <Text style={[s.versionOld, { color: mutedColor }]}>{update.currentVersion}</Text>
             <Icon source="chevron-double-right" size={18} color={mutedColor} />
             <Text style={s.versionNew}>{update.latestVersion}</Text>
           </View>
 
           <Text style={[s.title, { color: titleColor }]}>
-            {isRequired ? 'Update Tavira to continue' : 'A new version of Tavira is out'}
+            {isRequired ? t('update.requiredTitle') : t('update.optionalTitle')}
           </Text>
 
           <Text style={[s.body, { color: bodyColor }]}>
-            {isRequired
-              ? 'This version is no longer supported. Install the update from Google Play to keep your budgets in sync.'
-              : 'This update can’t install in the background like smaller ones. Get it from Google Play — your data stays as it is.'}
+            {isRequired ? t('update.requiredBody') : t('update.optionalBody')}
           </Text>
 
           <TouchableOpacity onPress={openStore} activeOpacity={0.82} style={s.primaryBtn} accessibilityRole="button">
             <LinearGradient colors={Tavira.gradTeal} style={s.primaryGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
               <Icon source="google-play" size={18} color={Tavira.navy} />
-              <Text style={s.primaryText}>Update on Google Play</Text>
+              <Text style={s.primaryText}>{t('update.updateButton')}</Text>
             </LinearGradient>
           </TouchableOpacity>
 
           {!isRequired && (
             <TouchableOpacity onPress={dismiss} activeOpacity={0.6} style={s.secondaryBtn} accessibilityRole="button">
-              <Text style={[s.secondaryText, { color: bodyColor }]}>Not now</Text>
+              <Text style={[s.secondaryText, { color: bodyColor }]}>{t('update.notNow')}</Text>
             </TouchableOpacity>
           )}
         </View>

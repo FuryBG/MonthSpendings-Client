@@ -8,6 +8,7 @@ import { SpendingDetailSheet } from '../components/SpendingDetailSheet';
 import { TopSpendingsList } from '../components/TopSpendingsList';
 import { COMPARE_A_COLOR, COMPARE_B_COLOR } from '../model/palette';
 import type { RangeSpending, RangeSummary, ResolvedRange } from '../model/types';
+import { useTranslation } from 'react-i18next';
 
 type Props = {
   summaryA: RangeSummary;
@@ -23,6 +24,7 @@ type Props = {
 
 export function TopSpendingsSection({ summaryA, summaryB, rangeA, rangeB, symbol, initialCount = 5, hideCategory, scopeLabel }: Props) {
   const c = useStatsColors();
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const [selected, setSelected] = useState<RangeSpending | null>(null);
   const compare = summaryB != null && rangeB != null;
@@ -39,7 +41,7 @@ export function TopSpendingsSection({ summaryA, summaryB, rangeA, rangeB, symbol
         </View>
       ) : null}
       {spendings.length === 0
-        ? <Text style={[s.empty, { color: c.muted }]}>Nothing spent in this range yet.</Text>
+        ? <Text style={[s.empty, { color: c.muted }]}>{t('stats.nothingSpent')}</Text>
         : <TopSpendingsList spendings={spendings.slice(0, count)} symbol={symbol} onPress={setSelected} hideCategory={hideCategory} />}
     </View>
   );
@@ -47,9 +49,9 @@ export function TopSpendingsSection({ summaryA, summaryB, rangeA, rangeB, symbol
   return (
     <StatCard>
       <SectionHeader
-        title="Biggest spendings"
+        title={t('stats.topSpendings.title')}
         subtitle={scopeLabel}
-        actionLabel={canExpand ? (expanded ? 'Show fewer' : 'Show more') : undefined}
+        actionLabel={canExpand ? (expanded ? t('stats.showFewer') : t('stats.showMore')) : undefined}
         onAction={canExpand ? () => setExpanded(e => !e) : undefined}
       />
 

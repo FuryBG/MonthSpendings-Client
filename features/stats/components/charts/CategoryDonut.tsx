@@ -7,6 +7,7 @@ import { formatMoney } from '../../model/format';
 import { categoryColor } from '../../model/palette';
 import type { RangeCategory } from '../../model/types';
 import { useStatsColors } from '../primitives/useStatsColors';
+import i18n from '@/i18n';
 
 type Props = {
   categories: RangeCategory[];
@@ -47,7 +48,7 @@ export function CategoryDonut({ categories, total, symbol, focusedId, size = 196
 
       <View style={s.center} pointerEvents="none">
         <Text style={[s.centerLabel, { color: c.muted }]} numberOfLines={1}>
-          {focused ? focused.name : 'Spent'}
+          {focused ? focused.name : i18n.t('stats.donutSpent')}
         </Text>
         <MaskedAmount
           value={formatMoney(focused ? focused.amount : total, symbol, { compact: true })}

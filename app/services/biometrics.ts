@@ -1,4 +1,5 @@
 import * as LocalAuthentication from 'expo-local-authentication';
+import i18n from '@/i18n';
 
 export async function isDeviceLockAvailable(): Promise<boolean> {
   // SecurityLevel.NONE means no protection at all; anything above that (SECRET = PIN/pattern/password,
@@ -12,11 +13,11 @@ export async function isBiometricsAvailable(): Promise<boolean> {
   return isDeviceLockAvailable();
 }
 
-export async function authenticate(reason = 'Unlock Tavira'): Promise<boolean> {
+export async function authenticate(reason = i18n.t('lock.prompt')): Promise<boolean> {
   const result = await LocalAuthentication.authenticateAsync({
     promptMessage: reason,
-    fallbackLabel: 'Use Passcode',
-    cancelLabel: 'Cancel',
+    fallbackLabel: i18n.t('lock.usePasscode'),
+    cancelLabel: i18n.t('common.actions.cancel'),
     disableDeviceFallback: false,
   });
   return result.success;

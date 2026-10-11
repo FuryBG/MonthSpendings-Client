@@ -10,9 +10,11 @@ import { useEffect } from "react";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { Appbar, Text, useTheme } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useTranslation } from 'react-i18next';
 
 export default function MainLayout() {
   const router = useRouter();
+  const { t } = useTranslation();
   const title = useTitleStore((s) => s.title);
   const user = useAuthStore((s) => s.user);
   const userLoading = useAuthStore((s) => s.userLoading);
@@ -40,7 +42,7 @@ export default function MainLayout() {
       <View style={styles.loadingOverlay}>
         <View style={styles.loadingCard}>
           <ActivityIndicator size={36} color={Tavira.teal} />
-          <Text style={styles.loadingMessage}>Loading…</Text>
+          <Text style={styles.loadingMessage}>{t('common.loading')}</Text>
         </View>
       </View>
     );
@@ -87,12 +89,12 @@ export default function MainLayout() {
       }}
     >
       <Stack.Screen name="(drawer)" options={{ headerShown: false }} />
-      <Stack.Screen name="ManageBudget" options={{ title: 'Manage Budget' }} />
-      <Stack.Screen name="CreateBudget" options={{ title: 'Create Budget' }} />
-      <Stack.Screen name="PendingTransactions" options={{ title: 'Pending Transactions' }} />
-      <Stack.Screen name="Invites" options={{ title: 'Invitations' }} />
-      <Stack.Screen name="spending-group/SpendingDetails" options={{ title: 'Spending Details' }} />
-      <Stack.Screen name="stats/CategoryDetail" options={{ title: 'Category' }} />
+      <Stack.Screen name="ManageBudget" options={{ title: t('navigation.manageBudget') }} />
+      <Stack.Screen name="CreateBudget" options={{ title: t('navigation.createBudget') }} />
+      <Stack.Screen name="PendingTransactions" options={{ title: t('navigation.pendingTransactions') }} />
+      <Stack.Screen name="Invites" options={{ title: t('navigation.invitations') }} />
+      <Stack.Screen name="spending-group/SpendingDetails" options={{ title: t('navigation.spendingDetails') }} />
+      <Stack.Screen name="stats/CategoryDetail" options={{ title: t('navigation.category') }} />
     </Stack>
   );
 }

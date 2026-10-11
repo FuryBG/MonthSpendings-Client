@@ -9,6 +9,7 @@ import { COMPARE_A_COLOR, COMPARE_B_COLOR } from '../../model/palette';
 import { useStatsColors } from '../primitives/useStatsColors';
 import { PeriodAxisLabels } from './PeriodAxisLabels';
 import { useBarScrubGesture } from './useBarScrubGesture';
+import i18n from '@/i18n';
 
 type Props = {
   points: TimelinePoint[];
@@ -71,7 +72,7 @@ export function PeriodBarChart({ points, compare, selectedIndex, onScrub, onRele
   return (
     <View>
       <GestureDetector gesture={gesture}>
-        <View style={{ height }} onLayout={e => setWidth(e.nativeEvent.layout.width)} accessibilityLabel="Spending per period chart. Tap a bar or slide across the bars to see each period.">
+        <View style={{ height }} onLayout={e => setWidth(e.nativeEvent.layout.width)} accessibilityLabel={i18n.t('stats.chartA11y')}>
           {/* Draw only once the width is known, so bars don't animate in from a wrong layout. */}
           {width > 0 ? (
             <CartesianChart

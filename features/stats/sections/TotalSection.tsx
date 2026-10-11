@@ -11,6 +11,7 @@ import { buildTimeline, diff, sideAverage } from '../model/compare';
 import { formatMoney, formatSpan } from '../model/format';
 import { COMPARE_A_COLOR, COMPARE_B_COLOR } from '../model/palette';
 import type { RangeSummary, ResolvedRange } from '../model/types';
+import { useTranslation } from 'react-i18next';
 
 type Props = {
   summaryA: RangeSummary;
@@ -34,6 +35,7 @@ type Props = {
  */
 export function TotalSection({ summaryA, summaryB, rangeA, rangeB, symbol, title, onCompare, pinnedPeriodId, onPinPeriod, pinnedHint }: Props) {
   const c = useStatsColors();
+  const { t } = useTranslation();
   const compare = summaryB != null && rangeB != null;
   const points = useMemo(() => buildTimeline(summaryA.periods, compare ? summaryB!.periods : null), [summaryA, summaryB, compare]);
 
@@ -53,12 +55,12 @@ export function TotalSection({ summaryA, summaryB, rangeA, rangeB, symbol, title
 
   const caption = point
     ? formatSpan(point.period.startDate, point.period.endDate)
-    : title ?? (isOpen && rangeA.count === 1 ? 'This period so far' : rangeA.label);
+    : title ?? (isOpen && rangeA.count === 1 ? t('stats.total.thisPeriodSoFar') : rangeA.label);
 
   const subline = point
-    ? `Period ${point.index + 1} of ${points.length}`
+    ? t('stats.total.periodOf', { index: point.index + 1, total: points.length })
     : rangeA.count > 1
-      ? `${formatMoney(summaryA.averagePerPeriod, symbol)} per period on average`
+      ? t('stats.total.averagePerPeriod', { amount: formatMoney(summaryA.averagePerPeriod, symbol) })
       : formatSpan(summaryA.startDate, summaryA.endDate);
 
   // Second row in compare mode: B's total, or, for a selected bar, the other range's average.
@@ -84,7 +86,7 @@ export function TotalSection({ summaryA, summaryB, rangeA, rangeB, symbol, title
             accessibilityRole="button"
           >
             <Icon source="compare-horizontal" size={16} color={c.text} />
-            <Text style={[s.compareText, { color: c.text }]}>Compare</Text>
+            <Text style={[s.compareText, { color: c.text }]}>{t('stats.compare.button')}</Text>
           </Pressable>
         ) : null}
       </View>
@@ -98,7 +100,7 @@ export function TotalSection({ summaryA, summaryB, rangeA, rangeB, symbol, title
             <MaskedAmount value={formatMoney(otherAverage, symbol)} style={[s.valueB, { color: c.muted }]} />
             <DiffChip diff={diff(point.total, otherAverage)} symbol={symbol} />
           </View>
-          <Text style={[s.bSpan, { color: c.muted }]}>average per period in {otherRange.label}</Text>
+          <Text style={[s.bSpan, { color: c.muted }]}>{t('stats.total.averageIn', { range: otherRange.label })}</Text>
         </View>
       ) : (
         <View style={s.bRow}>
@@ -127,12 +129,12 @@ export function TotalSection({ summaryA, summaryB, rangeA, rangeB, symbol, title
           {pinnedIndex != null && scrubIndex == null ? (
             <View style={s.pinnedRow}>
               <Text style={[s.pinnedHint, { color: c.muted }]} numberOfLines={1}>{pinnedHint ?? ''}</Text>
-              <Pressable onPress={() => pin(null)} hitSlop={10} style={s.clear} accessibilityLabel="Show the whole range">
-                <Text style={[s.clearText, { color: c.muted }]}>Show all</Text>
+              <Pressable onPress={() => pin(null)} hitSlop={10} style={s.clear} accessibilityLabel={t('stats.total.showWholeRange')}>
+                <Text style={[s.clearText, { color: c.muted }]}>{t('stats.showAll')}</Text>
               </Pressable>
             </View>
           ) : (
-            <Text style={[s.hint, { color: c.faint }]}>{scrubIndex == null ? 'Tap a period or slide across the bars' : ' '}</Text>
+            <Text style={[s.hint, { color: c.faint }]}>{scrubIndex == null ? t('stats.total.chartHint') : ' '}</Text>
           )}
         </View>
       ) : null}

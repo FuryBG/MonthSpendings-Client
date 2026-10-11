@@ -2,7 +2,7 @@
   "expo": {
     "name": "Tavira",
     "slug": "tavira",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "tavira",
@@ -17,7 +17,8 @@
       "supportsTablet": true,
       "bundleIdentifier": "app.expo.tavira",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "CFBundleAllowMixedLocalizations": true
       }
     },
     "android": {
@@ -34,6 +35,10 @@
     "web": {
       "output": "static",
       "favicon": "./assets/images/favicon.png"
+    },
+    "locales": {
+      "bg": "./i18n/native/bg.json",
+      "es": "./i18n/native/es.json"
     },
     "plugins": [
       [
@@ -81,7 +86,8 @@
       "expo-font",
       "expo-image",
       "expo-status-bar",
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-localization"
     ],
     "experiments": {
       "typedRoutes": true,

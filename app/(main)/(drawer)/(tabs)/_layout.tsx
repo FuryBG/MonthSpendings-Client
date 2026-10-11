@@ -6,11 +6,13 @@ import { Tabs } from "expo-router";
 import { Platform, StyleSheet, View } from "react-native";
 import { useTheme } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useTranslation } from 'react-i18next';
 
 const TAB_CONTENT_HEIGHT = Platform.OS === 'ios' ? 50 : 56;
 
 export default function TabsLayout() {
   const theme = useTheme();
+  const { t } = useTranslation();
   const isDark = theme.dark;
   const insets = useSafeAreaInsets();
 
@@ -39,7 +41,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
+          title: t('navigation.home'),
           tabBarIcon: ({ color, focused }) => (
             <View style={focused && isDark ? styles.activeIconWrap : undefined}>
               <IconSymbol size={24} name="house.fill" color={color} />
@@ -56,7 +58,7 @@ export default function TabsLayout() {
           },
         })}
         options={{
-          title: 'Stats',
+          title: t('navigation.stats'),
           tabBarIcon: ({ color, focused }) => (
             <View style={focused && isDark ? styles.activeIconWrap : undefined}>
               <IconSymbol size={24} name="chart.bar.fill" color={color} />

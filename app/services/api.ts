@@ -24,12 +24,17 @@ const api = axios.create({
 });
 
 let _memoryToken: string | null = null;
+let _requestLanguage = 'en';
 
 export const setMemoryToken = (token: string | null) => { _memoryToken = token; };
 
+/** Language the API uses for localized error messages (Accept-Language). */
+export const setRequestLanguage = (language: string) => { _requestLanguage = language; };
+
 api.interceptors.request.use((config) => {
-  if (_memoryToken && config.headers) {
-    config.headers.Authorization = `Bearer ${_memoryToken}`;
+  if (config.headers) {
+    if (_memoryToken) config.headers.Authorization = `Bearer ${_memoryToken}`;
+    config.headers['Accept-Language'] = _requestLanguage;
   }
   return config;
 });
@@ -145,6 +150,10 @@ export const updateUserActivity = async (dto: UpdateUserActivityDto): Promise<vo
 
 export const updateNotificationToken = async (token: string): Promise<void> => {
   await api.put('/api/user/notification-token', { notificationToken: token });
+};
+
+export const updateLanguage = async (language: string): Promise<void> => {
+  await api.put('/api/user/language', { language });
 };
 
 export const updateSyncWalletTransactions = async (sync: boolean): Promise<void> => {

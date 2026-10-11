@@ -1,11 +1,13 @@
 import Constants from "expo-constants";
 import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
+import i18n from '@/i18n';
 
 export async function registerForPushNotificationsAsync() {
   if (Platform.OS === "android") {
+    // Channel id stays "default" (the API sends to it); only the visible name is localized.
     await Notifications.setNotificationChannelAsync("default", {
-      name: "default",
+      name: i18n.t("notifications.channelName"),
       importance: Notifications.AndroidImportance.MAX,
       vibrationPattern: [0, 250, 250, 250],
       lightColor: "#FF231F7C",

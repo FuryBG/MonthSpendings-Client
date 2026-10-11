@@ -13,11 +13,15 @@ import { Animated, Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } 
 import { Icon, useTheme } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { respondToInvite } from "../services/api";
+import { useTranslation } from 'react-i18next';
+import { localeTag } from '@/i18n';
+import { getApiErrorMessage, isProRequired } from '@/utils/apiError';
 
 // ─── Empty State ──────────────────────────────────────────────────────────────
 
 function EmptyState() {
     const { colors } = useTheme();
+    const { t } = useTranslation();
     const fade = useRef(new Animated.Value(0)).current;
     const rise = useRef(new Animated.Value(28)).current;
 
@@ -38,9 +42,9 @@ function EmptyState() {
                     <Icon source="email-outline" size={46} color={colors.primary} />
                 </View>
             </View>
-            <Text style={[s.emptyTitle, { color: colors.onBackground }]}>No invitations yet</Text>
+            <Text style={[s.emptyTitle, { color: colors.onBackground }]}>{t('invites.empty.title')}</Text>
             <Text style={[s.emptySub, { color: colors.onSurfaceVariant }]}>
-                {"When someone invites you to\njoin a budget, it'll appear here."}
+                {t('invites.empty.description')}
             </Text>
         </Animated.View>
     );
@@ -56,6 +60,7 @@ interface InviteCardProps {
 
 function InviteCard({ invite, index, onRespond }: InviteCardProps) {
     const { colors } = useTheme();
+    const { t, i18n } = useTranslation();
     const fade = useRef(new Animated.Value(0)).current;
     const slide = useRef(new Animated.Value(32)).current;
 
@@ -74,15 +79,15 @@ function InviteCard({ invite, index, onRespond }: InviteCardProps) {
     const accentColor = isPending ? Tavira.teal : isAccepted ? Tavira.income : Tavira.expense;
 
     const expiry = invite.validTo
-        ? new Date(invite.validTo).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+        ? new Date(invite.validTo).toLocaleDateString(localeTag(i18n.language), { day: 'numeric', month: 'short', year: 'numeric' })
         : null;
 
     const status = !isPending
-        ? { label: isAccepted ? 'Accepted' : 'Declined', color: isAccepted ? Tavira.income : Tavira.expense }
+        ? { label: isAccepted ? t('invites.status.accepted') : t('invites.status.declined'), color: isAccepted ? Tavira.income : Tavira.expense }
         : null;
 
-    const budgetLabel = invite.budgetName || `Budget #${invite.budgetId}`;
-    const senderLabel = invite.senderName || invite.senderEmail || 'Unknown';
+    const budgetLabel = invite.budgetName || t('invites.budgetFallback', { id: invite.budgetId });
+    const senderLabel = invite.senderName || invite.senderEmail || t('invites.unknownSender');
 
     return (
         <Animated.View style={[c.card, { backgroundColor: isDark ? Tavira.glassBg : colors.surface, borderColor: isDark ? Tavira.glassBorder : 'transparent', borderWidth: isDark ? 1 : 0, elevation: isDark ? 0 : 2, shadowOpacity: isDark ? 0 : 0.07, opacity: fade, transform: [{ translateY: slide }] }]}>
@@ -106,7 +111,7 @@ function InviteCard({ invite, index, onRespond }: InviteCardProps) {
                 <View style={c.senderRow}>
                     <Icon source="account-outline" size={14} color={colors.onSurfaceVariant} />
                     <Text style={[c.senderText, { color: colors.onSurfaceVariant }]} numberOfLines={1}>
-                        Invited by {senderLabel}
+                        {t('invites.invitedBy', { name: senderLabel })}
                     </Text>
                 </View>
 
@@ -116,7 +121,7 @@ function InviteCard({ invite, index, onRespond }: InviteCardProps) {
                 {expiry && (
                     <View style={c.expiryRow}>
                         <Icon source="clock-outline" size={12} color={colors.onSurfaceVariant} />
-                        <Text style={[c.expiryText, { color: colors.onSurfaceVariant }]}>Expires {expiry}</Text>
+                        <Text style={[c.expiryText, { color: colors.onSurfaceVariant }]}>{t('invites.expires', { date: expiry })}</Text>
                     </View>
                 )}
 
@@ -127,13 +132,13 @@ function InviteCard({ invite, index, onRespond }: InviteCardProps) {
                             onPress={() => onRespond(invite.id, false)}
                             style={({ pressed }) => [c.btn, c.btnOutline, { borderColor: colors.error, opacity: pressed ? 0.6 : 1 }]}
                         >
-                            <Text style={[c.btnText, { color: colors.error }]}>Decline</Text>
+                            <Text style={[c.btnText, { color: colors.error }]}>{t('invites.decline')}</Text>
                         </Pressable>
                         <Pressable
                             onPress={() => onRespond(invite.id, true)}
                             style={({ pressed }) => [c.btn, c.btnFill, { backgroundColor: colors.primary, opacity: pressed ? 0.75 : 1 }]}
                         >
-                            <Text style={[c.btnText, { color: colors.onPrimary }]}>Accept</Text>
+                            <Text style={[c.btnText, { color: colors.onPrimary }]}>{t('invites.accept')}</Text>
                         </Pressable>
                     </View>
                 )}
@@ -152,12 +157,13 @@ export default function InvitesScreen() {
     const setTitle = useTitleStore((s) => s.setTitle);
     const [loading, setLoading] = useState(false);
     const [showProGate, setShowProGate] = useState(false);
-    const [proGateFeature, setProGateFeature] = useState('');
+    const [proGateReason, setProGateReason] = useState('');
     const { colors } = useTheme();
+    const { t } = useTranslation();
     const insets = useSafeAreaInsets();
 
     useFocusEffect(() => {
-        setTitle("Invitations");
+        setTitle(t('navigation.invitations'));
     });
 
     async function onRespondToInvite(inviteId: number, accepted: boolean) {
@@ -168,16 +174,14 @@ export default function InvitesScreen() {
             if (accepted) {
                 await queryClient.invalidateQueries({ queryKey: ['budgets'] });
             }
-            showSuccess(accepted ? "Invite accepted." : "Invite declined.");
-        } catch (error: any) {
-            const message = error?.response?.data;
-            if (accepted && typeof message === 'string' && message.includes('Pro')) {
-                setProGateFeature(
-                    message.includes('participants') ? 'Joining Large Budgets' : 'Multiple Budgets'
-                );
+            showSuccess(accepted ? t('invites.messages.accepted') : t('invites.messages.declined'));
+        } catch (error: unknown) {
+            if (accepted && isProRequired(error)) {
+                // The API's message says why (multiple budgets vs. a large budget)
+                setProGateReason(getApiErrorMessage(error));
                 setShowProGate(true);
             } else {
-                showError("Failed to respond to invite.");
+                showError(getApiErrorMessage(error, t('invites.messages.respondFailed')));
             }
         } finally {
             setLoading(false);
@@ -188,7 +192,7 @@ export default function InvitesScreen() {
 
     return (
         <ScreenContainer scrollable={true}>
-            <OverlayLoader isVisible={loading} message='Processing...' />
+            <OverlayLoader isVisible={loading} message={t('common.processing')} />
             <Modal visible={showProGate} animationType="slide" onRequestClose={() => setShowProGate(false)}>
                 <View style={{ flex: 1 }}>
                     <TouchableOpacity
@@ -197,7 +201,7 @@ export default function InvitesScreen() {
                     >
                         <Icon source="close" size={24} color={colors.onBackground} />
                     </TouchableOpacity>
-                    <ProGate featureName={proGateFeature} onUnlocked={() => setShowProGate(false)} />
+                    <ProGate featureName={t('pro.features.joinBudget')} description={proGateReason} onUnlocked={() => setShowProGate(false)} />
                 </View>
             </Modal>
             {user.receivedBudgetInvites.length === 0 ? (

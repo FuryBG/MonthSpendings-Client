@@ -4,49 +4,14 @@ import { useEffect, useRef } from 'react';
 import { Animated, Easing, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Icon, Text } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
-const SECTIONS = [
-  {
-    title: 'Acceptance of Terms',
-    body: 'By accessing or using Tavira, you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the application. Your continued use of Tavira after any updates constitutes acceptance of the revised terms.',
-  },
-  {
-    title: 'Use of the Service',
-    body: 'Tavira is a personal budgeting tool intended solely for lawful personal finance management. You agree to use the service only for its intended purpose and in compliance with all applicable laws and regulations. Commercial use or resale of the service is strictly prohibited.',
-  },
-  {
-    title: 'Account Registration',
-    body: 'You must authenticate using a valid Google account to access Tavira. You are responsible for maintaining the confidentiality of your account and for all activities that occur under it. Notify us immediately if you suspect unauthorized access to your account.',
-  },
-  {
-    title: 'Budgets and Financial Data',
-    body: 'Financial data you enter into Tavira is stored securely and used solely to provide budgeting features. You retain ownership of all data you input into the application. We do not use your financial data for advertising or sell it to third parties.',
-  },
-  {
-    title: 'Bank Account Integration',
-    body: 'Tavira integrates with banking services via secure open-banking protocols. By connecting a bank account, you authorize Tavira to read transaction data on your behalf for budget tracking purposes. You may revoke bank access at any time through the app settings.',
-  },
-  {
-    title: 'Prohibited Activities',
-    body: 'You may not use Tavira to engage in fraudulent, illegal, or harmful activities. Attempting to reverse-engineer, scrape, or disrupt the service is strictly prohibited. Violations may result in immediate account termination and referral to appropriate authorities.',
-  },
-  {
-    title: 'Termination',
-    body: 'We reserve the right to suspend or terminate your account if you violate these terms. You may delete your account at any time through the app settings. Upon termination, your data will be handled in accordance with our Privacy Policy.',
-  },
-  {
-    title: 'Changes to Terms',
-    body: 'We may update these Terms of Service from time to time to reflect changes to the service or applicable law. Significant changes will be communicated via in-app notification or email. Continued use of Tavira after changes take effect constitutes your acceptance.',
-  },
-  {
-    title: 'Contact Us',
-    body: 'If you have questions or concerns about these Terms of Service, please reach out to us at support@tavira.app. We aim to respond to all inquiries within 48 business hours.',
-  },
-];
+import { useTranslation } from 'react-i18next';
+import { getLegalContent } from '@/i18n/legal';
 
 export default function TermsOfServiceScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { i18n } = useTranslation();
+  const doc = getLegalContent(i18n.language).terms;
   const fadeIn = useRef(new Animated.Value(0)).current;
   const slideUp = useRef(new Animated.Value(20)).current;
 
@@ -66,7 +31,7 @@ export default function TermsOfServiceScreen() {
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} hitSlop={12}>
           <Icon source="arrow-left" size={20} color="#3EC6C6" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Terms of Service</Text>
+        <Text style={styles.headerTitle}>{doc.title}</Text>
         <View style={styles.headerSpacer} />
       </View>
 
@@ -75,12 +40,11 @@ export default function TermsOfServiceScreen() {
         contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 48 }]}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.metaLabel}>Last updated: May 2025</Text>
-        <Text style={styles.intro}>
-          Please read these Terms of Service carefully before using the Tavira application. These terms govern your access to and use of all Tavira features.
-        </Text>
+        <Text style={styles.metaLabel}>{doc.lastUpdated}</Text>
+        {doc.translationNotice ? <Text style={styles.notice}>{doc.translationNotice}</Text> : null}
+        <Text style={styles.intro}>{doc.intro}</Text>
 
-        {SECTIONS.map((section, index) => (
+        {doc.sections.map((section, index) => (
           <View key={section.title} style={styles.section}>
             <View style={styles.sectionHeader}>
               <View style={styles.accent} />
@@ -140,6 +104,15 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     textTransform: 'uppercase',
     marginBottom: 10,
+  },
+  notice: {
+    fontSize: 12,
+    color: 'rgba(242,244,248,0.45)',
+    lineHeight: 18,
+    borderLeftWidth: 2,
+    borderLeftColor: '#3EC6C6',
+    paddingLeft: 10,
+    marginBottom: 14,
   },
   intro: {
     fontSize: 14,

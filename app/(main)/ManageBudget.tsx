@@ -35,6 +35,8 @@ import {
     useTheme,
 } from "react-native-paper";
 import { createInvite, respondToInvite } from "../services/api";
+import { useTranslation } from 'react-i18next';
+import { getApiErrorMessage } from '@/utils/apiError';
 
 const COLOR_EXPENSE = Tavira.expense;
 const COLOR_INCOME  = Tavira.income;
@@ -45,6 +47,7 @@ type SheetType = 'invite' | 'addCategory' | 'deleteCategory' | 'renameCategory' 
 export default function ManageBudgetScreen() {
     const router = useRouter();
     const theme = useTheme();
+    const { t } = useTranslation();
     const { data: budgets = [] } = useBudgetsQuery();
     const user = useAuthStore((s) => s.user);
     const restoreSession = useAuthStore((s) => s.restoreSession);
@@ -80,8 +83,8 @@ export default function ManageBudgetScreen() {
 
     useEffect(() => {
         if (!hasSeenScreen('ManageBudget')) {
-            const t = setTimeout(() => setTourVisible(true), 600);
-            return () => clearTimeout(t);
+            const timer = setTimeout(() => setTourVisible(true), 600);
+            return () => clearTimeout(timer);
         }
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -98,16 +101,16 @@ export default function ManageBudgetScreen() {
     }
 
     const manageTourSteps: TourStep[] = [
-        { key: 'mb_header', icon: 'account-cash', title: 'Budget Overview', description: 'Shows the budget name and currency. Each budget is a separate spending envelope you can share with others.' },
-        { key: 'mb_members', icon: 'account-plus', title: 'Members & Invites', description: 'Tap Invite Member to share this budget by email. Shared members can add and view spending in real time.' },
-        { key: 'mb_categories', icon: 'cash-fast', title: 'Categories', description: 'Add, rename, or remove spending categories. Each category tracks its own balance independently.' },
-        { key: 'mb_period', icon: 'calendar-check', title: 'Finish Period', description: 'Close the current month and choose how to handle remaining balances — start fresh, carry into one category, or keep each.' },
+        { key: 'mb_header', icon: 'account-cash', title: t('tour.manage.header.title'), description: t('tour.manage.header.description') },
+        { key: 'mb_members', icon: 'account-plus', title: t('tour.manage.members.title'), description: t('tour.manage.members.description') },
+        { key: 'mb_categories', icon: 'cash-fast', title: t('tour.manage.categories.title'), description: t('tour.manage.categories.description') },
+        { key: 'mb_period', icon: 'calendar-check', title: t('tour.manage.period.title'), description: t('tour.manage.period.description') },
     ];
 
     useEffect(() => {
         if (activeSheet !== 'renameCategory') return;
-        const t = setTimeout(() => renameInputRef.current?.focus(), 350);
-        return () => clearTimeout(t);
+        const timer = setTimeout(() => renameInputRef.current?.focus(), 350);
+        return () => clearTimeout(timer);
     }, [activeSheet]);
 
     const selectedMainBudget = budgets.find(b => b.id == Number(params.budgetId));
@@ -165,9 +168,9 @@ export default function ManageBudgetScreen() {
         try {
             setLoading(true);
             await deleteBudgetCategoryMutation.mutateAsync(confirmDeleteCategory.id);
-            sheetRef.current?.close(() => { setConfirmDeleteCategory(null); showSuccess("Category deleted."); });
-        } catch {
-            sheetRef.current?.close(() => showError("Deleting category was not successful."));
+            sheetRef.current?.close(() => { setConfirmDeleteCategory(null); showSuccess(t('budget.manage.messages.categoryDeleted')); });
+        } catch (e) {
+            sheetRef.current?.close(() => showError(getApiErrorMessage(e, t('budget.manage.messages.categoryDeleteFailed'))));
         } finally {
             setLoading(false);
         }
@@ -179,9 +182,9 @@ export default function ManageBudgetScreen() {
             setIsDeletingBudget(true);
             await deleteBudgetMutation.mutateAsync(selectedMainBudget!.id);
             sheetRef.current?.close(() => router.replace("/(main)/(drawer)/(tabs)"));
-        } catch {
+        } catch (e) {
             setIsDeletingBudget(false);
-            sheetRef.current?.close(() => showError("Deleting budget was not successful."));
+            sheetRef.current?.close(() => showError(getApiErrorMessage(e, t('budget.manage.messages.budgetDeleteFailed'))));
         } finally {
             setLoading(false);
         }
@@ -193,9 +196,9 @@ export default function ManageBudgetScreen() {
             budgetCategory.budgetId = selectedMainBudget!.id;
             budgetCategory.spendings[0].budgetPeriodId = selectedMainBudget?.budgetPeriods[0].id ?? 0;
             await addBudgetCategoryMutation.mutateAsync(budgetCategory);
-            sheetRef.current?.close(() => { reset(); showSuccess("Category created."); });
-        } catch {
-            sheetRef.current?.close(() => showError("Creating category was not successful."));
+            sheetRef.current?.close(() => { reset(); showSuccess(t('budget.manage.messages.categoryCreated')); });
+        } catch (e) {
+            sheetRef.current?.close(() => showError(getApiErrorMessage(e, t('budget.manage.messages.categoryCreateFailed'))));
         } finally {
             setLoading(false);
         }
@@ -206,9 +209,9 @@ export default function ManageBudgetScreen() {
         try {
             setLoading(true);
             await updateCategoryNameMutation.mutateAsync({ id: renameCategoryTarget.id, newName: name });
-            sheetRef.current?.close(() => { renameReset(); showSuccess("Category renamed."); });
-        } catch {
-            sheetRef.current?.close(() => showError("Renaming category was not successful."));
+            sheetRef.current?.close(() => { renameReset(); showSuccess(t('budget.manage.messages.categoryRenamed')); });
+        } catch (e) {
+            sheetRef.current?.close(() => showError(getApiErrorMessage(e, t('budget.manage.messages.categoryRenameFailed'))));
         } finally {
             setLoading(false);
         }
@@ -218,9 +221,9 @@ export default function ManageBudgetScreen() {
         try {
             setLoading(true);
             await createInvite(budgetInvite);
-            sheetRef.current?.close(() => { inviteReset(); showSuccess("Invite sent."); });
-        } catch {
-            sheetRef.current?.close(() => showError("Sending invite was not successful."));
+            sheetRef.current?.close(() => { inviteReset(); showSuccess(t('budget.manage.messages.inviteSent')); });
+        } catch (e) {
+            sheetRef.current?.close(() => showError(getApiErrorMessage(e, t('budget.manage.messages.inviteFailed'))));
         } finally {
             setLoading(false);
         }
@@ -289,9 +292,9 @@ export default function ManageBudgetScreen() {
             }
 
             await finishBudgetMutation.mutateAsync(budgetToFinish);
-            sheetRef.current?.close(() => showSuccess("Budget period finished successfully."));
-        } catch {
-            sheetRef.current?.close(() => showError("Finishing period was not successful."));
+            sheetRef.current?.close(() => showSuccess(t('budget.manage.messages.periodFinished')));
+        } catch (e) {
+            sheetRef.current?.close(() => showError(getApiErrorMessage(e, t('budget.manage.messages.periodFinishFailed'))));
         } finally {
             setLoading(false);
         }
@@ -303,9 +306,9 @@ export default function ManageBudgetScreen() {
             setLoading(true);
             await kickMemberMutation.mutateAsync({ budgetId: selectedMainBudget.id, userId: kickTargetMember.id });
             setIsMembersEditMode(false);
-            sheetRef.current?.close(() => { setKickTargetMember(null); showSuccess(`${kickTargetMember.firstName || kickTargetMember.email} removed.`); });
-        } catch {
-            sheetRef.current?.close(() => showError("Removing member was not successful."));
+            sheetRef.current?.close(() => { setKickTargetMember(null); showSuccess(t('budget.manage.messages.memberRemoved', { name: kickTargetMember.firstName || kickTargetMember.email })); });
+        } catch (e) {
+            sheetRef.current?.close(() => showError(getApiErrorMessage(e, t('budget.manage.messages.memberRemoveFailed'))));
         } finally {
             setLoading(false);
         }
@@ -317,8 +320,8 @@ export default function ManageBudgetScreen() {
             setLoading(true);
             await leaveBudgetMutation.mutateAsync(selectedMainBudget.id);
             sheetRef.current?.close(() => router.replace("/(main)/(drawer)/(tabs)"));
-        } catch {
-            sheetRef.current?.close(() => showError("Leaving budget was not successful."));
+        } catch (e) {
+            sheetRef.current?.close(() => showError(getApiErrorMessage(e, t('budget.manage.messages.leaveFailed'))));
         } finally {
             setLoading(false);
         }
@@ -329,9 +332,9 @@ export default function ManageBudgetScreen() {
             setLoading(true);
             await respondToInvite(inviteId, accepted);
             await restoreSession();
-            showSuccess(accepted ? "Invite accepted." : "Invite declined.");
-        } catch {
-            showError("Failed to respond to invite.");
+            showSuccess(accepted ? t('invites.messages.accepted') : t('invites.messages.declined'));
+        } catch (e) {
+            showError(getApiErrorMessage(e, t('invites.messages.respondFailed')));
         } finally {
             setLoading(false);
         }
@@ -341,22 +344,22 @@ export default function ManageBudgetScreen() {
         Math.round(spendings.reduce((sum, s) => sum + s.amount, 0) * 100) / 100;
 
     useFocusEffect(() => {
-        setTitle("Budget Management");
+        setTitle(t('navigation.budgetManagement'));
     });
 
     const renderSheetContent = () => {
         if (activeSheet === 'invite') {
             return (
                 <>
-                    <Text style={sheetStyles.sheetTitle}>Invite Member</Text>
+                    <Text style={sheetStyles.sheetTitle}>{t('budget.manage.invite.title')}</Text>
                     <Controller
                         control={inviteControl}
-                        rules={{ required: "Email is required" }}
+                        rules={{ required: t('auth.validation.emailRequired') }}
                         name="receiverEmail"
                         render={({ field: { onChange, value }, fieldState }) => (
                             <>
                                 <TextInput
-                                    label="Email address"
+                                    label={t('budget.manage.invite.emailLabel')}
                                     value={value}
                                     onChangeText={onChange}
                                     error={fieldState.error != null}
@@ -371,11 +374,11 @@ export default function ManageBudgetScreen() {
                         )}
                     />
                     <View style={sheetStyles.sheetActions}>
-                        <Button mode="text" onPress={() => sheetRef.current?.close(inviteReset)}>Cancel</Button>
+                        <Button mode="text" onPress={() => sheetRef.current?.close(inviteReset)}>{t('common.actions.cancel')}</Button>
                         <Button mode="contained" loading={loading}
                             onPress={inviteHandleSubmit(onCreateInvite)}
                             contentStyle={sheetStyles.sheetConfirmContent}>
-                            Send Invite
+                            {t('budget.manage.invite.send')}
                         </Button>
                     </View>
                 </>
@@ -385,16 +388,16 @@ export default function ManageBudgetScreen() {
         if (activeSheet === 'renameCategory') {
             return (
                 <>
-                    <Text style={sheetStyles.sheetTitle}>Rename — {renameCategoryTarget?.name}</Text>
+                    <Text style={sheetStyles.sheetTitle}>{t('budget.manage.rename.title', { name: renameCategoryTarget?.name })}</Text>
                     <Controller
                         control={renameControl}
-                        rules={{ required: "Name is required" }}
+                        rules={{ required: t('budget.validation.categoryNameRequired') }}
                         name="name"
                         render={({ field: { onChange, value }, fieldState }) => (
                             <>
                                 <TextInput
                                     ref={renameInputRef}
-                                    label="Category name"
+                                    label={t('budget.fields.categoryName')}
                                     value={value}
                                     onChangeText={onChange}
                                     error={fieldState.error != null}
@@ -407,11 +410,11 @@ export default function ManageBudgetScreen() {
                         )}
                     />
                     <View style={sheetStyles.sheetActions}>
-                        <Button mode="text" onPress={() => sheetRef.current?.close(renameReset)}>Cancel</Button>
+                        <Button mode="text" onPress={() => sheetRef.current?.close(renameReset)}>{t('common.actions.cancel')}</Button>
                         <Button mode="contained" loading={loading}
                             onPress={renameHandleSubmit(onRenameCategory)}
                             contentStyle={sheetStyles.sheetConfirmContent}>
-                            Save
+                            {t('common.actions.save')}
                         </Button>
                     </View>
                 </>
@@ -421,15 +424,15 @@ export default function ManageBudgetScreen() {
         if (activeSheet === 'addCategory') {
             return (
                 <>
-                    <Text style={sheetStyles.sheetTitle}>Add Category</Text>
+                    <Text style={sheetStyles.sheetTitle}>{t('budget.manage.addCategory.title')}</Text>
                     <Controller
                         control={control}
-                        rules={{ required: "Name is required" }}
+                        rules={{ required: t('budget.validation.categoryNameRequired') }}
                         name="name"
                         render={({ field: { onChange, value }, fieldState }) => (
                             <>
                                 <TextInput
-                                    label="Category name"
+                                    label={t('budget.fields.categoryName')}
                                     value={value}
                                     onChangeText={onChange}
                                     error={fieldState.error != null}
@@ -443,12 +446,12 @@ export default function ManageBudgetScreen() {
                     />
                     <Controller
                         control={control}
-                        rules={{ required: "Starting amount is required" }}
+                        rules={{ required: t('budget.validation.startingAmountRequired') }}
                         name="spendings.0.amount"
                         render={({ field: { onChange, value }, fieldState }) => (
                             <>
                                 <TextInput
-                                    label="Starting amount"
+                                    label={t('budget.fields.startingAmount')}
                                     keyboardType="numeric"
                                     value={value ? value.toString() : ""}
                                     onChangeText={onChange}
@@ -462,11 +465,11 @@ export default function ManageBudgetScreen() {
                         )}
                     />
                     <View style={sheetStyles.sheetActions}>
-                        <Button mode="text" onPress={() => sheetRef.current?.close(reset)}>Cancel</Button>
+                        <Button mode="text" onPress={() => sheetRef.current?.close(reset)}>{t('common.actions.cancel')}</Button>
                         <Button mode="contained" loading={loading}
                             onPress={handleSubmit(onCreateCategory)}
                             contentStyle={sheetStyles.sheetConfirmContent}>
-                            Create
+                            {t('common.actions.create')}
                         </Button>
                     </View>
                 </>
@@ -479,16 +482,16 @@ export default function ManageBudgetScreen() {
                     <View style={[sheetStyles.sheetConfirmIcon, { backgroundColor: 'rgba(248,113,113,0.12)' }]}>
                         <Icon source="trash-can-outline" size={28} color={COLOR_EXPENSE} />
                     </View>
-                    <Text style={sheetStyles.sheetConfirmTitle}>Delete Category</Text>
+                    <Text style={sheetStyles.sheetConfirmTitle}>{t('budget.manage.deleteCategory.title')}</Text>
                     <Text style={sheetStyles.sheetConfirmDesc}>
-                        Delete "{confirmDeleteCategory?.name}"? All spending history for this category will be removed.
+                        {t('budget.manage.deleteCategory.message', { name: confirmDeleteCategory?.name })}
                     </Text>
                     <View style={sheetStyles.sheetActions}>
-                        <Button mode="text" onPress={() => sheetRef.current?.close()}>Cancel</Button>
+                        <Button mode="text" onPress={() => sheetRef.current?.close()}>{t('common.actions.cancel')}</Button>
                         <Button mode="contained" buttonColor={COLOR_EXPENSE} textColor="#fff"
                             loading={loading} onPress={onDeleteCategory}
                             contentStyle={sheetStyles.sheetConfirmContent}>
-                            Delete
+                            {t('common.actions.delete')}
                         </Button>
                     </View>
                 </View>
@@ -504,7 +507,7 @@ export default function ManageBudgetScreen() {
                         <View style={fp.headerIcon}>
                             <Icon source="calendar-check" size={24} color={COLOR_AMBER} />
                         </View>
-                        <Text style={fp.headerTitle}>Finish Period</Text>
+                        <Text style={fp.headerTitle}>{t('budget.manage.finish.title')}</Text>
                     </View>
 
                     <TouchableOpacity
@@ -517,8 +520,8 @@ export default function ManageBudgetScreen() {
                                 {carryMode === 'none' && <View style={fp.radioDot} />}
                             </View>
                             <View style={fp.optionText}>
-                                <Text style={fp.optionLabel}>Start Fresh</Text>
-                                <Text style={fp.optionSub}>No balances carry to the next period</Text>
+                                <Text style={fp.optionLabel}>{t('budget.manage.finish.fresh.label')}</Text>
+                                <Text style={fp.optionSub}>{t('budget.manage.finish.fresh.description')}</Text>
                             </View>
                         </View>
                     </TouchableOpacity>
@@ -533,8 +536,8 @@ export default function ManageBudgetScreen() {
                                 {carryMode === 'sumIntoOne' && <View style={fp.radioDot} />}
                             </View>
                             <View style={fp.optionText}>
-                                <Text style={fp.optionLabel}>Carry into Category</Text>
-                                <Text style={fp.optionSub}>Sum all remaining balances into one spot</Text>
+                                <Text style={fp.optionLabel}>{t('budget.manage.finish.sumIntoOne.label')}</Text>
+                                <Text style={fp.optionSub}>{t('budget.manage.finish.sumIntoOne.description')}</Text>
                             </View>
                         </View>
                         {carryMode === 'sumIntoOne' && (
@@ -569,14 +572,14 @@ export default function ManageBudgetScreen() {
                                 {carryMode === 'keepSame' && <View style={fp.radioDot} />}
                             </View>
                             <View style={fp.optionText}>
-                                <Text style={fp.optionLabel}>Carry Each Category</Text>
-                                <Text style={fp.optionSub}>Each category's remaining rolls into the next period</Text>
+                                <Text style={fp.optionLabel}>{t('budget.manage.finish.keepSame.label')}</Text>
+                                <Text style={fp.optionSub}>{t('budget.manage.finish.keepSame.description')}</Text>
                             </View>
                         </View>
                     </TouchableOpacity>
 
                     <View style={sheetStyles.sheetActions}>
-                        <Button mode="text" onPress={() => sheetRef.current?.close()}>Cancel</Button>
+                        <Button mode="text" onPress={() => sheetRef.current?.close()}>{t('common.actions.cancel')}</Button>
                         <Button
                             mode="contained"
                             buttonColor={COLOR_AMBER}
@@ -586,7 +589,7 @@ export default function ManageBudgetScreen() {
                             onPress={onFinishPeriod}
                             contentStyle={sheetStyles.sheetConfirmContent}
                         >
-                            Confirm
+                            {t('common.actions.confirm')}
                         </Button>
                     </View>
                 </View>
@@ -599,16 +602,16 @@ export default function ManageBudgetScreen() {
                     <View style={[sheetStyles.sheetConfirmIcon, { backgroundColor: 'rgba(248,113,113,0.12)' }]}>
                         <Icon source="trash-can-outline" size={28} color={COLOR_EXPENSE} />
                     </View>
-                    <Text style={sheetStyles.sheetConfirmTitle}>Delete Budget</Text>
+                    <Text style={sheetStyles.sheetConfirmTitle}>{t('budget.manage.deleteBudget.title')}</Text>
                     <Text style={sheetStyles.sheetConfirmDesc}>
-                        Permanently delete "{selectedMainBudget?.name}"? All spending categories and their history will be lost. This cannot be undone.
+                        {t('budget.manage.deleteBudget.message', { name: selectedMainBudget?.name })}
                     </Text>
                     <View style={sheetStyles.sheetActions}>
-                        <Button mode="text" onPress={() => sheetRef.current?.close()}>Cancel</Button>
+                        <Button mode="text" onPress={() => sheetRef.current?.close()}>{t('common.actions.cancel')}</Button>
                         <Button mode="contained" buttonColor={COLOR_EXPENSE} textColor="#fff"
                             loading={loading} onPress={onDeleteBudget}
                             contentStyle={sheetStyles.sheetConfirmContent}>
-                            Delete
+                            {t('common.actions.delete')}
                         </Button>
                     </View>
                 </View>
@@ -618,22 +621,22 @@ export default function ManageBudgetScreen() {
         if (activeSheet === 'kickMember') {
             const displayName = kickTargetMember?.firstName
                 ? `${kickTargetMember.firstName}${kickTargetMember.lastName ? ' ' + kickTargetMember.lastName : ''}`
-                : kickTargetMember?.email ?? 'this member';
+                : kickTargetMember?.email ?? t('budget.manage.kick.fallbackName');
             return (
                 <View style={sheetStyles.sheetCenteredContent}>
                     <View style={[sheetStyles.sheetConfirmIcon, { backgroundColor: 'rgba(248,113,113,0.12)' }]}>
                         <Icon source="account-remove" size={28} color={COLOR_EXPENSE} />
                     </View>
-                    <Text style={sheetStyles.sheetConfirmTitle}>Remove Member</Text>
+                    <Text style={sheetStyles.sheetConfirmTitle}>{t('budget.manage.kick.title')}</Text>
                     <Text style={sheetStyles.sheetConfirmDesc}>
-                        Remove {displayName} from this budget? They will be notified.
+                        {t('budget.manage.kick.message', { name: displayName })}
                     </Text>
                     <View style={sheetStyles.sheetActions}>
-                        <Button mode="text" onPress={() => sheetRef.current?.close()}>Cancel</Button>
+                        <Button mode="text" onPress={() => sheetRef.current?.close()}>{t('common.actions.cancel')}</Button>
                         <Button mode="contained" buttonColor={COLOR_EXPENSE} textColor="#fff"
                             loading={loading} onPress={onKickMember}
                             contentStyle={sheetStyles.sheetConfirmContent}>
-                            Remove
+                            {t('budget.manage.kick.confirm')}
                         </Button>
                     </View>
                 </View>
@@ -646,16 +649,16 @@ export default function ManageBudgetScreen() {
                     <View style={[sheetStyles.sheetConfirmIcon, { backgroundColor: 'rgba(248,113,113,0.12)' }]}>
                         <Icon source="logout" size={28} color={COLOR_EXPENSE} />
                     </View>
-                    <Text style={sheetStyles.sheetConfirmTitle}>Leave Budget</Text>
+                    <Text style={sheetStyles.sheetConfirmTitle}>{t('budget.manage.leave.title')}</Text>
                     <Text style={sheetStyles.sheetConfirmDesc}>
-                        Leave "{selectedMainBudget?.name}"? You will lose access to all transactions and categories.
+                        {t('budget.manage.leave.message', { name: selectedMainBudget?.name })}
                     </Text>
                     <View style={sheetStyles.sheetActions}>
-                        <Button mode="text" onPress={() => sheetRef.current?.close()}>Cancel</Button>
+                        <Button mode="text" onPress={() => sheetRef.current?.close()}>{t('common.actions.cancel')}</Button>
                         <Button mode="contained" buttonColor={COLOR_EXPENSE} textColor="#fff"
                             loading={loading} onPress={onLeaveBudget}
                             contentStyle={sheetStyles.sheetConfirmContent}>
-                            Leave
+                            {t('budget.manage.leave.confirm')}
                         </Button>
                     </View>
                 </View>
@@ -691,7 +694,7 @@ export default function ManageBudgetScreen() {
                     <Card mode="outlined" style={styles.sectionCard}>
                         <Card.Content>
                             <View style={styles.sectionTitleRow}>
-                                <Text style={styles.sectionTitle}>Pending Invitations</Text>
+                                <Text style={styles.sectionTitle}>{t('budget.manage.pendingInvitations')}</Text>
                                 <View style={[styles.inviteBadge, { backgroundColor: theme.colors.primary }]}>
                                     <Text style={[styles.inviteBadgeText, { color: theme.colors.onPrimary }]}>
                                         {user!.receivedBudgetInvites.filter(i => i.accepted === null).length}
@@ -737,7 +740,7 @@ export default function ManageBudgetScreen() {
                     <Card mode="outlined" style={styles.sectionCard}>
                         <Card.Content>
                             <View style={styles.membersTitleRow}>
-                                <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>Members</Text>
+                                <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>{t('budget.manage.members')}</Text>
                                 {isOwner ? (
                                     <IconButton
                                         icon={isMembersEditMode ? "check" : "pencil-outline"}
@@ -778,7 +781,7 @@ export default function ManageBudgetScreen() {
                                         />
                                     ) : member.id === user?.id ? (
                                         <View style={[styles.youBadge, { backgroundColor: theme.colors.primaryContainer }]}>
-                                            <Text style={[styles.youBadgeText, { color: theme.colors.onPrimaryContainer }]}>You</Text>
+                                            <Text style={[styles.youBadgeText, { color: theme.colors.onPrimaryContainer }]}>{t('budget.manage.you')}</Text>
                                         </View>
                                     ) : null}
                                 </View>
@@ -787,7 +790,7 @@ export default function ManageBudgetScreen() {
                             <TouchableOpacity style={styles.actionRow} onPress={() => openSheet('invite')}>
                                 <Icon source="account-plus" size={20} color={theme.colors.primary} />
                                 <Text style={[styles.actionRowText, { color: theme.colors.primary }]}>
-                                    Invite Member
+                                    {t('budget.manage.invite.title')}
                                 </Text>
                             </TouchableOpacity>
                         </Card.Content>
@@ -798,7 +801,7 @@ export default function ManageBudgetScreen() {
                 <TourTarget id="mb_categories">
                     <Card mode="outlined" style={styles.sectionCard}>
                         <Card.Content>
-                            <Text style={styles.sectionTitle}>Categories</Text>
+                            <Text style={styles.sectionTitle}>{t('budget.manage.categories')}</Text>
                             <Divider style={styles.divider} />
                             {selectedMainBudget?.budgetCategories?.map(bc => (
                                 <List.Item
@@ -829,7 +832,7 @@ export default function ManageBudgetScreen() {
                                 onPress={() => openSheet('addCategory')}
                                 style={styles.addCategoryButton}
                             >
-                                Add Category
+                                {t('budget.manage.addCategory.title')}
                             </Button>
                         </Card.Content>
                     </Card>
@@ -842,11 +845,11 @@ export default function ManageBudgetScreen() {
                             <View style={styles.sectionTitleRow}>
                                 <Icon source="calendar-month" size={18} color={COLOR_AMBER} />
                                 <Text style={[styles.sectionTitle, { color: COLOR_AMBER, marginBottom: 0, marginLeft: 6 }]}>
-                                    Budget Period
+                                    {t('budget.manage.period.title')}
                                 </Text>
                             </View>
                             <Text style={styles.sectionDescription}>
-                                Closes the current period. Choose whether to start the next period fresh or carry remaining balances into a single category.
+                                {t('budget.manage.period.description')}
                             </Text>
                             <Button
                                 mode="contained"
@@ -855,7 +858,7 @@ export default function ManageBudgetScreen() {
                                 style={styles.periodButton}
                                 onPress={() => openSheet('finishPeriod')}
                             >
-                                Finish Period
+                                {t('budget.manage.finish.title')}
                             </Button>
                         </Card.Content>
                     </Card>
@@ -870,8 +873,8 @@ export default function ManageBudgetScreen() {
                                 <Icon source="trash-can-outline" size={20} color={COLOR_EXPENSE} />
                             </View>
                             <View>
-                                <Text style={styles.deleteLabel}>Delete Budget</Text>
-                                <Text style={styles.deleteSubLabel}>Removes all categories and history</Text>
+                                <Text style={styles.deleteLabel}>{t('budget.manage.deleteBudget.title')}</Text>
+                                <Text style={styles.deleteSubLabel}>{t('budget.manage.deleteBudget.subtitle')}</Text>
                             </View>
                         </View>
                         <Icon source="chevron-right" size={20} color={COLOR_EXPENSE} />
