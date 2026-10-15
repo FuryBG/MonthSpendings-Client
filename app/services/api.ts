@@ -1,7 +1,6 @@
-import { AppUser, AppVersionInfo, AuthResponse, Budget, BudgetCategory, BudgetInvite, CategorizeNotificationTransactionDto, CreateNotificationTransactionDto, Currency, NotificationTransaction, Spending, UpdateUserActivityDto } from '@/types/Types';
+import { AppUser, AppVersionInfo, AuthResponse, Budget, BudgetCategory, BudgetInvite, CategorizeNotificationTransactionDto, Currency, NotificationTransaction, Spending, UpdateUserActivityDto, WalletIngestToken } from '@/types/Types';
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
-import { NativeModules } from 'react-native';
 
 export interface GoogleUserDto {
   id: string,
@@ -27,6 +26,7 @@ let _memoryToken: string | null = null;
 let _requestLanguage = 'en';
 
 export const setMemoryToken = (token: string | null) => { _memoryToken = token; };
+export const hasMemoryToken = () => _memoryToken !== null;
 
 /** Language the API uses for localized error messages (Accept-Language). */
 export const setRequestLanguage = (language: string) => { _requestLanguage = language; };
@@ -62,10 +62,13 @@ api.interceptors.response.use(
     const originalRequest = error?.config as (typeof error.config & { _retry?: boolean }) | undefined;
     const status = error?.response?.status;
     const url: string = originalRequest?.url ?? '';
+    // Token the failed request was sent with — anonymous requests have nothing to refresh.
+    const sentToken = (originalRequest?.headers?.Authorization as string | undefined)?.replace('Bearer ', '') ?? null;
 
     if (
       status === 401 &&
       originalRequest &&
+      sentToken &&
       !originalRequest._retry &&
       !AUTH_URLS.some((u) => url.includes(u))
     ) {
@@ -88,7 +91,6 @@ api.interceptors.response.use(
         const { data } = await api.post<AuthResponse>('/api/auth/refresh', { refreshToken });
 
         setMemoryToken(data.accessToken);
-        NativeModules.WalletSync?.setToken(data.accessToken).catch?.(() => {});
         await SecureStore.setItemAsync('token', data.accessToken);
         await SecureStore.setItemAsync('refreshToken', data.refreshToken);
 
@@ -97,10 +99,13 @@ api.interceptors.response.use(
         return api(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError, null);
-        setMemoryToken(null);
-        await SecureStore.deleteItemAsync('token');
-        await SecureStore.deleteItemAsync('refreshToken');
-        onUnauthorized?.();
+        // Only sign out if no newer session was started meanwhile (e.g. a login that finished during the refresh).
+        if (_memoryToken === sentToken) {
+          setMemoryToken(null);
+          await SecureStore.deleteItemAsync('token');
+          await SecureStore.deleteItemAsync('refreshToken');
+          onUnauthorized?.();
+        }
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
@@ -160,8 +165,8 @@ export const updateSyncWalletTransactions = async (sync: boolean): Promise<void>
   await api.put('/api/user/sync-wallet-transactions', { syncWalletTransactions: sync });
 };
 
-export const createNotificationTransaction = async (dto: CreateNotificationTransactionDto): Promise<NotificationTransaction> => {
-  const response = await api.post('/api/notification-transactions', dto);
+export const getWalletIngestToken = async (): Promise<WalletIngestToken> => {
+  const response = await api.get<WalletIngestToken>('/api/notification-transactions/ingest-token');
   return response.data;
 };
 

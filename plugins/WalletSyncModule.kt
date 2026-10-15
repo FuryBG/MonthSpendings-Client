@@ -33,6 +33,13 @@ class WalletSyncModule(private val reactContext: ReactApplicationContext) :
         }
     }
 
+    /** Retries queued notifications, e.g. after a fresh token was written or the phone came back online. */
+    @ReactMethod
+    fun flushOutbox(promise: Promise) {
+        WalletOutbox.flushAsync(reactContext)
+        promise.resolve(null)
+    }
+
     @ReactMethod
     fun deleteToken(promise: Promise) {
         try {

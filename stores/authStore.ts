@@ -1,19 +1,9 @@
-import { getUser, setMemoryToken } from '@/app/services/api';
+import { getUser, hasMemoryToken, setMemoryToken } from '@/app/services/api';
 import { queryClient } from '@/lib/queryClient';
 import { AppUser, AuthResponse } from '@/types/Types';
+import { clearWalletIngestToken, refreshWalletIngestToken } from '@/utils/walletSync';
 import * as SecureStore from 'expo-secure-store';
-import { NativeModules } from 'react-native';
 import { create } from 'zustand';
-
-function writeWalletToken(token: string) {
-  NativeModules.WalletSync?.setToken(token).catch?.(() => {});
-}
-
-function deleteWalletToken() {
-  NativeModules.WalletSync?.deleteToken().catch?.(() => {});
-}
-
-export { writeWalletToken };
 
 interface AuthState {
   user: AppUser | null;
@@ -34,9 +24,9 @@ export const useAuthStore = create<AuthState>((set) => ({
     setMemoryToken(tokens.accessToken);
     await SecureStore.setItemAsync('token', tokens.accessToken);
     await SecureStore.setItemAsync('refreshToken', tokens.refreshToken);
-    writeWalletToken(tokens.accessToken);
     const user = await getUser();
     set({ user });
+    if (user.syncWalletTransactions) refreshWalletIngestToken();
   },
 
   signOut: async () => {
@@ -52,7 +42,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     setMemoryToken(null);
     await SecureStore.deleteItemAsync('token');
     await SecureStore.deleteItemAsync('refreshToken');
-    deleteWalletToken();
+    clearWalletIngestToken();
     set({ user: null, userLoading: false });
     queryClient.clear();
   },
@@ -62,9 +52,9 @@ export const useAuthStore = create<AuthState>((set) => ({
       const token = await SecureStore.getItemAsync('token');
       if (token) {
         setMemoryToken(token);
-        writeWalletToken(token);
         const user = await getUser();
         set({ user, userLoading: false });
+        if (user.syncWalletTransactions) refreshWalletIngestToken();
       } else {
         set({ user: null, userLoading: false });
       }
@@ -83,6 +73,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   refreshUser: async () => {
+    if (!hasMemoryToken()) return;
     try {
       const user = await getUser();
       set({ user });

@@ -13,7 +13,7 @@ function withWalletKotlinFiles(config) {
       );
       fs.mkdirSync(kotlinDir, { recursive: true });
 
-      const templates = ['WalletNotificationService.kt', 'WalletSyncModule.kt', 'WalletSyncPackage.kt'];
+      const templates = ['WalletNotificationService.kt', 'WalletOutbox.kt', 'WalletSyncModule.kt', 'WalletSyncPackage.kt'];
       for (const filename of templates) {
         const src = fs.readFileSync(path.join(__dirname, filename), 'utf-8');
         fs.writeFileSync(path.join(kotlinDir, filename), src);
@@ -61,11 +61,17 @@ function withWalletManifest(config) {
   });
 }
 
+// Same API the JS app uses; read by WalletOutbox.kt when posting captured notifications.
+const WALLET_API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'https://api.taviraofficial.com';
+
 // Default (English) value for the service label; bg/es come from i18n/native/*.json.
 function withWalletStrings(config) {
   return withStringsXml(config, (config) => {
     config.modResults = AndroidConfig.Strings.setStringItem(
-      [{ $: { name: 'wallet_sync_label', translatable: 'true' }, _: 'Tavira Wallet Sync' }],
+      [
+        { $: { name: 'wallet_sync_label', translatable: 'true' }, _: 'Tavira Wallet Sync' },
+        { $: { name: 'wallet_api_url', translatable: 'false' }, _: WALLET_API_URL },
+      ],
       config.modResults,
     );
     return config;

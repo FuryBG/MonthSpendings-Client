@@ -1,7 +1,7 @@
-import { categorizeNotificationTransaction, createNotificationTransaction, deleteNotificationTransaction, getUncategorizedNotificationTransactions } from '@/app/services/api';
+import { categorizeNotificationTransaction, deleteNotificationTransaction, getUncategorizedNotificationTransactions } from '@/app/services/api';
 import { queryClient } from '@/lib/queryClient';
 import { useAuthStore } from '@/stores/authStore';
-import { CategorizeNotificationTransactionDto, CreateNotificationTransactionDto } from '@/types/Types';
+import { CategorizeNotificationTransactionDto } from '@/types/Types';
 import { useMutation, useQuery } from '@tanstack/react-query';
 
 export const PENDING_NOTIFICATION_TRANSACTIONS_KEY = ['pendingNotificationTransactions'] as const;
@@ -22,14 +22,6 @@ export const useCategorizeNotificationTransactionMutation = () =>
       queryClient.invalidateQueries({ queryKey: PENDING_NOTIFICATION_TRANSACTIONS_KEY });
       queryClient.invalidateQueries({ queryKey: ['budgets'] });
       queryClient.invalidateQueries({ queryKey: ['period-comparison'] });
-    },
-  });
-
-export const useCreateNotificationTransactionMutation = () =>
-  useMutation({
-    mutationFn: (dto: CreateNotificationTransactionDto) => createNotificationTransaction(dto),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: PENDING_NOTIFICATION_TRANSACTIONS_KEY });
     },
   });
 

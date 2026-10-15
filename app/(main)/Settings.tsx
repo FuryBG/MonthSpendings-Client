@@ -15,17 +15,14 @@ import * as Notifications from 'expo-notifications';
 import { Stack, useRouter } from 'expo-router';
 import * as Updates from 'expo-updates';
 import { useEffect, useRef, useState } from 'react';
-import { Alert, AppState, AppStateStatus, Linking, NativeModules, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Alert, AppState, AppStateStatus, Linking, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { Icon, Switch, Text, useTheme } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
 import i18n, { LANGUAGE_NATIVE_NAMES, localeTag } from '@/i18n';
 import { LanguageSheet } from '@/components/LanguageSheet';
 import { useLanguageStore } from '@/stores/languageStore';
 import { getApiErrorMessage } from '@/utils/apiError';
-
-const WalletSync = NativeModules.WalletSync as
-  | { isNotificationListenerEnabled: () => Promise<boolean> }
-  | undefined;
+import { clearWalletIngestToken, refreshWalletIngestToken, WalletSync } from '@/utils/walletSync';
 
 function SettingRow({
   icon,
@@ -223,6 +220,7 @@ export default function SettingsScreen() {
           try {
             await updateSyncWalletTransactions(true);
             await refreshUser();
+            refreshWalletIngestToken();
           } catch {
             setSyncValue(false);
             showError(i18n.t('settings.messages.walletSyncEnableFailed'));
@@ -271,6 +269,8 @@ export default function SettingsScreen() {
     try {
       await updateSyncWalletTransactions(newValue);
       await refreshUser();
+      if (newValue) refreshWalletIngestToken();
+      else clearWalletIngestToken();
     } catch {
       setSyncValue(!newValue);
       showError(t('settings.messages.walletSyncUpdateFailed'));

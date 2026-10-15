@@ -1,101 +1,48 @@
 package app.expo.tavira
 
+import android.app.Notification
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
-import java.io.File
-import java.net.HttpURLConnection
-import java.net.URL
-import org.json.JSONObject
 
+/**
+ * Captures Google Wallet payment notifications and queues them raw; the API parses amount/currency/merchant,
+ * so new notification formats are fixed server-side without an app release.
+ */
 class WalletNotificationService : NotificationListenerService() {
 
+    companion object {
+        private val WALLET_PACKAGES = setOf(
+            "com.google.android.apps.walletnfcrel",
+            "com.google.android.gms",
+        )
+    }
+
+    override fun onListenerConnected() {
+        WalletOutbox.flushAsync(this)
+    }
+
     override fun onNotificationPosted(sbn: StatusBarNotification) {
-        val extras = sbn.notification?.extras ?: return
-        val title = extras.getCharSequence("android.title")?.toString() ?: return
-        val text = extras.getCharSequence("android.bigText")?.toString()
-            ?: extras.getCharSequence("android.text")?.toString()
+        if (!isWalletPackage(sbn.packageName)) return
+
+        val notification = sbn.notification ?: return
+        if (notification.flags and Notification.FLAG_GROUP_SUMMARY != 0) return
+        if (notification.flags and Notification.FLAG_ONGOING_EVENT != 0) return
+
+        val extras = notification.extras ?: return
+        val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString()?.takeIf { it.isNotBlank() }
+        val text = (extras.getCharSequence(Notification.EXTRA_BIG_TEXT) ?: extras.getCharSequence(Notification.EXTRA_TEXT))
+            ?.toString()
+            ?.takeIf { it.isNotBlank() }
             ?: return
 
-        val parsed = parseWalletNotification(title, text) ?: return
+        // A payment always shows an amount; skips Play services noise like "Device backed up".
+        if (text.none { it.isDigit() } && title?.none { it.isDigit() } != false) return
 
-        Thread {
-            val token = readToken() ?: return@Thread
-            postTransaction(token, parsed)
-        }.start()
+        WalletOutbox.enqueue(this, sbn.key, title, text, sbn.packageName, sbn.postTime)
+        WalletOutbox.flushAsync(this)
     }
 
-    private fun readToken(): String? = try {
-        File(filesDir, "wallet_token").readText().trim().takeIf { it.isNotEmpty() }
-    } catch (_: Exception) {
-        null
-    }
-
-    private fun postTransaction(token: String, parsed: ParsedTransaction) {
-        try {
-            val url = URL("https://api.taviraofficial.com/api/notification-transactions")
-            val conn = url.openConnection() as HttpURLConnection
-            conn.apply {
-                requestMethod = "POST"
-                setRequestProperty("Authorization", "Bearer $token")
-                setRequestProperty("Content-Type", "application/json")
-                doOutput = true
-                connectTimeout = 15_000
-                readTimeout = 15_000
-            }
-            val body = JSONObject().apply {
-                put("merchantName", parsed.merchantName)
-                put("amount", parsed.amount)
-                put("currency", parsed.currency)
-                put("rawTitle", parsed.rawTitle)
-                put("rawBody", parsed.rawBody)
-            }.toString()
-            conn.outputStream.use { it.write(body.toByteArray()) }
-            conn.responseCode
-            conn.disconnect()
-        } catch (_: Exception) {}
-    }
-
-    private data class ParsedTransaction(
-        val merchantName: String,
-        val amount: Double,
-        val currency: String,
-        val rawTitle: String,
-        val rawBody: String,
-    )
-
-    private fun parseWalletNotification(title: String, text: String): ParsedTransaction? {
-        val body = text.trim()
-
-        // €5.50, $5.50, £5.50 etc. at start
-        Regex("""^([€$£₺₴₽₾])\s*([\d]+[.,][\d]{1,2})""").find(body)?.let {
-            val amount = it.groupValues[2].replace(',', '.').toDoubleOrNull() ?: return null
-            if (amount <= 0) return null
-            return ParsedTransaction(title.trim(), amount, detectCurrency(it.groupValues[1], "", body), title, text)
-        }
-
-        // лв 5.50
-        Regex("""^лв\.?\s*([\d]+[.,][\d]{1,2})""").find(body)?.let {
-            val amount = it.groupValues[1].replace(',', '.').toDoubleOrNull() ?: return null
-            if (amount <= 0) return null
-            return ParsedTransaction(title.trim(), amount, "BGN", title, text)
-        }
-
-        // 5.50 BGN
-        Regex("""([\d]+[.,][\d]{1,2})\s+([A-Z]{3})\b""").find(body)?.let {
-            val amount = it.groupValues[1].replace(',', '.').toDoubleOrNull() ?: return null
-            if (amount <= 0) return null
-            return ParsedTransaction(title.trim(), amount, detectCurrency("", it.groupValues[2], body), title, text)
-        }
-
-        return null
-    }
-
-    private fun detectCurrency(symbol: String, code: String, body: String): String = when {
-        symbol == "€" || code == "EUR" || body.contains("EUR", ignoreCase = true) -> "EUR"
-        symbol == "$" || code == "USD" || body.contains("USD", ignoreCase = true) -> "USD"
-        symbol == "£" || code == "GBP" || body.contains("GBP", ignoreCase = true) -> "GBP"
-        symbol == "₺" || code == "TRY" || body.contains("TRY", ignoreCase = true) -> "TRY"
-        symbol == "₾" || code == "GEL" || body.contains("GEL", ignoreCase = true) -> "GEL"
-        else -> "BGN"
-    }
+    // Debug builds also accept the app's own notifications, for testing with self-posted ones.
+    private fun isWalletPackage(packageName: String): Boolean =
+        packageName in WALLET_PACKAGES || (BuildConfig.DEBUG && packageName == this.packageName)
 }

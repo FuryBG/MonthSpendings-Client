@@ -85,16 +85,13 @@ export type NotificationTransaction = {
     amount: number
     currency: string
     merchantName: string
+    cardLast4: string | null
     receivedAt: string
     categorized: boolean
 }
 
-export type CreateNotificationTransactionDto = {
-    merchantName: string
-    amount: number
-    currency: string
-    rawTitle?: string
-    rawBody?: string
+export type WalletIngestToken = {
+    token: string
 }
 
 export type CategorizeNotificationTransactionDto = {
