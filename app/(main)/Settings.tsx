@@ -1,4 +1,4 @@
-import { requestAccountDeletion, updateNotificationToken, updateSyncWalletTransactions } from '@/app/services/api';
+import { deleteAccount, updateNotificationToken, updateSyncWalletTransactions } from '@/app/services/api';
 import { isDeviceLockAvailable } from '@/app/services/biometrics';
 import { ScreenContainer } from '@/components/ScreenContainer';
 import { ScreenIntroSheet } from '@/components/tour/ScreenIntroSheet';
@@ -197,8 +197,9 @@ export default function SettingsScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              await requestAccountDeletion();
-              showSuccess(t('settings.deleteAccount.submitted'));
+              await deleteAccount();
+              showSuccess(t('settings.deleteAccount.deleted'));
+              await useAuthStore.getState().signOut();
             } catch (e) {
               showError(getApiErrorMessage(e, t('settings.deleteAccount.failed')));
             }

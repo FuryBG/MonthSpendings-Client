@@ -43,19 +43,19 @@ const es: LegalContent = {
       },
       {
         title: 'Contáctanos',
-        body: 'Si tienes preguntas o dudas sobre estos Términos del servicio, escríbenos a support@tavira.app. Intentamos responder a todas las consultas en un plazo de 48 horas hábiles.',
+        body: 'Si tienes preguntas o dudas sobre estos Términos del servicio, escríbenos a support@taviraofficial.com. Intentamos responder a todas las consultas en un plazo de 48 horas hábiles.',
       },
     ],
   },
   privacy: {
     title: 'Política de privacidad',
-    lastUpdated: 'Última actualización: mayo de 2025',
+    lastUpdated: 'Última actualización: noviembre de 2026',
     intro: 'Tu privacidad nos importa. Esta política explica qué datos recopila Tavira, cómo se utilizan y qué opciones tienes respecto a tu información.',
     translationNotice: NOTICE,
     sections: [
       {
         title: 'Información que recopilamos',
-        body: 'Recopilamos la información que nos proporcionas directamente, incluidos tu nombre, dirección de correo electrónico y foto de perfil obtenidos mediante el inicio de sesión con Google. También podemos recopilar datos de uso, como interacciones con funciones y registros de errores, para mejorar el servicio.',
+        body: 'Recopilamos la información que nos proporcionas: tu nombre, dirección de correo y foto de perfil mediante el inicio de sesión con Google, o tu nombre, dirección de correo y un hash de la contraseña si te registras con correo. Guardamos los presupuestos, categorías y gastos que introduces. Si activas Wallet Sync en Android, recibimos el texto de las notificaciones de pago de tu aplicación de cartera y guardamos el comercio, el importe, la moneda, los últimos cuatro dígitos de la tarjeta y el texto de la notificación. También guardamos tu token de notificaciones, idioma y zona horaria, y recopilamos registros técnicos para operar y mejorar el servicio.',
       },
       {
         title: 'Cómo usamos tu información',
@@ -63,7 +63,7 @@ const es: LegalContent = {
       },
       {
         title: 'Compartición de datos',
-        body: 'No vendemos ni alquilamos tu información personal. Compartimos datos con proveedores de servicios de confianza que ayudan a operar Tavira, como RevenueCat (gestión de suscripciones) y Google Firebase (autenticación). Estos proveedores pueden recopilar y tratar determinados datos de acuerdo con sus propias políticas de privacidad. También podemos divulgar información si la ley lo exige o para proteger los derechos de los usuarios.',
+        body: 'No vendemos ni alquilamos tu información personal. Compartimos datos con proveedores de servicios de confianza que ayudan a operar Tavira: RevenueCat (gestión de suscripciones), Google y Expo (inicio de sesión y notificaciones), y nuestros proveedores de alojamiento y base de datos. Estos proveedores tratan determinados datos de acuerdo con sus propias políticas de privacidad. También podemos divulgar información si la ley lo exige o para proteger los derechos de los usuarios.',
       },
       {
         title: 'Seguridad de los datos',
@@ -71,11 +71,11 @@ const es: LegalContent = {
       },
       {
         title: 'Conservación de datos',
-        body: 'Conservamos tus datos personales mientras tu cuenta permanezca activa o mientras sea necesario para prestar el servicio. Si eliminas tu cuenta, tus datos se eliminarán de forma permanente en un plazo de 30 días, salvo cuando la ley exija conservarlos.',
+        body: 'Conservamos tus datos personales mientras tu cuenta esté activa. Cuando eliminas tu cuenta en la aplicación, tu cuenta y los datos asociados se eliminan de forma permanente de nuestra base de datos de inmediato. Las solicitudes por correo se completan en un plazo de 30 días. Los registros técnicos vinculados a un identificador numérico interno y las copias de seguridad de la base de datos se eliminan en un plazo de 30 días. También pedimos a RevenueCat que elimine tu registro de cliente. Google y Apple conservan los registros de compra según sus propias políticas. Solo conservamos otros datos cuando la ley lo exige. Detalles: https://api.taviraofficial.com/delete-account',
       },
       {
         title: 'Tus derechos',
-        body: 'Tienes derecho a acceder, corregir o eliminar la información personal que tenemos sobre ti. Para ejercer cualquiera de estos derechos, contáctanos en support@tavira.app.',
+        body: 'Tienes derecho a acceder, corregir o eliminar la información personal que tenemos sobre ti. Para eliminar tu cuenta, usa Ajustes en la aplicación o sigue los pasos en https://api.taviraofficial.com/delete-account. Para cualquier otra solicitud, contáctanos en support@taviraofficial.com.',
       },
       {
         title: 'Privacidad de los menores',
@@ -87,7 +87,7 @@ const es: LegalContent = {
       },
       {
         title: 'Contáctanos',
-        body: 'Si tienes alguna pregunta sobre esta Política de privacidad o sobre cómo tratamos tus datos, contáctanos en support@tavira.app. Nos comprometemos a atender las cuestiones de privacidad de forma rápida y transparente.',
+        body: 'Si tienes alguna pregunta sobre esta Política de privacidad o sobre cómo tratamos tus datos, contáctanos en support@taviraofficial.com. Nos comprometemos a atender las cuestiones de privacidad de forma rápida y transparente.',
       },
     ],
   },

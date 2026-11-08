@@ -383,10 +383,10 @@ const es: Translation = {
     },
     deleteAccount: {
       title: 'Eliminar cuenta',
-      message: 'Revisaremos tu solicitud. Tu cuenta y todos los datos asociados se eliminarán de forma permanente en un plazo de 30 días. Esta acción no se puede deshacer.',
-      confirm: 'Solicitar eliminación',
-      submitted: 'Solicitud de eliminación enviada. La procesaremos en un plazo de 30 días.',
-      failed: 'No se pudo enviar la solicitud. Inténtalo de nuevo.',
+      message: 'Tu cuenta y todos los datos asociados se eliminarán de forma permanente de inmediato. Esta acción no se puede deshacer.\n\nEsto no cancela una suscripción a Tavira Pro. Si tienes una, cancélala primero en Google Play o en App Store.',
+      confirm: 'Eliminar definitivamente',
+      deleted: 'Tu cuenta se ha eliminado.',
+      failed: 'No se pudo eliminar tu cuenta. Inténtalo de nuevo.',
     },
     version: {
       label: 'VERSIÓN',

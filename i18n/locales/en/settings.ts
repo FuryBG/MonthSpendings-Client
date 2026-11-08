@@ -42,10 +42,10 @@ const settings = {
   },
   deleteAccount: {
     title: 'Delete Account',
-    message: 'Your request will be reviewed. Your account and all associated data will be permanently deleted within 30 days. This cannot be undone.',
-    confirm: 'Request Deletion',
-    submitted: 'Deletion request submitted. We will process it within 30 days.',
-    failed: 'Failed to submit request. Please try again.',
+    message: 'Your account and all associated data will be permanently deleted right away. This cannot be undone.\n\nThis does not cancel a Tavira Pro subscription. If you have one, cancel it in Google Play or the App Store first.',
+    confirm: 'Delete Permanently',
+    deleted: 'Your account has been deleted.',
+    failed: 'Failed to delete your account. Please try again.',
   },
   version: {
     label: 'VERSION',

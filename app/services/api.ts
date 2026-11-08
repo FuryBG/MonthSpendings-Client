@@ -262,8 +262,8 @@ export const updateBudgetCategoryName = async (id: number, newName: string): Pro
   return response.data;
 };
 
-export const requestAccountDeletion = async (): Promise<void> => {
-  await api.post('/api/user/delete-request');
+export const deleteAccount = async (): Promise<void> => {
+  await api.delete('/api/user');
 };
 
 export default api;

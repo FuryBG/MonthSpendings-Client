@@ -40,18 +40,18 @@ const en: LegalContent = {
       },
       {
         title: 'Contact Us',
-        body: 'If you have questions or concerns about these Terms of Service, please reach out to us at support@tavira.app. We aim to respond to all inquiries within 48 business hours.',
+        body: 'If you have questions or concerns about these Terms of Service, please reach out to us at support@taviraofficial.com. We aim to respond to all inquiries within 48 business hours.',
       },
     ],
   },
   privacy: {
     title: 'Privacy Policy',
-    lastUpdated: 'Last updated: May 2025',
+    lastUpdated: 'Last updated: November 2026',
     intro: 'Your privacy matters to us. This policy explains what data Tavira collects, how it is used, and the choices you have regarding your information.',
     sections: [
       {
         title: 'Information We Collect',
-        body: 'We collect information you provide directly, including your name, email address, and profile photo obtained via Google Sign-In. Usage data such as feature interactions and error logs may be collected to improve the service.',
+        body: 'We collect the information you provide: your name, email address and profile photo through Google Sign-In, or your name, email address and a password hash if you register with email. We store the budgets, categories and expenses you enter. If you turn on Wallet Sync on Android, we receive the text of payment notifications from your wallet app and store the merchant, amount, currency, last four card digits and notification text. We also store your push notification token, language and time zone, and collect technical logs to operate and improve the service.',
       },
       {
         title: 'How We Use Your Information',
@@ -59,7 +59,7 @@ const en: LegalContent = {
       },
       {
         title: 'Data Sharing',
-        body: 'We do not sell or rent your personal information. We share data with trusted service providers who help operate Tavira, including RevenueCat (subscription management) and Google Firebase (authentication). These providers may collect and process certain data in accordance with their own privacy policies. We may also disclose information if required by law or to protect user rights.',
+        body: 'We do not sell or rent your personal information. We share data with trusted service providers who help operate Tavira: RevenueCat (subscription management), Google and Expo (sign-in and push notifications), and our hosting and database providers. These providers process certain data in accordance with their own privacy policies. We may also disclose information if required by law or to protect user rights.',
       },
       {
         title: 'Data Security',
@@ -67,11 +67,11 @@ const en: LegalContent = {
       },
       {
         title: 'Data Retention',
-        body: 'We retain your personal data for as long as your account remains active or as needed to provide the service. If you delete your account, your data will be permanently removed within 30 days, except where retention is required by law.',
+        body: 'We keep your personal data while your account is active. When you delete your account in the app, your account and associated data are permanently removed from our database right away. Requests sent by email are completed within 30 days. Technical logs tied to an internal numeric ID, and database backups, are removed within 30 days. We also ask RevenueCat to delete your customer record. Google and Apple keep purchase records under their own policies. We keep other data only where the law requires it. Details: https://api.taviraofficial.com/delete-account',
       },
       {
         title: 'Your Rights',
-        body: 'You have the right to access, correct, or delete the personal information we hold about you. To exercise any of these rights, contact us at support@tavira.app.',
+        body: 'You have the right to access, correct, or delete the personal information we hold about you. To delete your account, use Settings in the app or follow the steps at https://api.taviraofficial.com/delete-account. For any other request, contact us at support@taviraofficial.com.',
       },
       {
         title: "Children's Privacy",
@@ -83,7 +83,7 @@ const en: LegalContent = {
       },
       {
         title: 'Contact Us',
-        body: 'If you have any questions about this Privacy Policy or how we handle your data, please contact us at support@tavira.app. We are committed to addressing privacy concerns promptly and transparently.',
+        body: 'If you have any questions about this Privacy Policy or how we handle your data, please contact us at support@taviraofficial.com. We are committed to addressing privacy concerns promptly and transparently.',
       },
     ],
   },
